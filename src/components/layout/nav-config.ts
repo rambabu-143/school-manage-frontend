@@ -5,6 +5,7 @@ import {
   CalendarCheck,
   GraduationCap,
   LayoutDashboard,
+  Receipt,
   Users,
   UsersRound,
 } from "lucide-react"
@@ -27,6 +28,10 @@ const STAFF_ROLES: readonly Role[] = [
   "accountant",
 ]
 
+// Fees endpoints reject teachers outright, so the nav item follows the
+// backend's FEES_ROLES rather than the broader STAFF_ROLES.
+const FEES_ROLES: readonly Role[] = ["super_admin", "school_admin", "branch_admin", "accountant"]
+
 // Grows one entry per module as each is built - no placeholder links to
 // pages that don't exist yet.
 export const NAV_ITEMS: readonly NavItem[] = [
@@ -37,4 +42,5 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Academics", href: "/academics", icon: BookOpen, roles: STAFF_ROLES },
   { label: "Attendance", href: "/attendance", icon: CalendarCheck, roles: STAFF_ROLES },
   { label: "Gradebook", href: "/gradebook", icon: GraduationCap, roles: STAFF_ROLES },
+  { label: "Fees", href: "/fees", icon: Receipt, roles: FEES_ROLES },
 ]
