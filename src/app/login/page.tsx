@@ -28,6 +28,9 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>
 
+// ponytail: dev-only convenience, remove before shipping.
+const DEMO_CREDENTIALS = { email: "admin@demoschool.io", password: "DevPass123!" }
+
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -111,6 +114,17 @@ function LoginForm() {
                   {login.isPending && <Loader2 className="animate-spin" />}
                   Sign in
                 </Button>
+                {process.env.NODE_ENV !== "production" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={login.isPending}
+                    onClick={() => form.reset(DEMO_CREDENTIALS)}
+                  >
+                    Fill demo credentials
+                  </Button>
+                )}
               </form>
             </Form>
           </CardContent>
