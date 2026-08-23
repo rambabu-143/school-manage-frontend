@@ -6,6 +6,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Receipt,
+  UserCheck,
   Users,
   UsersRound,
 } from "lucide-react"
@@ -43,4 +44,5 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Attendance", href: "/attendance", icon: CalendarCheck, roles: STAFF_ROLES },
   { label: "Gradebook", href: "/gradebook", icon: GraduationCap, roles: STAFF_ROLES },
   { label: "Fees", href: "/fees", icon: Receipt, roles: FEES_ROLES },
+  { label: "My Children", href: "/portal", icon: UserCheck, roles: ["parent"] },
 ]
