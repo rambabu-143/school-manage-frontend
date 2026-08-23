@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { BookOpen, Building2, LayoutDashboard, Users, UsersRound } from "lucide-react"
+import { BookOpen, Building2, CalendarCheck, LayoutDashboard, Users, UsersRound } from "lucide-react"
 
 import type { Role } from "@/types/auth"
 
@@ -27,4 +27,5 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Students", href: "/students", icon: Users, roles: STAFF_ROLES },
   { label: "Staff", href: "/staff", icon: UsersRound, roles: STAFF_ROLES },
   { label: "Academics", href: "/academics", icon: BookOpen, roles: STAFF_ROLES },
+  { label: "Attendance", href: "/attendance", icon: CalendarCheck, roles: STAFF_ROLES },
 ]
