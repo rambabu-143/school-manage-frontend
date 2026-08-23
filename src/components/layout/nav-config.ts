@@ -3,6 +3,7 @@ import {
   BookOpen,
   Building2,
   CalendarCheck,
+  ClipboardList,
   GraduationCap,
   LayoutDashboard,
   Receipt,
@@ -33,10 +34,14 @@ const STAFF_ROLES: readonly Role[] = [
 // backend's FEES_ROLES rather than the broader STAFF_ROLES.
 const FEES_ROLES: readonly Role[] = ["super_admin", "school_admin", "branch_admin", "accountant"]
 
+// Admissions endpoints are admin-only (require_role(*ADMIN_ROLES) throughout).
+const ADMIN_ONLY_ROLES: readonly Role[] = ["super_admin", "school_admin", "branch_admin"]
+
 // Grows one entry per module as each is built - no placeholder links to
 // pages that don't exist yet.
 export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Admissions", href: "/admissions", icon: ClipboardList, roles: ADMIN_ONLY_ROLES },
   { label: "Branches", href: "/branches", icon: Building2, roles: STAFF_ROLES },
   { label: "Students", href: "/students", icon: Users, roles: STAFF_ROLES },
   { label: "Staff", href: "/staff", icon: UsersRound, roles: STAFF_ROLES },
