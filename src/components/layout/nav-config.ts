@@ -7,6 +7,7 @@ import {
   CalendarOff,
   ClipboardList,
   GraduationCap,
+  Hotel,
   LayoutDashboard,
   Receipt,
   UserCheck,
@@ -32,9 +33,14 @@ const STAFF_ROLES: readonly Role[] = [
   "accountant",
 ]
 
-// Fees endpoints reject teachers outright, so the nav item follows the
-// backend's FEES_ROLES rather than the broader STAFF_ROLES.
-const FEES_ROLES: readonly Role[] = ["super_admin", "school_admin", "branch_admin", "accountant"]
+// Fees and hostel endpoints reject teachers outright, so these nav items
+// follow this narrower role set rather than the broader STAFF_ROLES.
+const ADMIN_AND_ACCOUNTANT_ROLES: readonly Role[] = [
+  "super_admin",
+  "school_admin",
+  "branch_admin",
+  "accountant",
+]
 
 // Admissions endpoints are admin-only (require_role(*ADMIN_ROLES) throughout).
 const ADMIN_ONLY_ROLES: readonly Role[] = ["super_admin", "school_admin", "branch_admin"]
@@ -51,7 +57,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Attendance", href: "/attendance", icon: CalendarCheck, roles: STAFF_ROLES },
   { label: "Leave", href: "/hr", icon: CalendarOff, roles: STAFF_ROLES },
   { label: "Gradebook", href: "/gradebook", icon: GraduationCap, roles: STAFF_ROLES },
-  { label: "Fees", href: "/fees", icon: Receipt, roles: FEES_ROLES },
+  { label: "Fees", href: "/fees", icon: Receipt, roles: ADMIN_AND_ACCOUNTANT_ROLES },
   { label: "Transport", href: "/transport", icon: Bus, roles: STAFF_ROLES },
+  { label: "Hostel", href: "/hostel", icon: Hotel, roles: ADMIN_AND_ACCOUNTANT_ROLES },
   { label: "My Children", href: "/portal", icon: UserCheck, roles: ["parent"] },
 ]
