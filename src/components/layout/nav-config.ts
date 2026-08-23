@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react"
 import {
   BookOpen,
   Building2,
+  Bus,
   CalendarCheck,
   CalendarOff,
   ClipboardList,
@@ -51,5 +52,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Leave", href: "/hr", icon: CalendarOff, roles: STAFF_ROLES },
   { label: "Gradebook", href: "/gradebook", icon: GraduationCap, roles: STAFF_ROLES },
   { label: "Fees", href: "/fees", icon: Receipt, roles: FEES_ROLES },
+  { label: "Transport", href: "/transport", icon: Bus, roles: STAFF_ROLES },
   { label: "My Children", href: "/portal", icon: UserCheck, roles: ["parent"] },
 ]
