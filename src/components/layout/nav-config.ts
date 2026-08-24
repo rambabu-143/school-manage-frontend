@@ -11,6 +11,7 @@ import {
   Hotel,
   LayoutDashboard,
   ListChecks,
+  NotebookText,
   Package,
   Receipt,
   ShieldAlert,
@@ -95,5 +96,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
     roles: ADMIN_AND_TEACHER_ROLES,
   },
   { label: "Syllabus", href: "/syllabus", icon: ListChecks, roles: ADMIN_AND_TEACHER_ROLES },
+  { label: "Appraisal", href: "/appraisal", icon: NotebookText, roles: STAFF_ROLES },
   { label: "My Children", href: "/portal", icon: UserCheck, roles: ["parent"] },
 ]
