@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Hotel,
   LayoutDashboard,
+  Package,
   Receipt,
   UserCheck,
   Users,
@@ -60,5 +61,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Fees", href: "/fees", icon: Receipt, roles: ADMIN_AND_ACCOUNTANT_ROLES },
   { label: "Transport", href: "/transport", icon: Bus, roles: STAFF_ROLES },
   { label: "Hostel", href: "/hostel", icon: Hotel, roles: ADMIN_AND_ACCOUNTANT_ROLES },
+  { label: "Inventory", href: "/inventory", icon: Package, roles: STAFF_ROLES },
   { label: "My Children", href: "/portal", icon: UserCheck, roles: ["parent"] },
 ]
