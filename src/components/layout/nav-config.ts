@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   Package,
   Receipt,
+  ShieldAlert,
   UserCheck,
   Users,
   UsersRound,
@@ -46,6 +47,14 @@ const ADMIN_AND_ACCOUNTANT_ROLES: readonly Role[] = [
 // Admissions endpoints are admin-only (require_role(*ADMIN_ROLES) throughout).
 const ADMIN_ONLY_ROLES: readonly Role[] = ["super_admin", "school_admin", "branch_admin"]
 
+// Disciplinary records are readable by admins and teachers only (no accountant).
+const ADMIN_AND_TEACHER_ROLES: readonly Role[] = [
+  "super_admin",
+  "school_admin",
+  "branch_admin",
+  "teacher",
+]
+
 // Grows one entry per module as each is built - no placeholder links to
 // pages that don't exist yet.
 export const NAV_ITEMS: readonly NavItem[] = [
@@ -62,5 +71,11 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Transport", href: "/transport", icon: Bus, roles: STAFF_ROLES },
   { label: "Hostel", href: "/hostel", icon: Hotel, roles: ADMIN_AND_ACCOUNTANT_ROLES },
   { label: "Inventory", href: "/inventory", icon: Package, roles: STAFF_ROLES },
+  {
+    label: "Disciplinary",
+    href: "/disciplinary",
+    icon: ShieldAlert,
+    roles: ADMIN_AND_TEACHER_ROLES,
+  },
   { label: "My Children", href: "/portal", icon: UserCheck, roles: ["parent"] },
 ]
