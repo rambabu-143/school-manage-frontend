@@ -6,6 +6,7 @@ import {
   CalendarCheck,
   CalendarOff,
   ClipboardList,
+  Flag,
   GraduationCap,
   HeartHandshake,
   Hotel,
@@ -97,5 +98,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
   { label: "Syllabus", href: "/syllabus", icon: ListChecks, roles: ADMIN_AND_TEACHER_ROLES },
   { label: "Appraisal", href: "/appraisal", icon: NotebookText, roles: STAFF_ROLES },
+  { label: "Houses", href: "/houses", icon: Flag, roles: ADMIN_AND_TEACHER_ROLES },
   { label: "My Children", href: "/portal", icon: UserCheck, roles: ["parent"] },
 ]
