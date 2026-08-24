@@ -13,6 +13,7 @@ import {
   Package,
   Receipt,
   ShieldAlert,
+  Sparkles,
   UserCheck,
   Users,
   UsersRound,
@@ -84,5 +85,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: HeartHandshake,
     roles: ADMIN_AND_TEACHER_ROLES,
   },
+  { label: "Alumni", href: "/alumni", icon: Sparkles, roles: ADMIN_ONLY_ROLES },
   { label: "My Children", href: "/portal", icon: UserCheck, roles: ["parent"] },
 ]
