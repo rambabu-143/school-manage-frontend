@@ -14,6 +14,7 @@ import {
   Receipt,
   ShieldAlert,
   Sparkles,
+  SplitSquareVertical,
   UserCheck,
   Users,
   UsersRound,
@@ -86,5 +87,11 @@ export const NAV_ITEMS: readonly NavItem[] = [
     roles: ADMIN_AND_TEACHER_ROLES,
   },
   { label: "Alumni", href: "/alumni", icon: Sparkles, roles: ADMIN_ONLY_ROLES },
+  {
+    label: "Streams",
+    href: "/streams",
+    icon: SplitSquareVertical,
+    roles: ADMIN_AND_TEACHER_ROLES,
+  },
   { label: "My Children", href: "/portal", icon: UserCheck, roles: ["parent"] },
 ]
