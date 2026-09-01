@@ -2,9 +2,11 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+import { ConcessionRenewalsTab } from "./concession-renewals-tab"
 import { ConcessionsTab } from "./concessions-tab"
 import { FeeHeadsTab } from "./fee-heads-tab"
 import { InvoicesTab } from "./invoices-tab"
+import { PaymentGatewayTab } from "./payment-gateway-tab"
 
 export default function FeesPage() {
   return (
@@ -21,6 +23,8 @@ export default function FeesPage() {
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
           <TabsTrigger value="fee-heads">Fee Heads</TabsTrigger>
           <TabsTrigger value="concessions">Concessions</TabsTrigger>
+          <TabsTrigger value="concession-renewals">Concession Renewals</TabsTrigger>
+          <TabsTrigger value="payment-gateway">Payment Gateway</TabsTrigger>
         </TabsList>
         <TabsContent value="invoices">
           <InvoicesTab />
@@ -30,6 +34,12 @@ export default function FeesPage() {
         </TabsContent>
         <TabsContent value="concessions">
           <ConcessionsTab />
+        </TabsContent>
+        <TabsContent value="concession-renewals">
+          <ConcessionRenewalsTab />
+        </TabsContent>
+        <TabsContent value="payment-gateway">
+          <PaymentGatewayTab />
         </TabsContent>
       </Tabs>
     </div>

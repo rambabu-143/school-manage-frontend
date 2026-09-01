@@ -23,3 +23,20 @@ export interface CounsellingRecordCreateInput {
   follow_up_required: boolean
   follow_up_date?: string | null
 }
+
+export interface CounsellingFollowup {
+  id: string
+  tenant_id: string
+  record_id: string
+  counsellor_id: string
+  followup_date: string
+  notes: string
+  action_items: string | null
+  created_at: string
+}
+
+export interface CounsellingFollowupCreateInput {
+  followup_date: string
+  notes: string
+  action_items?: string | null
+}

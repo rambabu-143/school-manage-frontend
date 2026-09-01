@@ -15,6 +15,9 @@ import { useMyChildren } from "@/hooks/use-portal"
 import { AttendanceTab } from "./attendance-tab"
 import { DisciplinaryTab } from "./disciplinary-tab"
 import { FeesTab } from "./fees-tab"
+import { HomeworkTab } from "./homework-tab"
+import { IdCardTab } from "./id-card-tab"
+import { ObservationsTab } from "./observations-tab"
 import { ReportCardTab } from "./report-card-tab"
 
 export default function PortalPage() {
@@ -61,12 +64,18 @@ export default function PortalPage() {
         <Tabs defaultValue="attendance">
           <TabsList>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            <TabsTrigger value="homework">Homework</TabsTrigger>
             <TabsTrigger value="report-card">Report Card</TabsTrigger>
             <TabsTrigger value="fees">Fees</TabsTrigger>
             <TabsTrigger value="disciplinary">Disciplinary</TabsTrigger>
+            <TabsTrigger value="observations">Observations</TabsTrigger>
+            <TabsTrigger value="id-card">ID Card</TabsTrigger>
           </TabsList>
           <TabsContent value="attendance">
             <AttendanceTab studentId={student.id} />
+          </TabsContent>
+          <TabsContent value="homework">
+            <HomeworkTab studentId={student.id} />
           </TabsContent>
           <TabsContent value="report-card">
             <ReportCardTab studentId={student.id} />
@@ -76,6 +85,12 @@ export default function PortalPage() {
           </TabsContent>
           <TabsContent value="disciplinary">
             <DisciplinaryTab studentId={student.id} />
+          </TabsContent>
+          <TabsContent value="observations">
+            <ObservationsTab studentId={student.id} />
+          </TabsContent>
+          <TabsContent value="id-card">
+            <IdCardTab studentId={student.id} />
           </TabsContent>
         </Tabs>
       )}

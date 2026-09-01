@@ -6,6 +6,7 @@ import { apiClient } from "@/lib/api-client"
 import type { StudentAttendanceRecord } from "@/types/attendance"
 import type { Invoice } from "@/types/fees"
 import type { ReportCard } from "@/types/gradebook"
+import type { ObservationRemark } from "@/types/observations"
 import type { Student } from "@/types/people"
 import type { DisciplinaryRecord } from "@/types/portal"
 
@@ -67,6 +68,19 @@ export function useChildDisciplinaryRecords(studentId: string | undefined) {
     queryFn: async () => {
       const { data } = await apiClient.get<DisciplinaryRecord[]>(
         `/me/children/${studentId}/disciplinary-records`
+      )
+      return data
+    },
+    enabled: !!studentId,
+  })
+}
+
+export function useChildObservationRemarks(studentId: string | undefined) {
+  return useQuery({
+    queryKey: ["portal", "observation-remarks", studentId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<ObservationRemark[]>(
+        `/me/children/${studentId}/observation-remarks`
       )
       return data
     },

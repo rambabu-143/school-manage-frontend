@@ -48,8 +48,8 @@ type PaymentValues = z.output<typeof paymentSchema>
 
 function statusVariant(status: Invoice["status"]) {
   if (status === "paid") return "default" as const
-  if (status === "overdue") return "destructive" as const
-  return "secondary" as const
+  if (status === "partial") return "secondary" as const
+  return "outline" as const
 }
 
 interface InvoiceDetailSheetProps {
