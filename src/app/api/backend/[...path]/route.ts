@@ -11,20 +11,28 @@ async function handle(request: Request, context: RouteContext): Promise<NextResp
   const targetPath = `/${path.join("/")}${search}`
 
   const hasBody = !["GET", "HEAD"].includes(request.method)
+  const contentType = request.headers.get("content-type") ?? undefined
+  // multipart bodies (file uploads) carry a boundary in their Content-Type
+  // that must be forwarded verbatim - re-encoding as JSON text would corrupt
+  // the file bytes and drop the boundary.
+  const isMultipart = contentType?.startsWith("multipart/form-data") ?? false
   const cookieStore = await cookies()
 
   try {
     const response = await authedBackendFetch(cookieStore, targetPath, {
       method: request.method,
-      headers: hasBody ? { "Content-Type": "application/json" } : undefined,
-      body: hasBody ? await request.text() : undefined,
+      headers: hasBody ? { "Content-Type": isMultipart ? contentType! : "application/json" } : undefined,
+      body: hasBody ? (isMultipart ? await request.arrayBuffer() : await request.text()) : undefined,
     })
 
-    const text = await response.text()
-    return new NextResponse(text || null, {
-      status: response.status,
-      headers: { "Content-Type": response.headers.get("Content-Type") ?? "application/json" },
-    })
+    // arrayBuffer (not text) so binary responses like file downloads pass through intact.
+    const body = await response.arrayBuffer()
+    const headers: Record<string, string> = {
+      "Content-Type": response.headers.get("Content-Type") ?? "application/json",
+    }
+    const disposition = response.headers.get("Content-Disposition")
+    if (disposition) headers["Content-Disposition"] = disposition
+    return new NextResponse(body.byteLength ? body : null, { status: response.status, headers })
   } catch (error) {
     if (error instanceof SessionExpiredError) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })

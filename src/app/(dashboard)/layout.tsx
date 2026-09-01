@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
+import { AnimatePresence, motion } from "framer-motion"
 
 import { Sidebar } from "@/components/layout/sidebar"
 import { Topbar } from "@/components/layout/topbar"
@@ -10,6 +11,7 @@ import { useSession } from "@/hooks/use-session"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const { data: user, isPending, isError } = useSession()
 
   React.useEffect(() => {
@@ -32,7 +34,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar role={user.role} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar user={user} />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </main>
       </div>
     </div>
   )

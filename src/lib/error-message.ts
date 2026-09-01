@@ -1,5 +1,6 @@
-/** Backend errors come back as {message} (validation) or {error} (everything
- * else) via src/exception_handlers.py / auth routes - check both. */
+/** Backend errors come back as {message} (validation, via
+ * src/exception_handlers.py), {detail} (a plain FastAPI HTTPException, e.g.
+ * 400/403/404/409 - the most common case), or {error} - check all three. */
 export function errorMessage(error: unknown): string {
   if (
     error &&
@@ -9,8 +10,8 @@ export function errorMessage(error: unknown): string {
     typeof error.response === "object" &&
     "data" in error.response
   ) {
-    const data = error.response.data as { message?: string; error?: string }
-    return data.message ?? data.error ?? "Something went wrong"
+    const data = error.response.data as { message?: string; detail?: string; error?: string }
+    return data.message ?? data.detail ?? data.error ?? "Something went wrong"
   }
   return "Something went wrong"
 }

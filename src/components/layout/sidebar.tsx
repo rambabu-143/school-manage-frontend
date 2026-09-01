@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { motion } from "framer-motion"
 import { GraduationCap, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 
 import { NAV_ITEMS } from "@/components/layout/nav-config"
@@ -32,7 +33,7 @@ export function Sidebar({ role }: { role: Role }) {
         {!collapsed && <span className="truncate font-semibold">School Manage</span>}
       </div>
 
-      <ScrollArea className="flex-1 py-2">
+      <ScrollArea className="min-h-0 flex-1 py-2">
         <nav className="flex flex-col gap-1 px-2">
           {items.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -43,14 +44,21 @@ export function Sidebar({ role }: { role: Role }) {
                 href={item.href}
                 title={collapsed ? item.label : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-primary/10 text-primary"
+                    ? "text-primary"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <Icon className="size-4 shrink-0" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                {isActive && (
+                  <motion.div
+                    layoutId="sidebar-active-pill"
+                    className="absolute inset-0 rounded-md bg-primary/10"
+                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                  />
+                )}
+                <Icon className="relative z-10 size-4 shrink-0" />
+                {!collapsed && <span className="relative z-10 truncate">{item.label}</span>}
               </Link>
             )
           })}

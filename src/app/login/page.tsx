@@ -29,7 +29,12 @@ const loginSchema = z.object({
 type LoginValues = z.infer<typeof loginSchema>
 
 // ponytail: dev-only convenience, remove before shipping.
-const DEMO_CREDENTIALS = { email: "admin@demoschool.io", password: "DevPass123!" }
+const DEMO_LOGINS = [
+  { label: "Admin", email: "admin@demoschool.io" },
+  { label: "Teacher", email: "teacher@demoschool.io" },
+  { label: "Parent", email: "parent@demoschool.io" },
+] as const
+const DEMO_PASSWORD = "DevPass123!"
 
 function LoginForm() {
   const router = useRouter()
@@ -115,15 +120,22 @@ function LoginForm() {
                   Sign in
                 </Button>
                 {process.env.NODE_ENV !== "production" && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    disabled={login.isPending}
-                    onClick={() => form.reset(DEMO_CREDENTIALS)}
-                  >
-                    Fill demo credentials
-                  </Button>
+                  <div className="grid grid-cols-3 gap-2">
+                    {DEMO_LOGINS.map((demo) => (
+                      <Button
+                        key={demo.email}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={login.isPending}
+                        onClick={() =>
+                          form.reset({ email: demo.email, password: DEMO_PASSWORD })
+                        }
+                      >
+                        {demo.label}
+                      </Button>
+                    ))}
+                  </div>
                 )}
               </form>
             </Form>

@@ -5,7 +5,11 @@ import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
 import { errorMessage } from "@/lib/error-message"
-import type { StaffAttendanceCreateInput, StaffAttendanceRecord } from "@/types/attendance"
+import type {
+  MachinePunchImportInput,
+  StaffAttendanceCreateInput,
+  StaffAttendanceRecord,
+} from "@/types/attendance"
 
 export function useStaffAttendance(params: { staffId?: string; dateFrom?: string; dateTo?: string }) {
   return useQuery({
@@ -34,6 +38,25 @@ export function useMarkStaffAttendance() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff-attendance"] })
       toast.success("Attendance saved")
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
+}
+
+export function useImportMachinePunches() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: MachinePunchImportInput) => {
+      const { data } = await apiClient.post<StaffAttendanceRecord[]>(
+        "/attendance/staff/machine-punches",
+        input
+      )
+      return data
+    },
+    onSuccess: (rows) => {
+      queryClient.invalidateQueries({ queryKey: ["staff-attendance"] })
+      toast.success(`Reconciled ${rows.length} day(s) of attendance`)
     },
     onError: (error) => toast.error(errorMessage(error)),
   })

@@ -28,3 +28,19 @@ export interface LoginInput {
   email: string
   password: string
 }
+
+// super_admin is seeded manually, not assignable via the API.
+export const ASSIGNABLE_ROLES: readonly Role[] = [
+  ROLES.SCHOOL_ADMIN,
+  ROLES.BRANCH_ADMIN,
+  ROLES.TEACHER,
+  ROLES.ACCOUNTANT,
+  ROLES.STUDENT,
+  ROLES.PARENT,
+]
+
+export interface UserCreateInput {
+  email: string
+  password: string
+  role: Role
+}

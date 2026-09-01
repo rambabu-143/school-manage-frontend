@@ -6,6 +6,7 @@ import { LogOut, Menu, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { NAV_ITEMS } from "@/components/layout/nav-config"
+import { NotificationsBell } from "@/components/layout/notifications-bell"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -77,6 +78,8 @@ export function Topbar({ user }: { user: User }) {
       </div>
 
       <div className="flex items-center gap-2">
+        <NotificationsBell />
+
         <Button
           variant="ghost"
           size="icon"
