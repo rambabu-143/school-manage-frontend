@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { BranchSelect } from "@/components/branch-select"
+import { UserSelect } from "@/components/user-select"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +42,10 @@ import {
 } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { useAddGuardian, useDeleteStudent, useUpdateStudent } from "@/hooks/use-students"
+import { ROLES } from "@/types/auth"
 import type { Student } from "@/types/people"
+
+const GUARDIAN_LOGIN_ROLES = [ROLES.PARENT] as const
 
 const studentEditSchema = z.object({
   branch_id: z.string().min(1),
@@ -49,6 +53,10 @@ const studentEditSchema = z.object({
   last_name: z.string().min(1, "Last name is required").max(100),
   gender: z.string().max(20).optional(),
   is_active: z.boolean(),
+  blood_group: z.string().max(10).optional(),
+  allergies: z.string().max(500).optional(),
+  pen_number: z.string().max(50).optional(),
+  board_roll_number: z.string().max(50).optional(),
 })
 
 type StudentEditValues = z.infer<typeof studentEditSchema>
@@ -58,6 +66,7 @@ const guardianSchema = z.object({
   relation: z.string().min(1, "Relation is required").max(50),
   phone: z.string().max(20).optional(),
   email: z.email("Enter a valid email").optional().or(z.literal("")),
+  user_id: z.string().optional(),
 })
 
 type GuardianValues = z.infer<typeof guardianSchema>
@@ -81,13 +90,17 @@ export function StudentDetailSheet({ student, onOpenChange }: StudentDetailSheet
           last_name: student.last_name,
           gender: student.gender ?? "",
           is_active: student.is_active,
+          blood_group: student.blood_group ?? "",
+          allergies: student.allergies ?? "",
+          pen_number: student.pen_number ?? "",
+          board_roll_number: student.board_roll_number ?? "",
         }
       : undefined,
   })
 
   const guardianForm = useForm<GuardianValues>({
     resolver: zodResolver(guardianSchema),
-    defaultValues: { name: "", relation: "", phone: "", email: "" },
+    defaultValues: { name: "", relation: "", phone: "", email: "", user_id: "" },
   })
 
   if (!student) return null
@@ -96,7 +109,14 @@ export function StudentDetailSheet({ student, onOpenChange }: StudentDetailSheet
     if (!student) return
     updateStudent.mutate({
       id: student.id,
-      input: { ...values, gender: values.gender || undefined },
+      input: {
+        ...values,
+        gender: values.gender || undefined,
+        blood_group: values.blood_group || undefined,
+        allergies: values.allergies || undefined,
+        pen_number: values.pen_number || undefined,
+        board_roll_number: values.board_roll_number || undefined,
+      },
     })
   }
 
@@ -110,6 +130,7 @@ export function StudentDetailSheet({ student, onOpenChange }: StudentDetailSheet
           relation: values.relation,
           phone: values.phone || undefined,
           email: values.email || undefined,
+          user_id: values.user_id || undefined,
         },
       },
       { onSuccess: () => guardianForm.reset() }
@@ -190,6 +211,62 @@ export function StudentDetailSheet({ student, onOpenChange }: StudentDetailSheet
                   </FormItem>
                 )}
               />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="blood_group"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Blood group</FormLabel>
+                      <FormControl>
+                        <Input placeholder="O+" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="allergies"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Allergies</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Optional" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="pen_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>PEN number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Optional" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="board_roll_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Board roll number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Optional" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
                 name="is_active"
@@ -294,6 +371,23 @@ export function StudentDetailSheet({ student, onOpenChange }: StudentDetailSheet
                     )}
                   />
                 </div>
+                <FormField
+                  control={guardianForm.control}
+                  name="user_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Portal login</FormLabel>
+                      <FormControl>
+                        <UserSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          roles={GUARDIAN_LOGIN_ROLES}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <Button
                   type="submit"
                   variant="outline"

@@ -265,6 +265,7 @@ export function AppraisalsTab() {
         cycle={selected ? cycleById.get(selected.cycle_id) : undefined}
         canSubmit={isAdmin}
         canAcknowledge={!!selected && selected.staff_id === ownStaffId}
+        showRatings={isAdmin}
         onOpenChange={(open) => !open && setSelectedId(undefined)}
       />
     </div>

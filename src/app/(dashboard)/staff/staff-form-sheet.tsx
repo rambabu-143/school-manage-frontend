@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { BranchSelect } from "@/components/branch-select"
+import { DepartmentSelect } from "@/components/department-select"
+import { UserSelect } from "@/components/user-select"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -27,6 +29,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { useCreateStaff } from "@/hooks/use-staff"
+import { ASSIGNABLE_ROLES, ROLES } from "@/types/auth"
+
+const STAFF_LOGIN_ROLES = ASSIGNABLE_ROLES.filter(
+  (role) => role !== ROLES.PARENT && role !== ROLES.STUDENT
+)
 
 const staffSchema = z.object({
   branch_id: z.string().min(1, "Branch is required"),
@@ -36,6 +43,9 @@ const staffSchema = z.object({
   designation: z.string().min(1, "Designation is required").max(100),
   phone: z.string().max(20).optional(),
   email: z.email("Enter a valid email").optional().or(z.literal("")),
+  user_id: z.string().optional(),
+  department_id: z.string().optional(),
+  contract_end_date: z.string().optional(),
 })
 
 type StaffValues = z.infer<typeof staffSchema>
@@ -54,6 +64,9 @@ export function StaffFormSheet() {
       designation: "",
       phone: "",
       email: "",
+      user_id: "",
+      department_id: "",
+      contract_end_date: "",
     },
   })
 
@@ -63,6 +76,9 @@ export function StaffFormSheet() {
         ...values,
         phone: values.phone || undefined,
         email: values.email || undefined,
+        user_id: values.user_id || undefined,
+        department_id: values.department_id || undefined,
+        contract_end_date: values.contract_end_date || undefined,
       },
       {
         onSuccess: () => {
@@ -189,6 +205,49 @@ export function StaffFormSheet() {
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="department_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Department</FormLabel>
+                  <FormControl>
+                    <DepartmentSelect value={field.value} onChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="contract_end_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contract end date</FormLabel>
+                  <FormControl>
+                    <Input type="date" placeholder="Leave blank for permanent staff" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="user_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Portal login</FormLabel>
+                  <FormControl>
+                    <UserSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      roles={STAFF_LOGIN_ROLES}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <SheetFooter className="px-0">
               <Button type="submit" disabled={createStaff.isPending}>
                 {createStaff.isPending && <Loader2 className="animate-spin" />}

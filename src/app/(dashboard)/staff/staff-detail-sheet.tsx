@@ -47,6 +47,7 @@ const staffEditSchema = z.object({
   phone: z.string().max(20).optional(),
   email: z.email("Enter a valid email").optional().or(z.literal("")),
   is_active: z.boolean(),
+  contract_end_date: z.string().optional(),
 })
 
 type StaffEditValues = z.infer<typeof staffEditSchema>
@@ -71,6 +72,7 @@ export function StaffDetailSheet({ staff, onOpenChange }: StaffDetailSheetProps)
           phone: staff.phone ?? "",
           email: staff.email ?? "",
           is_active: staff.is_active,
+          contract_end_date: staff.contract_end_date ?? "",
         }
       : undefined,
   })
@@ -85,6 +87,7 @@ export function StaffDetailSheet({ staff, onOpenChange }: StaffDetailSheetProps)
         ...values,
         phone: values.phone || undefined,
         email: values.email || undefined,
+        contract_end_date: values.contract_end_date || undefined,
       },
     })
   }
@@ -191,6 +194,19 @@ export function StaffDetailSheet({ staff, onOpenChange }: StaffDetailSheetProps)
                   )}
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="contract_end_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contract end date</FormLabel>
+                    <FormControl>
+                      <Input type="date" placeholder="Leave blank for permanent staff" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="is_active"

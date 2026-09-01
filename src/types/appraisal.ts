@@ -40,3 +40,39 @@ export interface StaffAppraisalCreateInput {
   areas_for_improvement?: string | null
   overall_comments?: string | null
 }
+
+export interface AppraisalAssignment {
+  id: string
+  tenant_id: string
+  cycle_id: string
+  staff_id: string
+  assessor_staff_id: string
+  created_at: string
+}
+
+export interface AppraisalAssignmentCreateInput {
+  cycle_id: string
+  staff_id: string
+  assessor_staff_id: string
+}
+
+export type StaffRatingRole = "staff" | "student"
+
+export interface StaffRating {
+  id: string
+  tenant_id: string
+  cycle_id: string
+  staff_id: string
+  rated_by_user_id: string
+  rater_role: StaffRatingRole
+  rating: number
+  comment: string | null
+  created_at: string
+}
+
+export interface StaffRatingCreateInput {
+  cycle_id: string
+  staff_id: string
+  rating: number
+  comment?: string | null
+}

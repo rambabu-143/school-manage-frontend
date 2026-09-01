@@ -35,6 +35,10 @@ const studentSchema = z.object({
   last_name: z.string().min(1, "Last name is required").max(100),
   date_of_birth: z.string().min(1, "Date of birth is required"),
   gender: z.string().max(20).optional(),
+  blood_group: z.string().max(10).optional(),
+  allergies: z.string().max(500).optional(),
+  pen_number: z.string().max(50).optional(),
+  board_roll_number: z.string().max(50).optional(),
 })
 
 type StudentValues = z.infer<typeof studentSchema>
@@ -52,12 +56,23 @@ export function StudentFormSheet() {
       last_name: "",
       date_of_birth: "",
       gender: "",
+      blood_group: "",
+      allergies: "",
+      pen_number: "",
+      board_roll_number: "",
     },
   })
 
   function onSubmit(values: StudentValues) {
     createStudent.mutate(
-      { ...values, gender: values.gender || undefined },
+      {
+        ...values,
+        gender: values.gender || undefined,
+        blood_group: values.blood_group || undefined,
+        allergies: values.allergies || undefined,
+        pen_number: values.pen_number || undefined,
+        board_roll_number: values.board_roll_number || undefined,
+      },
       {
         onSuccess: () => {
           setOpen(false)
@@ -165,6 +180,62 @@ export function StudentFormSheet() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Gender</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Optional" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="blood_group"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Blood group</FormLabel>
+                    <FormControl>
+                      <Input placeholder="O+" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="allergies"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Allergies</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Optional" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="pen_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PEN number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Optional" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="board_roll_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Board roll number</FormLabel>
                     <FormControl>
                       <Input placeholder="Optional" {...field} />
                     </FormControl>

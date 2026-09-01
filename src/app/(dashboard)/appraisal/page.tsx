@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import { AppraisalsTab } from "./appraisals-tab"
+import { AssignmentsTab } from "./assignments-tab"
 import { CyclesTab } from "./cycles-tab"
 
 export default function AppraisalPage() {
@@ -16,10 +17,14 @@ export default function AppraisalPage() {
       <Tabs defaultValue="appraisals">
         <TabsList>
           <TabsTrigger value="appraisals">Appraisals</TabsTrigger>
+          <TabsTrigger value="assignments">Assessors</TabsTrigger>
           <TabsTrigger value="cycles">Cycles</TabsTrigger>
         </TabsList>
         <TabsContent value="appraisals">
           <AppraisalsTab />
+        </TabsContent>
+        <TabsContent value="assignments">
+          <AssignmentsTab />
         </TabsContent>
         <TabsContent value="cycles">
           <CyclesTab />

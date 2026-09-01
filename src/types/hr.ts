@@ -25,3 +25,35 @@ export interface LeaveApplicationCreateInput {
   end_date: string
   reason: string
 }
+
+export interface Shift {
+  id: string
+  tenant_id: string
+  branch_id: string
+  name: string
+  start_time: string
+  end_time: string
+  grace_minutes: number
+  half_day_hours: string
+}
+
+export interface ShiftCreateInput {
+  branch_id: string
+  name: string
+  start_time: string
+  end_time: string
+  grace_minutes?: number
+  half_day_hours?: string
+}
+
+export interface StaffShiftAssignment {
+  id: string
+  tenant_id: string
+  staff_id: string
+  shift_id: string
+}
+
+export interface StaffShiftAssignmentCreateInput {
+  staff_id: string
+  shift_id: string
+}

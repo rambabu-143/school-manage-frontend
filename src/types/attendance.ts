@@ -40,16 +40,30 @@ export interface StaffAttendanceCreateInput {
   remarks?: string | null
 }
 
+export type AttendanceSource = "manual" | "biometric"
+
 export interface StaffAttendanceRecord {
   id: string
   tenant_id: string
   staff_id: string
   date: string
   status: AttendanceStatus
+  source: AttendanceSource
+  in_time: string | null
+  out_time: string | null
   marked_by_id: string | null
   remarks: string | null
   created_at: string
   updated_at: string
+}
+
+export interface MachinePunch {
+  staff_id: string
+  punched_at: string
+}
+
+export interface MachinePunchImportInput {
+  punches: MachinePunch[]
 }
 
 export interface StudentAttendanceSummary {

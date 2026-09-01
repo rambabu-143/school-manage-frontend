@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select"
 import { useMarkStaffAttendance, useStaffAttendance } from "@/hooks/use-staff-attendance"
 import { useStaff } from "@/hooks/use-staff"
+import { Badge } from "@/components/ui/badge"
 import { ATTENDANCE_STATUSES, type AttendanceStatus, type StaffAttendanceRecord } from "@/types/attendance"
 
 function today() {
@@ -63,6 +64,24 @@ export function StaffAttendanceTab() {
       cell: ({ row }) => <span className="capitalize">{statusLabel(row.original.status)}</span>,
     },
     { accessorKey: "remarks", header: "Remarks", cell: ({ row }) => row.original.remarks ?? "—" },
+    {
+      accessorKey: "source",
+      header: "Source",
+      cell: ({ row }) =>
+        row.original.source === "biometric" ? (
+          <Badge variant="secondary">Biometric</Badge>
+        ) : (
+          <span className="text-muted-foreground">Manual</span>
+        ),
+    },
+    {
+      id: "in_out",
+      header: "In / Out",
+      cell: ({ row }) =>
+        row.original.in_time
+          ? `${row.original.in_time.slice(0, 5)} – ${row.original.out_time?.slice(0, 5) ?? "—"}`
+          : "—",
+    },
   ]
 
   return (

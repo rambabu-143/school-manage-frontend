@@ -2,6 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+import { MachineImportTab } from "./machine-import-tab"
 import { MarkAttendanceTab } from "./mark-attendance-tab"
 import { StaffAttendanceTab } from "./staff-attendance-tab"
 import { SummaryTab } from "./summary-tab"
@@ -21,6 +22,7 @@ export default function AttendancePage() {
           <TabsTrigger value="mark">Mark Attendance</TabsTrigger>
           <TabsTrigger value="summary">Summary</TabsTrigger>
           <TabsTrigger value="staff">Staff</TabsTrigger>
+          <TabsTrigger value="machine-import">Machine Import</TabsTrigger>
         </TabsList>
         <TabsContent value="mark">
           <MarkAttendanceTab />
@@ -30,6 +32,9 @@ export default function AttendancePage() {
         </TabsContent>
         <TabsContent value="staff">
           <StaffAttendanceTab />
+        </TabsContent>
+        <TabsContent value="machine-import">
+          <MachineImportTab />
         </TabsContent>
       </Tabs>
     </div>

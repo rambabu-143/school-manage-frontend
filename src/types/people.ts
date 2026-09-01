@@ -13,6 +13,7 @@ export interface GuardianCreateInput {
   relation: string
   phone?: string | null
   email?: string | null
+  user_id?: string | null
 }
 
 export interface Student {
@@ -26,6 +27,10 @@ export interface Student {
   gender: string | null
   enrollment_date: string
   is_active: boolean
+  blood_group: string | null
+  allergies: string | null
+  pen_number: string | null
+  board_roll_number: string | null
   created_at: string
   updated_at: string
   guardians: Guardian[]
@@ -38,6 +43,10 @@ export interface StudentCreateInput {
   last_name: string
   date_of_birth: string
   gender?: string | null
+  blood_group?: string | null
+  allergies?: string | null
+  pen_number?: string | null
+  board_roll_number?: string | null
 }
 
 export interface StudentUpdateInput {
@@ -46,6 +55,10 @@ export interface StudentUpdateInput {
   last_name?: string
   gender?: string | null
   is_active?: boolean
+  blood_group?: string | null
+  allergies?: string | null
+  pen_number?: string | null
+  board_roll_number?: string | null
 }
 
 export interface Staff {
@@ -53,6 +66,7 @@ export interface Staff {
   tenant_id: string
   branch_id: string
   user_id: string | null
+  department_id: string | null
   employee_number: string
   first_name: string
   last_name: string
@@ -61,6 +75,7 @@ export interface Staff {
   email: string | null
   date_of_joining: string
   is_active: boolean
+  contract_end_date: string | null
   created_at: string
   updated_at: string
 }
@@ -73,6 +88,9 @@ export interface StaffCreateInput {
   designation: string
   phone?: string | null
   email?: string | null
+  user_id?: string | null
+  department_id?: string | null
+  contract_end_date?: string | null
 }
 
 export interface StaffUpdateInput {
@@ -83,4 +101,7 @@ export interface StaffUpdateInput {
   phone?: string | null
   email?: string | null
   is_active?: boolean
+  user_id?: string | null
+  department_id?: string | null
+  contract_end_date?: string | null
 }
