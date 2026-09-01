@@ -3,13 +3,12 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { ColumnDef } from "@tanstack/react-table"
-import { Loader2, Plus, Users } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { BranchSelect } from "@/components/branch-select"
 import { DataTable } from "@/components/data-table/data-table"
-import { StaffSelect } from "@/components/staff-select"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -29,36 +28,36 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { useCreateHouse, useHouses } from "@/hooks/use-houses"
-import { useStaff } from "@/hooks/use-staff"
-import type { House } from "@/types/houses"
+import {
+  useBoardOfDirectors,
+  useCreateBoardOfDirector,
+  useUpdateBoardOfDirector,
+} from "@/hooks/use-notices"
+import type { BoardOfDirector } from "@/types/notices"
 
-import { HouseRosterSheet } from "./house-roster-sheet"
-
-const houseSchema = z.object({
-  branch_id: z.string().min(1, "Branch is required"),
-  name: z.string().min(1, "Name is required").max(100),
-  color: z.string().max(30).optional(),
-  captain_staff_id: z.string().optional(),
+const memberSchema = z.object({
+  name: z.string().min(1, "Name is required").max(200),
+  designation: z.string().min(1, "Designation is required").max(100),
+  email: z.string().email().optional().or(z.literal("")),
+  mobile: z.string().max(20).optional(),
 })
 
-type HouseValues = z.infer<typeof houseSchema>
+type MemberValues = z.infer<typeof memberSchema>
 
-export function HousesTab() {
-  const { data: houses, isPending } = useHouses()
-  const { data: staff } = useStaff()
+export function BoardOfDirectorsTab() {
+  const { data: members, isPending } = useBoardOfDirectors()
   const [open, setOpen] = React.useState(false)
-  const [rosterHouse, setRosterHouse] = React.useState<House | null>(null)
-  const createHouse = useCreateHouse()
+  const createMember = useCreateBoardOfDirector()
+  const updateMember = useUpdateBoardOfDirector()
 
-  const form = useForm<HouseValues>({
-    resolver: zodResolver(houseSchema),
-    defaultValues: { branch_id: "", name: "", color: "", captain_staff_id: "" },
+  const form = useForm<MemberValues>({
+    resolver: zodResolver(memberSchema),
+    defaultValues: { name: "", designation: "", email: "", mobile: "" },
   })
 
-  function onSubmit(values: HouseValues) {
-    createHouse.mutate(
-      { ...values, captain_staff_id: values.captain_staff_id || null },
+  function onSubmit(values: MemberValues) {
+    createMember.mutate(
+      { ...values, email: values.email || null, mobile: values.mobile || null },
       {
         onSuccess: () => {
           setOpen(false)
@@ -68,38 +67,38 @@ export function HousesTab() {
     )
   }
 
-  const columns: ColumnDef<House>[] = [
+  const columns: ColumnDef<BoardOfDirector>[] = [
+    { accessorKey: "name", header: "Name" },
+    { accessorKey: "designation", header: "Designation" },
+    { accessorKey: "email", header: "Email", cell: ({ row }) => row.original.email ?? "—" },
+    { accessorKey: "mobile", header: "Mobile", cell: ({ row }) => row.original.mobile ?? "—" },
     {
-      accessorKey: "name",
-      header: "Name",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          {row.original.color && (
-            <span
-              className="size-3 rounded-full border"
-              style={{ backgroundColor: row.original.color }}
-            />
-          )}
-          {row.original.name}
-        </div>
-      ),
-    },
-    {
-      id: "captain",
-      header: "Captain",
-      cell: ({ row }) => {
-        const captain = staff?.find((s) => s.id === row.original.captain_staff_id)
-        return captain ? `${captain.first_name} ${captain.last_name}` : "—"
-      },
+      id: "status",
+      header: "Status",
+      cell: ({ row }) =>
+        row.original.is_active ? (
+          <Badge>Active</Badge>
+        ) : (
+          <Badge variant="secondary">Inactive</Badge>
+        ),
     },
     {
       id: "actions",
       header: "",
       cell: ({ row }) => (
         <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={() => setRosterHouse(row.original)}>
-            <Users />
-            Roster
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={updateMember.isPending}
+            onClick={() =>
+              updateMember.mutate({
+                id: row.original.id,
+                input: { is_active: !row.original.is_active },
+              })
+            }
+          >
+            {row.original.is_active ? "Deactivate" : "Activate"}
           </Button>
         </div>
       ),
@@ -119,29 +118,16 @@ export function HousesTab() {
           <SheetTrigger asChild>
             <Button>
               <Plus />
-              New House
+              New Member
             </Button>
           </SheetTrigger>
           <SheetContent>
             <SheetHeader>
-              <SheetTitle>New House</SheetTitle>
-              <SheetDescription>e.g. &quot;Red House&quot;</SheetDescription>
+              <SheetTitle>New Board Member</SheetTitle>
+              <SheetDescription>Add a board/trust member contact.</SheetDescription>
             </SheetHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4">
-                <FormField
-                  control={form.control}
-                  name="branch_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Branch</FormLabel>
-                      <FormControl>
-                        <BranchSelect value={field.value} onChange={field.onChange} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <FormField
                   control={form.control}
                   name="name"
@@ -149,7 +135,7 @@ export function HousesTab() {
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Red House" {...field} />
+                        <Input placeholder="Jane Doe" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -157,12 +143,12 @@ export function HousesTab() {
                 />
                 <FormField
                   control={form.control}
-                  name="color"
+                  name="designation"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Color</FormLabel>
+                      <FormLabel>Designation</FormLabel>
                       <FormControl>
-                        <Input type="color" className="h-10 w-20 p-1" {...field} />
+                        <Input placeholder="Chairperson" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -170,21 +156,34 @@ export function HousesTab() {
                 />
                 <FormField
                   control={form.control}
-                  name="captain_staff_id"
+                  name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Captain</FormLabel>
+                      <FormLabel>Email (optional)</FormLabel>
                       <FormControl>
-                        <StaffSelect value={field.value} onChange={field.onChange} />
+                        <Input type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="mobile"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mobile (optional)</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <SheetFooter className="px-0">
-                  <Button type="submit" disabled={createHouse.isPending}>
-                    {createHouse.isPending && <Loader2 className="animate-spin" />}
-                    Create house
+                  <Button type="submit" disabled={createMember.isPending}>
+                    {createMember.isPending && <Loader2 className="animate-spin" />}
+                    Add member
                   </Button>
                 </SheetFooter>
               </form>
@@ -195,12 +194,10 @@ export function HousesTab() {
 
       <DataTable
         columns={columns}
-        data={houses ?? []}
+        data={members ?? []}
         isLoading={isPending}
-        emptyMessage="No houses yet."
+        emptyMessage="No board members yet."
       />
-
-      <HouseRosterSheet house={rosterHouse} onOpenChange={(open) => !open && setRosterHouse(null)} />
     </div>
   )
 }

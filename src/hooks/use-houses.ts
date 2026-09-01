@@ -5,7 +5,7 @@ import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
 import { errorMessage } from "@/lib/error-message"
-import type { House, HouseCreateInput, HouseLeaderboard } from "@/types/houses"
+import type { House, HouseCreateInput, HouseLeaderboard, HouseMember } from "@/types/houses"
 
 export function useHouses(branchId?: string) {
   return useQuery({
@@ -32,6 +32,17 @@ export function useCreateHouse() {
       toast.success("House created")
     },
     onError: (error) => toast.error(errorMessage(error)),
+  })
+}
+
+export function useHouseMembers(houseId: string | undefined) {
+  return useQuery({
+    queryKey: ["houses", houseId, "students"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<HouseMember[]>(`/houses/${houseId}/students`)
+      return data
+    },
+    enabled: !!houseId,
   })
 }
 

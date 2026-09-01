@@ -3,13 +3,12 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { ColumnDef } from "@tanstack/react-table"
-import { Loader2, Plus, Users } from "lucide-react"
+import { Images, Loader2, Plus, Trash2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { BranchSelect } from "@/components/branch-select"
 import { DataTable } from "@/components/data-table/data-table"
-import { StaffSelect } from "@/components/staff-select"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -29,77 +28,64 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { useCreateHouse, useHouses } from "@/hooks/use-houses"
-import { useStaff } from "@/hooks/use-staff"
-import type { House } from "@/types/houses"
+import { useCreateGalleryAlbum, useDeleteGalleryAlbum, useGalleryAlbums } from "@/hooks/use-gallery"
+import type { GalleryAlbum } from "@/types/gallery"
 
-import { HouseRosterSheet } from "./house-roster-sheet"
+import { AlbumPhotosSheet } from "./album-photos-sheet"
 
-const houseSchema = z.object({
+const albumSchema = z.object({
   branch_id: z.string().min(1, "Branch is required"),
-  name: z.string().min(1, "Name is required").max(100),
-  color: z.string().max(30).optional(),
-  captain_staff_id: z.string().optional(),
+  year_session: z.string().min(1, "Year is required").max(20),
+  title: z.string().min(1, "Title is required").max(200),
+  description: z.string().max(1000).optional(),
 })
 
-type HouseValues = z.infer<typeof houseSchema>
+type AlbumValues = z.infer<typeof albumSchema>
 
-export function HousesTab() {
-  const { data: houses, isPending } = useHouses()
-  const { data: staff } = useStaff()
+export function AlbumsTab() {
+  const { data: albums, isPending } = useGalleryAlbums()
   const [open, setOpen] = React.useState(false)
-  const [rosterHouse, setRosterHouse] = React.useState<House | null>(null)
-  const createHouse = useCreateHouse()
+  const [viewingAlbum, setViewingAlbum] = React.useState<GalleryAlbum | null>(null)
+  const createAlbum = useCreateGalleryAlbum()
+  const deleteAlbum = useDeleteGalleryAlbum()
 
-  const form = useForm<HouseValues>({
-    resolver: zodResolver(houseSchema),
-    defaultValues: { branch_id: "", name: "", color: "", captain_staff_id: "" },
+  const form = useForm<AlbumValues>({
+    resolver: zodResolver(albumSchema),
+    defaultValues: { branch_id: "", year_session: "", title: "", description: "" },
   })
 
-  function onSubmit(values: HouseValues) {
-    createHouse.mutate(
-      { ...values, captain_staff_id: values.captain_staff_id || null },
-      {
-        onSuccess: () => {
-          setOpen(false)
-          form.reset()
-        },
-      }
-    )
+  function onSubmit(values: AlbumValues) {
+    createAlbum.mutate(values, {
+      onSuccess: () => {
+        setOpen(false)
+        form.reset()
+      },
+    })
   }
 
-  const columns: ColumnDef<House>[] = [
+  const columns: ColumnDef<GalleryAlbum>[] = [
+    { accessorKey: "title", header: "Title" },
+    { accessorKey: "year_session", header: "Year" },
     {
-      accessorKey: "name",
-      header: "Name",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          {row.original.color && (
-            <span
-              className="size-3 rounded-full border"
-              style={{ backgroundColor: row.original.color }}
-            />
-          )}
-          {row.original.name}
-        </div>
-      ),
-    },
-    {
-      id: "captain",
-      header: "Captain",
-      cell: ({ row }) => {
-        const captain = staff?.find((s) => s.id === row.original.captain_staff_id)
-        return captain ? `${captain.first_name} ${captain.last_name}` : "—"
-      },
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => row.original.description ?? "—",
     },
     {
       id: "actions",
       header: "",
       cell: ({ row }) => (
-        <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={() => setRosterHouse(row.original)}>
-            <Users />
-            Roster
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setViewingAlbum(row.original)}>
+            <Images />
+            Photos
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => deleteAlbum.mutate(row.original.id)}
+          >
+            <Trash2 />
           </Button>
         </div>
       ),
@@ -119,13 +105,13 @@ export function HousesTab() {
           <SheetTrigger asChild>
             <Button>
               <Plus />
-              New House
+              New Album
             </Button>
           </SheetTrigger>
           <SheetContent>
             <SheetHeader>
-              <SheetTitle>New House</SheetTitle>
-              <SheetDescription>e.g. &quot;Red House&quot;</SheetDescription>
+              <SheetTitle>New Album</SheetTitle>
+              <SheetDescription>e.g. &quot;Sports Day 2026-2027&quot;</SheetDescription>
             </SheetHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4">
@@ -144,12 +130,12 @@ export function HousesTab() {
                 />
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="year_session"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>Year</FormLabel>
                       <FormControl>
-                        <Input placeholder="Red House" {...field} />
+                        <Input placeholder="2026-2027" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -157,12 +143,12 @@ export function HousesTab() {
                 />
                 <FormField
                   control={form.control}
-                  name="color"
+                  name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Color</FormLabel>
+                      <FormLabel>Title</FormLabel>
                       <FormControl>
-                        <Input type="color" className="h-10 w-20 p-1" {...field} />
+                        <Input placeholder="Sports Day" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -170,21 +156,21 @@ export function HousesTab() {
                 />
                 <FormField
                   control={form.control}
-                  name="captain_staff_id"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Captain</FormLabel>
+                      <FormLabel>Description (optional)</FormLabel>
                       <FormControl>
-                        <StaffSelect value={field.value} onChange={field.onChange} />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <SheetFooter className="px-0">
-                  <Button type="submit" disabled={createHouse.isPending}>
-                    {createHouse.isPending && <Loader2 className="animate-spin" />}
-                    Create house
+                  <Button type="submit" disabled={createAlbum.isPending}>
+                    {createAlbum.isPending && <Loader2 className="animate-spin" />}
+                    Create album
                   </Button>
                 </SheetFooter>
               </form>
@@ -195,12 +181,12 @@ export function HousesTab() {
 
       <DataTable
         columns={columns}
-        data={houses ?? []}
+        data={albums ?? []}
         isLoading={isPending}
-        emptyMessage="No houses yet."
+        emptyMessage="No albums yet."
       />
 
-      <HouseRosterSheet house={rosterHouse} onOpenChange={(open) => !open && setRosterHouse(null)} />
+      <AlbumPhotosSheet album={viewingAlbum} onOpenChange={(open) => !open && setViewingAlbum(null)} />
     </div>
   )
 }

@@ -3,7 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { ColumnDef } from "@tanstack/react-table"
-import { Loader2, Plus } from "lucide-react"
+import { Loader2, Plus, Users } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -31,6 +31,8 @@ import {
 import { useCreateHostel, useHostels } from "@/hooks/use-hostels"
 import type { Hostel } from "@/types/hostel"
 
+import { HostelOccupantsSheet } from "./hostel-occupants-sheet"
+
 const hostelSchema = z.object({
   branch_id: z.string().min(1, "Branch is required"),
   name: z.string().min(1, "Name is required").max(100),
@@ -40,16 +42,29 @@ const hostelSchema = z.object({
 
 type HostelValues = z.infer<typeof hostelSchema>
 
-const columns: ColumnDef<Hostel>[] = [
-  { accessorKey: "name", header: "Name" },
-  { accessorKey: "warden_name", header: "Warden", cell: ({ row }) => row.original.warden_name ?? "—" },
-  { accessorKey: "warden_phone", header: "Warden phone", cell: ({ row }) => row.original.warden_phone ?? "—" },
-]
-
 export function HostelsTab() {
   const { data: hostels, isPending } = useHostels()
   const [open, setOpen] = React.useState(false)
+  const [occupantsHostel, setOccupantsHostel] = React.useState<Hostel | null>(null)
   const createHostel = useCreateHostel()
+
+  const columns: ColumnDef<Hostel>[] = [
+    { accessorKey: "name", header: "Name" },
+    { accessorKey: "warden_name", header: "Warden", cell: ({ row }) => row.original.warden_name ?? "—" },
+    { accessorKey: "warden_phone", header: "Warden phone", cell: ({ row }) => row.original.warden_phone ?? "—" },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={() => setOccupantsHostel(row.original)}>
+            <Users />
+            Occupants
+          </Button>
+        </div>
+      ),
+    },
+  ]
 
   const form = useForm<HostelValues>({
     resolver: zodResolver(hostelSchema),
@@ -160,6 +175,11 @@ export function HostelsTab() {
         data={hostels ?? []}
         isLoading={isPending}
         emptyMessage="No hostels yet."
+      />
+
+      <HostelOccupantsSheet
+        hostel={occupantsHostel}
+        onOpenChange={(open) => !open && setOccupantsHostel(null)}
       />
     </div>
   )

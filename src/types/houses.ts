@@ -51,3 +51,10 @@ export interface HouseLeaderboard {
   academic_year_id: string
   houses: HouseLeaderboardEntry[]
 }
+
+export interface HouseMember {
+  student_id: string
+  first_name: string
+  last_name: string
+  admission_number: string
+}

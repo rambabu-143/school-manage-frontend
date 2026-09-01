@@ -5,7 +5,7 @@ import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
 import { errorMessage } from "@/lib/error-message"
-import type { Hostel, HostelCreateInput } from "@/types/hostel"
+import type { Hostel, HostelCreateInput, HostelOccupant } from "@/types/hostel"
 
 export function useHostels(branchId?: string) {
   return useQuery({
@@ -16,6 +16,17 @@ export function useHostels(branchId?: string) {
       })
       return data
     },
+  })
+}
+
+export function useHostelOccupants(hostelId: string | undefined) {
+  return useQuery({
+    queryKey: ["hostels", hostelId, "occupants"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<HostelOccupant[]>(`/hostels/${hostelId}/occupants`)
+      return data
+    },
+    enabled: !!hostelId,
   })
 }
 

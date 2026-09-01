@@ -45,3 +45,12 @@ export interface RoomOccupant {
   last_name: string
   bed_number: number | null
 }
+
+export interface HostelOccupant {
+  student_id: string
+  first_name: string
+  last_name: string
+  room_id: string
+  room_number: string
+  bed_number: number | null
+}
