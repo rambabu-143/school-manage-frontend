@@ -83,3 +83,32 @@ export interface SmsMessageCreateInput {
   staff_ids?: string[]
   extra_phones?: string[]
 }
+
+export interface MessageTemplate {
+  id: string
+  tenant_id: string
+  name: string
+  body: string
+  created_at: string
+}
+
+export interface MessageTemplateCreateInput {
+  name: string
+  body: string
+}
+
+export interface MessageGroup {
+  id: string
+  tenant_id: string
+  name: string
+  created_by_user_id: string
+  created_at: string
+  student_ids: string[]
+  staff_ids: string[]
+}
+
+export interface MessageGroupCreateInput {
+  name: string
+  student_ids?: string[]
+  staff_ids?: string[]
+}

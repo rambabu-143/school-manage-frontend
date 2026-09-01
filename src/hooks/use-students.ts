@@ -12,12 +12,24 @@ import type {
   StudentUpdateInput,
 } from "@/types/people"
 
-export function useStudents(branchId?: string) {
+export function useStudents(params?: {
+  branchId?: string
+  gradeId?: string
+  sectionId?: string
+  isActive?: boolean
+  search?: string
+}) {
   return useQuery({
-    queryKey: ["students", { branchId }],
+    queryKey: ["students", params],
     queryFn: async () => {
       const { data } = await apiClient.get<Student[]>("/students", {
-        params: branchId ? { branch_id: branchId } : undefined,
+        params: {
+          branch_id: params?.branchId || undefined,
+          grade_id: params?.gradeId || undefined,
+          section_id: params?.sectionId || undefined,
+          is_active: params?.isActive,
+          search: params?.search || undefined,
+        },
       })
       return data
     },

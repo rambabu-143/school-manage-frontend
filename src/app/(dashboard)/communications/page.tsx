@@ -3,7 +3,9 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import { EmailTab } from "./email-tab"
+import { GroupsTab } from "./groups-tab"
 import { SmsTab } from "./sms-tab"
+import { TemplatesTab } from "./templates-tab"
 
 export default function CommunicationsPage() {
   return (
@@ -19,12 +21,20 @@ export default function CommunicationsPage() {
         <TabsList>
           <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="sms">SMS</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="groups">Groups</TabsTrigger>
         </TabsList>
         <TabsContent value="email">
           <EmailTab />
         </TabsContent>
         <TabsContent value="sms">
           <SmsTab />
+        </TabsContent>
+        <TabsContent value="templates">
+          <TemplatesTab />
+        </TabsContent>
+        <TabsContent value="groups">
+          <GroupsTab />
         </TabsContent>
       </Tabs>
     </div>

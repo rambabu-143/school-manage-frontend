@@ -86,3 +86,21 @@ export interface CumulativeReport {
   exams: CumulativeExamResult[]
   overall_percentage: number
 }
+
+export interface ReportCardReleaseSetting {
+  id: string
+  tenant_id: string
+  branch_id: string
+  academic_year_id: string
+  grade_id: string
+  is_live: boolean
+  live_at: string | null
+}
+
+export interface ReportCardReleaseSettingUpsertInput {
+  branch_id: string
+  academic_year_id: string
+  grade_id: string
+  is_live: boolean
+  live_at?: string | null
+}
