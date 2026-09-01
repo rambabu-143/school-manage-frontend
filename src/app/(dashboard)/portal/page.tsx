@@ -21,7 +21,7 @@ import { ObservationsTab } from "./observations-tab"
 import { ReportCardTab } from "./report-card-tab"
 
 export default function PortalPage() {
-  const { data: children, isPending } = useMyChildren()
+  const { data: children, isPending, isError } = useMyChildren()
   const [selectedId, setSelectedId] = React.useState<string>()
 
   const studentId = selectedId ?? children?.[0]?.id
@@ -37,7 +37,12 @@ export default function PortalPage() {
       </div>
 
       {isPending && <p className="text-sm text-muted-foreground">Loading...</p>}
-      {!isPending && children?.length === 0 && (
+      {isError && (
+        <p className="text-sm text-muted-foreground">
+          This page is only available to parent accounts.
+        </p>
+      )}
+      {!isPending && !isError && children?.length === 0 && (
         <p className="text-sm text-muted-foreground">
           No children are linked to your account yet.
         </p>
