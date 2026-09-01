@@ -2,6 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+import { DatesheetTab } from "./datesheet-tab"
 import { ExamsTab } from "./exams-tab"
 import { MarksEntryTab } from "./marks-entry-tab"
 import { ReportCardTab } from "./report-card-tab"
@@ -21,6 +22,7 @@ export default function GradebookPage() {
         <TabsList>
           <TabsTrigger value="subjects">Subjects</TabsTrigger>
           <TabsTrigger value="exams">Exams</TabsTrigger>
+          <TabsTrigger value="datesheet">Datesheet</TabsTrigger>
           <TabsTrigger value="marks">Marks Entry</TabsTrigger>
           <TabsTrigger value="report-card">Report Card</TabsTrigger>
         </TabsList>
@@ -29,6 +31,9 @@ export default function GradebookPage() {
         </TabsContent>
         <TabsContent value="exams">
           <ExamsTab />
+        </TabsContent>
+        <TabsContent value="datesheet">
+          <DatesheetTab />
         </TabsContent>
         <TabsContent value="marks">
           <MarksEntryTab />
