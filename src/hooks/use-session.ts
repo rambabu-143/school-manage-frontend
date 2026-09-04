@@ -43,6 +43,35 @@ export function useLogin() {
   })
 }
 
+export function useRequestPasswordReset() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const response = await fetch("/api/auth/password-reset/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      if (!response.ok) throw new Error("Something went wrong. Please try again.")
+    },
+  })
+}
+
+export function useConfirmPasswordReset() {
+  return useMutation({
+    mutationFn: async ({ token, newPassword }: { token: string; newPassword: string }) => {
+      const response = await fetch("/api/auth/password-reset/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error ?? "Could not reset your password")
+      }
+    },
+  })
+}
+
 export function useLogout() {
   const queryClient = useQueryClient()
 

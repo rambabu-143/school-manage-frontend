@@ -48,6 +48,27 @@ export async function loginRequest(email: string, password: string) {
   return data as { access_token: string; refresh_token: string; token_type: string }
 }
 
+export async function requestPasswordReset(email: string): Promise<void> {
+  const response = await backendFetch("/auth/password-reset/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  })
+  if (!response.ok) throw new BackendError(response.status, await parseBody(response))
+}
+
+export async function confirmPasswordReset(
+  token: string,
+  newPassword: string
+): Promise<void> {
+  const response = await backendFetch("/auth/password-reset/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, new_password: newPassword }),
+  })
+  if (!response.ok) throw new BackendError(response.status, await parseBody(response))
+}
+
 export async function refreshRequest(refreshToken: string) {
   const response = await backendFetch("/auth/refresh", {
     method: "POST",

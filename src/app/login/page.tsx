@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { motion } from "framer-motion"
@@ -98,7 +99,15 @@ function LoginForm() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Password</FormLabel>
+                        <Link
+                          href="/forgot-password"
+                          className="text-xs text-muted-foreground underline underline-offset-4"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
                       <FormControl>
                         <Input
                           type="password"
