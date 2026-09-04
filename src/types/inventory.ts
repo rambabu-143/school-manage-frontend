@@ -97,6 +97,20 @@ export interface PurchaseOrderCreateInput {
   amount: number
 }
 
+export interface BillExtractItem {
+  name: string
+  quantity: number
+  unit: string
+  rate: number
+}
+
+export interface BillExtractResult {
+  vendor_name: string | null
+  invoice_no: string | null
+  invoice_date: string | null
+  items: BillExtractItem[]
+}
+
 export type RequisitionStatus = "pending" | "approved" | "rejected" | "fulfilled"
 
 export interface Requisition {

@@ -3,7 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { ColumnDef } from "@tanstack/react-table"
-import { Loader2, Plus } from "lucide-react"
+import { Loader2, Plus, Upload } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -38,12 +38,14 @@ import {
 } from "@/components/ui/sheet"
 import {
   useCreatePurchaseOrder,
+  useExtractBill,
   usePurchaseOrders,
   useUpdatePurchaseOrderStatus,
 } from "@/hooks/use-purchase-orders"
 import { useVendors } from "@/hooks/use-vendors"
 import {
   PURCHASE_ORDER_STATUSES,
+  type BillExtractResult,
   type PurchaseOrder,
   type PurchaseOrderStatus,
 } from "@/types/inventory"
@@ -62,8 +64,10 @@ export function PurchaseOrdersTab() {
   const { data: orders, isPending } = usePurchaseOrders()
   const { data: vendors } = useVendors()
   const [open, setOpen] = React.useState(false)
+  const [extracted, setExtracted] = React.useState<BillExtractResult | null>(null)
   const createOrder = useCreatePurchaseOrder()
   const updateStatus = useUpdatePurchaseOrderStatus()
+  const extractBill = useExtractBill()
 
   const form = useForm<OrderInput, unknown, OrderValues>({
     resolver: zodResolver(orderSchema),
@@ -75,6 +79,25 @@ export function PurchaseOrdersTab() {
       onSuccess: () => {
         setOpen(false)
         form.reset()
+        setExtracted(null)
+      },
+    })
+  }
+
+  function onBillSelected(file: File | null) {
+    if (!file) return
+    extractBill.mutate(file, {
+      onSuccess: (result) => {
+        setExtracted(result)
+        const itemSummary = result.items.map((item) => item.name).join(", ")
+        const description = [result.vendor_name, itemSummary].filter(Boolean).join(" — ")
+        if (description) {
+          form.setValue("description", description.slice(0, 1000))
+        }
+        const total = result.items.reduce((sum, item) => sum + item.quantity * item.rate, 0)
+        if (total > 0) {
+          form.setValue("amount", Math.round(total * 100) / 100)
+        }
       },
     })
   }
@@ -120,7 +143,10 @@ export function PurchaseOrdersTab() {
           open={open}
           onOpenChange={(next) => {
             setOpen(next)
-            if (!next) form.reset()
+            if (!next) {
+              form.reset()
+              setExtracted(null)
+            }
           }}
         >
           <SheetTrigger asChild>
@@ -134,6 +160,37 @@ export function PurchaseOrdersTab() {
               <SheetTitle>New Purchase Order</SheetTitle>
               <SheetDescription>Order supplies from a vendor.</SheetDescription>
             </SheetHeader>
+            <div className="flex flex-col gap-2 px-4">
+              <label className="text-sm font-medium">Prefill from a bill (optional)</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="application/pdf"
+                  disabled={extractBill.isPending}
+                  onChange={(e) => onBillSelected(e.target.files?.[0] ?? null)}
+                  className="h-8 text-xs"
+                />
+                {extractBill.isPending && <Loader2 className="size-4 animate-spin" />}
+                {!extractBill.isPending && <Upload className="size-4 text-muted-foreground" />}
+              </div>
+              {extracted && (
+                <div className="rounded-md border bg-muted/50 p-2 text-xs text-muted-foreground">
+                  <p>
+                    Read from PDF - review before submitting.
+                    {extracted.invoice_no && ` Invoice ${extracted.invoice_no}.`}
+                  </p>
+                  {extracted.items.length > 0 && (
+                    <ul className="mt-1 list-disc pl-4">
+                      {extracted.items.map((item, i) => (
+                        <li key={i}>
+                          {item.name} - {item.quantity} {item.unit} @ {item.rate}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4">
                 <FormField

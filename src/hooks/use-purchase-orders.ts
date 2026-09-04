@@ -5,7 +5,12 @@ import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
 import { errorMessage } from "@/lib/error-message"
-import type { PurchaseOrder, PurchaseOrderCreateInput, PurchaseOrderStatus } from "@/types/inventory"
+import type {
+  BillExtractResult,
+  PurchaseOrder,
+  PurchaseOrderCreateInput,
+  PurchaseOrderStatus,
+} from "@/types/inventory"
 
 export function usePurchaseOrders(params?: {
   branchId?: string
@@ -38,6 +43,21 @@ export function useCreatePurchaseOrder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchase-orders"] })
       toast.success("Purchase order created")
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
+}
+
+export function useExtractBill() {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData()
+      formData.append("file", file)
+      const { data } = await apiClient.post<BillExtractResult>(
+        "/purchase-orders/extract-bill",
+        formData
+      )
+      return data
     },
     onError: (error) => toast.error(errorMessage(error)),
   })
