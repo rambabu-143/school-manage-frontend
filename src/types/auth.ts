@@ -44,3 +44,15 @@ export interface UserCreateInput {
   password: string
   role: Role
 }
+
+export interface TwoFactorChallenge {
+  requires_2fa: true
+  two_factor_token: string
+}
+
+export interface TwoFactorInput {
+  two_factor_token: string
+  code: string
+}
+
+export type LoginResult = { user: User } | TwoFactorChallenge

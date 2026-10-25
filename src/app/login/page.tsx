@@ -41,6 +41,14 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const login = useLogin()
+  const [challenge, setChallenge] = React.useState<string | null>(null)
+  const [code, setCode] = React.useState("")
+
+  function completeLogin() {
+    const next = searchParams.get("next")
+    router.replace(next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard")
+    router.refresh()
+  }
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -49,9 +57,13 @@ function LoginForm() {
 
   function onSubmit(values: LoginValues) {
     login.mutate(values, {
-      onSuccess: () => {
-        router.replace(searchParams.get("next") ?? "/dashboard")
-        router.refresh()
+      onSuccess: (result) => {
+        if ("requires_2fa" in result) {
+          setChallenge(result.two_factor_token)
+          form.reset()
+        } else {
+          completeLogin()
+        }
       },
     })
   }
@@ -73,7 +85,31 @@ function LoginForm() {
             <CardDescription>School management system</CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
+            {challenge ? (
+              <form className="space-y-4" onSubmit={(event) => {
+                event.preventDefault()
+                login.mutate({ two_factor_token: challenge, code: code.trim() }, {
+                  onSuccess: (result) => { if ("user" in result) completeLogin() },
+                })
+              }}>
+                <div className="space-y-2">
+                  <label htmlFor="verification-code" className="text-sm font-medium">Verification code</label>
+                  <p className="text-sm text-muted-foreground">Enter a code from your authenticator app or an unused backup code.</p>
+                  <Input id="verification-code" autoComplete="one-time-code" autoFocus
+                    value={code} onChange={(event) => setCode(event.target.value)}
+                    maxLength={16} required disabled={login.isPending} />
+                </div>
+                {login.isError && <p role="alert" className="text-sm text-destructive">{login.error.message}</p>}
+                <Button type="submit" className="w-full" disabled={login.isPending || !code.trim()}>
+                  {login.isPending && <Loader2 className="animate-spin" />}
+                  Verify and sign in
+                </Button>
+                <Button type="button" variant="outline" className="w-full" disabled={login.isPending}
+                  onClick={() => { setChallenge(null); setCode(""); login.reset() }}>
+                  Back to sign in
+                </Button>
+              </form>
+            ) : <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
@@ -147,7 +183,7 @@ function LoginForm() {
                   </div>
                 )}
               </form>
-            </Form>
+            </Form>}
           </CardContent>
         </Card>
       </motion.div>

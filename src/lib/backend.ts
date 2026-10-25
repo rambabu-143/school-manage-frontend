@@ -1,3 +1,5 @@
+import type { TwoFactorChallenge, TwoFactorInput } from "@/types/auth"
+
 // Server-only helpers for talking to the FastAPI backend. Never imported
 // from client components - the access token stays server-side, in an
 // httpOnly cookie, and is only ever attached to requests made from here.
@@ -36,6 +38,19 @@ export async function backendFetch(
   })
 }
 
+type TokenPair = { access_token: string; refresh_token: string; token_type: string }
+
+export async function verifyTwoFactorRequest(input: TwoFactorInput): Promise<TokenPair> {
+  const response = await backendFetch("/auth/2fa/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  })
+  const data = await parseBody(response)
+  if (!response.ok) throw new BackendError(response.status, data)
+  return data as TokenPair
+}
+
 export async function loginRequest(email: string, password: string) {
   const body = new URLSearchParams({ username: email, password })
   const response = await backendFetch("/auth/login", {
@@ -45,7 +60,7 @@ export async function loginRequest(email: string, password: string) {
   })
   const data = await parseBody(response)
   if (!response.ok) throw new BackendError(response.status, data)
-  return data as { access_token: string; refresh_token: string; token_type: string }
+  return data as TokenPair | TwoFactorChallenge
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {

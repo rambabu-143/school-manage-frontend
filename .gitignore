@@ -43,3 +43,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local QA artifacts may contain browser traces and synthetic session tokens.
+.qa-artifacts/

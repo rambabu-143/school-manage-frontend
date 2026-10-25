@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import type { LoginInput, User } from "@/types/auth"
+import type { LoginInput, LoginResult, TwoFactorInput, User } from "@/types/auth"
 
 async function fetchSession(): Promise<User | null> {
   const response = await fetch("/api/auth/me")
@@ -25,20 +25,20 @@ export function useLogin() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ email, password }: LoginInput) => {
+    mutationFn: async (input: LoginInput | TwoFactorInput): Promise<LoginResult> => {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(input),
       })
       const data = await response.json()
       if (!response.ok) {
         throw new Error(data.error ?? "Login failed")
       }
-      return data.user as User
+      return data as LoginResult
     },
-    onSuccess: (user) => {
-      queryClient.setQueryData(["session"], user)
+    onSuccess: (result) => {
+      if ("user" in result) queryClient.setQueryData(["session"], result.user)
     },
   })
 }
