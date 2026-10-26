@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 
+import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Topbar } from "@/components/layout/topbar"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -12,13 +13,27 @@ import { useSession } from "@/hooks/use-session"
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { data: user, isPending, isError } = useSession()
+  const { data: user, isPending, isError, refetch } = useSession()
 
+  // Only a clean 401 (user === null) means "not authenticated" - redirect to
+  // login. A network/5xx error (isError) is transient: the session cookie is
+  // still there, so bouncing to /login would just have proxy.ts bounce back
+  // to /dashboard on the cookie's presence, looping forever. Show a retry
+  // state instead.
   React.useEffect(() => {
-    if (!isPending && (isError || user === null)) {
+    if (!isPending && user === null) {
       router.replace("/login")
     }
-  }, [isPending, isError, user, router])
+  }, [isPending, user, router])
+
+  if (isError) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-muted-foreground">Couldn&apos;t reach the server. Check your connection and try again.</p>
+        <Button onClick={() => refetch()}>Retry</Button>
+      </div>
+    )
+  }
 
   if (isPending || !user) {
     return (

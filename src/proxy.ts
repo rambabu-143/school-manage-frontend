@@ -2,7 +2,11 @@ import { NextResponse, type NextRequest } from "next/server"
 
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/session-cookies"
 
-const PUBLIC_PATHS = ["/login"]
+const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password"]
+// Only these bounce an already-authenticated visitor away - a logged-in user
+// might still legitimately need /reset-password (e.g. a stale/expired
+// cookie, or resetting a different account's password from a shared link).
+const REDIRECT_IF_AUTHENTICATED_PATHS = ["/login"]
 
 /**
  * Coarse gate only: presence of a session cookie, not its validity - actual
@@ -22,7 +26,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  if (hasSession && isPublicPath) {
+  if (hasSession && REDIRECT_IF_AUTHENTICATED_PATHS.includes(pathname)) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
