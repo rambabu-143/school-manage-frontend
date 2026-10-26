@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // CommonJS Playwright suite with its own package.json.
+    "qa/browser/**",
+    ".qa-artifacts/**",
   ]),
 ]);
 

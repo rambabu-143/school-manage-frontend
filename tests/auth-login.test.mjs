@@ -32,15 +32,15 @@ async function loadRoute({ loginResult, verifyError } = {}) {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
   })
   const context = vm.createContext({ Response })
-  const module = new vm.SourceTextModule(outputText, { context })
-  await module.link((specifier) => {
+  const mod = new vm.SourceTextModule(outputText, { context })
+  await mod.link((specifier) => {
     const exports = mocks[specifier]
     return new vm.SyntheticModule(Object.keys(exports), function () {
       for (const [key, value] of Object.entries(exports)) this.setExport(key, value)
     }, { context })
   })
-  await module.evaluate()
-  return { post: (body) => module.namespace.POST(new Request("http://test/api/auth/login", {
+  await mod.evaluate()
+  return { post: (body) => mod.namespace.POST(new Request("http://test/api/auth/login", {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   })), calls }
 }

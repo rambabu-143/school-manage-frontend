@@ -28,7 +28,7 @@ test("2FA rejects a bad code, then authenticator code completes login", async ({
   expect((await page.context().cookies()).some(c => c.name === "access_token")).toBe(false)
   await page.getByLabel("Verification code", { exact: true }).fill("invalid")
   await page.getByRole("button", { name: "Verify and sign in" }).click()
-  await expect(page.getByRole("alert")).toContainText("Invalid or expired")
+  await expect(page.locator('p[role="alert"]')).toContainText("Invalid or expired")
   await page.getByLabel("Verification code", { exact: true }).fill(totp(setup.secret))
   await page.getByRole("button", { name: "Verify and sign in" }).click()
   await expect(page).toHaveURL(/\/dashboard$/)
@@ -47,7 +47,7 @@ test("backup code signs in and cannot be reused", async ({ page, request }) => {
   await signIn(page, admin.email)
   await page.getByLabel("Verification code", { exact: true }).fill(enabled.backup_codes[0])
   await page.getByRole("button", { name: "Verify and sign in" }).click()
-  await expect(page.getByRole("alert")).toContainText("Invalid or expired")
+  await expect(page.locator('p[role="alert"]')).toContainText("Invalid or expired")
 })
 
 test("teacher session cannot create users through the frontend proxy", async ({ page, request }) => {
