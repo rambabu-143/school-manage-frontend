@@ -3,12 +3,12 @@ import fs from "node:fs"
 import test from "node:test"
 import { QueryClient } from "@tanstack/react-query"
 
-import { isSameOriginRequest, validateProxyPath, buildUpstreamHeaders, buildResponseHeaders, sanitizeErrorBody, readBodyLimited } from "../src/lib/bff-guards.ts"
+import { stripTokenKeys, isSameOriginRequest, validateProxyPath, buildUpstreamHeaders, buildResponseHeaders, sanitizeErrorBody, readBodyLimited } from "../src/lib/bff-guards.ts"
 import { safeNext } from "../src/lib/safe-redirect.ts"
-import { singleFlight } from "../src/lib/single-flight.ts"
-import { qk, scopeKey, setQueryScope } from "../src/lib/query-keys.ts"
+import { singleFlight, _resetSingleFlight } from "../src/lib/single-flight.ts"
+import { qk, scopeKey, setQueryScope, subscribeQueryScope, getScopeKey } from "../src/lib/query-keys.ts"
 import { staleTimeFor, shouldRetry, pollInterval } from "../src/lib/query-policy.ts"
-import { createIdentityGuard } from "../src/lib/identity-lifecycle.ts"
+import { createIdentityGuard, attachIdentityGuard, ctxToScopeCtx } from "../src/lib/identity-lifecycle.ts"
 import { domainsToInvalidate } from "../src/lib/invalidation.ts"
 
 const H = (o) => new Headers(o)
@@ -137,4 +137,72 @@ test("session cookie flags", async () => {
   assert.match(src, /httpOnly: true/)
   assert.match(src, /sameSite: "lax"/)
   assert.match(src, /secure: process\.env\.NODE_ENV === "production"/)
+})
+
+test("every token-returning operation in the OpenAPI snapshot is denied by the proxy", () => {
+  const { operations } = JSON.parse(fs.readFileSync(new URL("./fixtures/token-returning-ops.json", import.meta.url), "utf8"))
+  assert.ok(operations.length >= 9)
+  for (const op of operations) {
+    const segs = op.path.split("/").filter(Boolean)
+    assert.equal(validateProxyPath(segs), null, `${op.method} ${op.path}`)
+  }
+})
+
+test("auth/* is default-deny with a tiny allow-list", () => {
+  for (const ok of [["auth", "me"], ["auth", "session"], ["auth", "users"], ["auth", "users", "abc"]])
+    assert.ok(validateProxyPath(ok), ok.join("/"))
+  for (const bad of [["auth", "switch-branch"], ["auth", "switch-year"], ["auth", "switch-user"], ["auth", "otp", "verify"], ["auth", "google"], ["auth", "unknown"], ["AUTH", "Google"], ["event-portal", "login"]])
+    assert.equal(validateProxyPath(bad), null, bad.join("/"))
+})
+
+test("token keys are stripped from proxied JSON bodies", () => {
+  const r = stripTokenKeys(JSON.stringify({ a: 1, nested: [{ access_token: "x", ok: 1 }], refresh_token: "y" }))
+  assert.equal(r.stripped, true)
+  assert.deepEqual(JSON.parse(r.text), { a: 1, nested: [{ ok: 1 }] })
+  assert.deepEqual(stripTokenKeys('{"a":1}'), { text: '{"a":1}', stripped: false })
+  assert.equal(stripTokenKeys("not json access_token").stripped, false)
+})
+
+test("x-forwarded-host uses the first list entry", () => {
+  assert.equal(isSameOriginRequest("POST", H({ "x-forwarded-host": "a.com, proxy.internal", origin: "https://a.com" })), true)
+  assert.equal(isSameOriginRequest("POST", H({ "x-forwarded-host": "evil.com, a.com", origin: "https://a.com" })), false)
+})
+
+test("single-flight keeps the settled result for the ttl, not on failure", async () => {
+  _resetSingleFlight()
+  let calls = 0
+  const f = async () => ++calls
+  assert.equal(await singleFlight("k", f, 50), 1)
+  assert.equal(await singleFlight("k", f, 50), 1) // old refresh token reuses rotated pair
+  await new Promise((r) => setTimeout(r, 70))
+  assert.equal(await singleFlight("k", f, 50), 2)
+  await assert.rejects(singleFlight("bad", async () => { throw new Error("x") }, 50))
+  assert.equal(await singleFlight("bad", async () => "ok", 50), "ok")
+  _resetSingleFlight()
+})
+
+test("branch and academic year re-scope the cache; identity events refetch session", async () => {
+  const client = new QueryClient()
+  let fire
+  attachIdentityGuard(client, (cb) => { fire = cb; return () => {} })
+  const user = { id: "u", tenant_id: "t" }
+  const keys = []
+  const unsub = subscribeQueryScope(() => keys.push(getScopeKey()))
+  client.setQueryData(["session-context"], { branch_id: "b1", academic_year_id: "y1" })
+  client.setQueryData(["session"], user)
+  assert.equal(getScopeKey(), "t|u|b1|y1")
+  client.setQueryData(qk("students"), [1])
+  client.setQueryData(["session-context"], { branch_id: "b2", academic_year_id: "y1" })
+  client.setQueryData(["session"], { ...user })
+  assert.equal(getScopeKey(), "t|u|b2|y1")
+  assert.equal(client.getQueryData(["t|u|b1|y1", "students"]), undefined)
+  assert.ok(client.getQueryData(["session-context"]))
+  assert.deepEqual(keys, ["t|u|b1|y1", "t|u|b2|y1"])
+  assert.deepEqual(ctxToScopeCtx(null), { branchId: null, academicYearId: null })
+  let refetched = 0
+  client.invalidateQueries = () => { refetched++; return Promise.resolve() }
+  fire()
+  assert.equal(refetched, 1)
+  unsub()
+  setQueryScope(null)
 })

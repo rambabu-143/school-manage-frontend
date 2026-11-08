@@ -1,6 +1,6 @@
 import { QueryClient, type Query } from "@tanstack/react-query"
 
-import { SESSION_KEY, type QueryDomain } from "./query-keys"
+import { SESSION_CONTEXT_KEY, SESSION_KEY, type QueryDomain } from "./query-keys"
 
 // Per-domain freshness. Anything not listed is a "list" (30 s).
 const SEC = 1000
@@ -22,7 +22,7 @@ const LIVE: QueryDomain[] = [
 export const FRESHNESS_MS = { reference: 5 * 60 * SEC, list: 30 * SEC, dashboard: 20 * SEC, live: 5 * SEC } as const
 
 export function staleTimeFor(domain: unknown): number {
-  if (domain === SESSION_KEY[0]) return 5 * 60 * SEC
+  if (domain === SESSION_KEY[0] || domain === SESSION_CONTEXT_KEY[0]) return 5 * 60 * SEC
   if (REFERENCE.includes(domain as QueryDomain)) return FRESHNESS_MS.reference
   if (DASHBOARDS.includes(domain as QueryDomain)) return FRESHNESS_MS.dashboard
   if (LIVE.includes(domain as QueryDomain)) return FRESHNESS_MS.live
@@ -32,7 +32,7 @@ export function staleTimeFor(domain: unknown): number {
 /** Applied as the QueryClient default: key shape is [scope, domain, ...] (or ["session"]). */
 export function staleTimeForQuery(query: Query): number {
   const k = query.queryKey
-  return staleTimeFor(k[0] === SESSION_KEY[0] ? k[0] : k[1])
+  return staleTimeFor(k[0] === SESSION_KEY[0] || k[0] === SESSION_CONTEXT_KEY[0] ? k[0] : k[1])
 }
 
 const NO_RETRY = new Set([401, 403, 404, 422])

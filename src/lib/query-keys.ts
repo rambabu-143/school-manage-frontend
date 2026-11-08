@@ -113,6 +113,8 @@ export type QueryScope = {
 export const ANON_SCOPE_KEY = "anon"
 /** Session is the one key that exists before an identity is known. */
 export const SESSION_KEY = ["session"] as const
+/** Active branch / academic year from /auth/session; written alongside the session user. */
+export const SESSION_CONTEXT_KEY = ["session-context"] as const
 
 export function scopeKey(scope: QueryScope | null): string {
   if (!scope) return ANON_SCOPE_KEY
@@ -120,10 +122,21 @@ export function scopeKey(scope: QueryScope | null): string {
 }
 
 let current: QueryScope | null = null
+const listeners = new Set<() => void>()
 
 export const getQueryScope = () => current
+export const getScopeKey = () => scopeKey(current)
+/** For useSyncExternalStore: lets mounted trees re-key when the scope changes. */
+export const subscribeQueryScope = (cb: () => void) => {
+  listeners.add(cb)
+  return () => {
+    listeners.delete(cb)
+  }
+}
 export const setQueryScope = (scope: QueryScope | null) => {
+  const changed = scopeKey(scope) !== scopeKey(current)
   current = scope
+  if (changed) listeners.forEach((cb) => cb())
 }
 
 /** qk("students", { page }) -> [scope, "students", { page }] ; partial keys work for invalidation. */

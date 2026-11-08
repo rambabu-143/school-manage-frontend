@@ -1,15 +1,23 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient, type QueryFunctionContext } from "@tanstack/react-query"
 
-import { SESSION_KEY } from "@/lib/query-keys"
+import { SESSION_CONTEXT_KEY, SESSION_KEY } from "@/lib/query-keys"
 import type { LoginInput, LoginResult, TwoFactorInput, User } from "@/types/auth"
 
-async function fetchSession(): Promise<User | null> {
+async function fetchSession({ client }: QueryFunctionContext): Promise<User | null> {
   const response = await fetch("/api/auth/me")
   if (response.status === 401) return null
   if (!response.ok) throw new Error("Failed to load session")
   const data = (await response.json()) as { user: User }
+  // Active branch / academic year scope the query cache; write them before the
+  // user so the identity guard sees both. Best effort: unscoped on failure.
+  try {
+    const ctx = await fetch("/api/backend/auth/session")
+    client.setQueryData(SESSION_CONTEXT_KEY, ctx.ok ? await ctx.json() : null)
+  } catch {
+    client.setQueryData(SESSION_CONTEXT_KEY, null)
+  }
   return data.user
 }
 
