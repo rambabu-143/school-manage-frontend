@@ -1,0 +1,57 @@
+"use client"
+
+import { useCallback, useState } from "react"
+import { toast } from "sonner"
+
+import { apiClient } from "@/lib/api-client"
+import { parseApiError } from "@/lib/shared/api-error"
+import { filenameFromDisposition } from "@/lib/shared/download"
+
+/**
+ * Fetch a binary (PDF/CSV/...) through the BFF and save it, or open it in a tab (PDF preview).
+ *   const { download, isLoading } = useDownload()
+ *   download("/students/1/id-card.pdf", { params, fallbackName: "id-card.pdf" })
+ */
+export function useDownload() {
+  const [isLoading, setLoading] = useState(false)
+
+  const download = useCallback(
+    async (path: string, opts: { params?: Record<string, unknown>; fallbackName?: string; open?: boolean } = {}) => {
+      setLoading(true)
+      try {
+        const res = await apiClient.get<Blob>(path, { params: opts.params, responseType: "blob" })
+        const name = filenameFromDisposition(res.headers["content-disposition"]) ?? opts.fallbackName ?? "download"
+        const url = URL.createObjectURL(res.data)
+        if (opts.open) {
+          window.open(url, "_blank", "noopener")
+        } else {
+          const a = document.createElement("a")
+          a.href = url
+          a.download = name
+          document.body.appendChild(a)
+          a.click()
+          a.remove()
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 60_000)
+        return true
+      } catch (e) {
+        // blob error bodies are Blobs - decode JSON so the message is the server's
+        let err = e
+        const data = (e as { response?: { data?: unknown } }).response?.data
+        if (data instanceof Blob) {
+          try {
+            ;(err as { response: { data: unknown } }).response.data = JSON.parse(await data.text())
+          } catch {
+            err = e
+          }
+        }
+        toast.error(parseApiError(err).message)
+        return false
+      } finally {
+        setLoading(false)
+      }
+    },
+    []
+  )
+  return { download, isLoading }
+}
