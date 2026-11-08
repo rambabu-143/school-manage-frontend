@@ -1,11 +1,11 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import axios from "axios"
 
 import { apiClient } from "@/lib/api-client"
 import { parseApiError, type ParsedApiError } from "@/lib/shared/api-error"
-import { validateFile, type FileRule } from "@/lib/shared/file-validation"
+import { validateCsvRows, validateFile, type FileRule } from "@/lib/shared/file-validation"
 
 /**
  * Multipart upload through the BFF (/api/backend/*). Progress is browser->BFF bytes.
@@ -28,11 +28,16 @@ export function useUpload<T = unknown>({
   const [isUploading, setUploading] = useState(false)
   const [error, setError] = useState<ParsedApiError | null>(null)
   const [data, setData] = useState<T | null>(null)
+  const [cancelled, setCancelled] = useState(false)
+
+  // abort an in-flight upload when the component goes away
+  useEffect(() => () => ctrl.current?.abort(), [])
 
   const reset = useCallback(() => {
     setProgress(0)
     setError(null)
     setData(null)
+    setCancelled(false)
   }, [])
 
   const cancel = useCallback(() => ctrl.current?.abort(), [])
@@ -44,6 +49,13 @@ export function useUpload<T = unknown>({
       if (invalid) {
         setError({ status: null, kind: "validation", message: invalid, fieldErrors: {}, rowErrors: [], retryAfter: null })
         return null
+      }
+      if (rule.maxRows !== undefined) {
+        const tooMany = validateCsvRows(await file.slice(0, rule.maxBytes).text(), rule)
+        if (tooMany) {
+          setError({ status: null, kind: "validation", message: tooMany, fieldErrors: {}, rowErrors: [], retryAfter: null })
+          return null
+        }
       }
       const form = new FormData()
       form.append(field, file)
@@ -61,7 +73,8 @@ export function useUpload<T = unknown>({
         setData(res.data)
         return res.data
       } catch (e) {
-        if (!axios.isCancel(e)) setError(parseApiError(e))
+        if (axios.isCancel(e)) setCancelled(true)
+        else setError(parseApiError(e))
         return null
       } finally {
         setUploading(false)
@@ -70,5 +83,5 @@ export function useUpload<T = unknown>({
     [path, rule, field, extraFields, reset]
   )
 
-  return { upload, cancel, reset, progress, isUploading, error, data }
+  return { upload, cancel, reset, progress, isUploading, error, data, cancelled }
 }

@@ -58,7 +58,7 @@ export function CrudPage<TRow extends { id: string }, TForm extends FieldValues>
   const qc = useQueryClient()
   const { data: user } = useSession()
   const { handle } = useApiError()
-  const lp = useListParams()
+  const lp = useListParams(undefined, cfg.sortable)
   const [editing, setEditing] = useState<TRow | "new" | null>(null)
   const [deleting, setDeleting] = useState<TRow | null>(null)
   const allowed = (a: "create" | "update" | "delete") => !cfg.roles?.[a] || (!!user && cfg.roles[a]!.includes(user.role))
@@ -155,6 +155,9 @@ export function CrudPage<TRow extends { id: string }, TForm extends FieldValues>
                   )}
                 />
               ))}
+              {form.formState.errors.root?.server?.message && (
+                <p role="alert" className="text-sm text-destructive">{form.formState.errors.root.server.message}</p>
+              )}
               <DialogFooter>
                 <Button type="button" variant="outline" disabled={save.isPending} onClick={() => setEditing(null)}>Cancel</Button>
                 <Button type="submit" disabled={save.isPending}>{save.isPending ? "Saving..." : "Save"}</Button>

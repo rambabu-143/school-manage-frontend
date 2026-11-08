@@ -21,9 +21,10 @@ export function useUrlParams() {
   return { params: sp, get: (k: string) => sp.get(k), set }
 }
 
-export function useListParams(defaults?: Partial<ListParams>): ListParams {
+export function useListParams(defaults?: Partial<ListParams>, allowedSorts: readonly string[] = []): ListParams {
   const sp = useSearchParams()
   const key = sp.toString()
   const d = JSON.stringify(defaults ?? {})
-  return useMemo(() => parseListParams(new URLSearchParams(key), JSON.parse(d)), [key, d])
+  const a = JSON.stringify(allowedSorts)
+  return useMemo(() => parseListParams(new URLSearchParams(key), JSON.parse(d), JSON.parse(a)), [key, d, a])
 }

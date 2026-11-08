@@ -10,13 +10,20 @@ const posInt = (v: string | null, fallback: number) => {
   return v !== null && Number.isInteger(n) && n >= 1 ? n : fallback
 }
 
-export function parseListParams(sp: URLSearchParams, defaults: Partial<ListParams> = {}): ListParams {
+/** `allowedSorts` is the caller's allow-list; an unknown ?sort= is ignored (no list = no sorting). */
+export function parseListParams(
+  sp: URLSearchParams,
+  defaults: Partial<ListParams> = {},
+  allowedSorts: readonly string[] = []
+): ListParams {
+  const wanted = sp.get("sort")
+  const sort = wanted !== null && allowedSorts.includes(wanted) ? wanted : defaults.sort ?? null
   const limit = Math.min(posInt(sp.get("limit"), defaults.limit ?? DEFAULT_PAGE_SIZE), MAX_PAGE_SIZE)
   const dir = sp.get("dir") ?? defaults.dir
   return {
     page: posInt(sp.get("page"), 1),
     limit,
-    sort: sp.get("sort") ?? defaults.sort ?? null,
+    sort,
     dir: dir === "desc" ? "desc" : "asc",
   }
 }

@@ -80,6 +80,7 @@ export function FileUpload<T = unknown>({ path, rule, field, extraFields, onSucc
           )}
         </div>
       )}
+      {up.cancelled && <p role="status" className="text-sm text-muted-foreground">Upload cancelled.</p>}
       {up.data !== null && !up.error && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">Upload complete.</p>}
     </div>
   )

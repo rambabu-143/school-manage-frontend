@@ -33,6 +33,13 @@ function kindOf(status: number | null): ApiErrorKind {
   return status >= 500 ? "server" : "unknown"
 }
 
+const LOC_ROOTS = new Set(["body", "query", "path", "header", "cookie"])
+/** FastAPI loc is ["body", ...field path]; a lone ["name"] is the field itself. */
+export function locPath(loc: unknown[]): string {
+  const parts = loc.length > 1 && LOC_ROOTS.has(String(loc[0])) ? loc.slice(1) : loc
+  return parts.join(".")
+}
+
 function headerValue(headers: unknown, name: string): string | undefined {
   if (!headers) return undefined
   if (typeof (headers as { get?: unknown }).get === "function") {
@@ -90,12 +97,12 @@ export function parseApiError(error: unknown): ParsedApiError {
     message = str(data.message)
     const fe = details?.field_errors
     if (Array.isArray(fe)) {
-      for (const e of fe) if (isObj(e) && str(e.field)) fieldErrors[e.field as string] ??= String(e.message ?? "Invalid")
+      for (const e of fe) if (isObj(e) && str(e.field) && e.field !== "") fieldErrors[e.field as string] ??= String(e.message ?? "Invalid")
     }
     if (Array.isArray(detail)) {
       for (const e of detail) {
         if (!isObj(e)) continue
-        const loc = Array.isArray(e.loc) ? e.loc.slice(1).join(".") : ""
+        const loc = Array.isArray(e.loc) ? locPath(e.loc) : ""
         if (loc) fieldErrors[loc] ??= String(e.msg ?? "Invalid")
       }
     } else if (isObj(detail)) {

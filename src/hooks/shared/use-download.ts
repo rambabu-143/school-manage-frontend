@@ -5,7 +5,7 @@ import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
 import { parseApiError } from "@/lib/shared/api-error"
-import { filenameFromDisposition } from "@/lib/shared/download"
+import { canOpenInline, filenameFromDisposition, safeDownloadName } from "@/lib/shared/download"
 
 /**
  * Fetch a binary (PDF/CSV/...) through the BFF and save it, or open it in a tab (PDF preview).
@@ -20,9 +20,14 @@ export function useDownload() {
       setLoading(true)
       try {
         const res = await apiClient.get<Blob>(path, { params: opts.params, responseType: "blob" })
-        const name = filenameFromDisposition(res.headers["content-disposition"]) ?? opts.fallbackName ?? "download"
+        const type = res.data.type || String(res.headers["content-type"] ?? "")
+        const name = safeDownloadName(
+          filenameFromDisposition(res.headers["content-disposition"]) ?? opts.fallbackName ?? null,
+          type
+        )
         const url = URL.createObjectURL(res.data)
-        if (opts.open) {
+        // only PDFs/images are opened inline; anything else is forced to download
+        if (opts.open && canOpenInline(type)) {
           window.open(url, "_blank", "noopener")
         } else {
           const a = document.createElement("a")
@@ -37,10 +42,11 @@ export function useDownload() {
       } catch (e) {
         // blob error bodies are Blobs - decode JSON so the message is the server's
         let err = e
-        const data = (e as { response?: { data?: unknown } }).response?.data
-        if (data instanceof Blob) {
+        const response = (e as { response?: { data?: unknown } }).response
+        if (response?.data instanceof Blob) {
           try {
-            ;(err as { response: { data: unknown } }).response.data = JSON.parse(await data.text())
+            // copy, never mutate the caller's error object
+            err = { ...(e as object), response: { ...response, data: JSON.parse(await response.data.text()) } }
           } catch {
             err = e
           }

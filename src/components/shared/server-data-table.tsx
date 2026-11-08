@@ -23,7 +23,7 @@ interface ServerDataTableProps<TData> {
   emptyMessage?: string
 }
 
-/** page/limit/sort live in the URL (?page&limit&sort&dir); limit is capped at 100. Feed `useListParams()` into your query. */
+/** page/limit/sort live in the URL (?page&limit&sort&dir); limit is capped at 100. Feed `useListParams(undefined, sortable)` into your query. */
 export function ServerDataTable<TData>({
   columns, rows, total, isLoading, error, onRetry, sortable = [], onRowClick, emptyMessage,
 }: ServerDataTableProps<TData>) {

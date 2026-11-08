@@ -4,7 +4,9 @@ import test from "node:test"
 const { parseApiError, parseRetryAfter } = await import("../src/lib/shared/api-error.ts")
 const { validateFile, CSV_RULE, IMAGE_RULE } = await import("../src/lib/shared/file-validation.ts")
 const { parseListParams, patchSearch, normalizeDateRange, toApiParams } = await import("../src/lib/shared/url-params.ts")
-const { filenameFromDisposition } = await import("../src/lib/shared/download.ts")
+const { filenameFromDisposition, safeDownloadName, canOpenInline } = await import("../src/lib/shared/download.ts")
+const { countCsvRows, validateCsvRows } = await import("../src/lib/shared/file-validation.ts")
+const { default: nextConfig } = await import("../next.config.ts")
 
 const err = (status, data, headers) => ({ response: { status, data, headers } })
 
@@ -70,6 +72,58 @@ test("date range normalisation", () => {
 test("content-disposition filename", () => {
   assert.equal(filenameFromDisposition('attachment; filename="card.pdf"'), "card.pdf")
   assert.equal(filenameFromDisposition("attachment; filename*=UTF-8''r%C3%A9sum%C3%A9.pdf"), "résumé.pdf")
-  assert.equal(filenameFromDisposition('attachment; filename="../../etc/passwd"'), "passwd")
+  assert.equal(safeDownloadName(filenameFromDisposition('attachment; filename="../../etc/passwd"')), "passwd")
   assert.equal(filenameFromDisposition(undefined), null)
+})
+
+test("download: filename charsets, sanitising, inline whitelist", () => {
+  assert.equal(filenameFromDisposition("attachment; filename*=ISO-8859-1''caf%E9.pdf; filename=\"cafe.pdf\""), "cafe.pdf")
+  assert.equal(filenameFromDisposition("attachment; filename*=ISO-8859-1''caf%E9.pdf"), null)
+  assert.equal(safeDownloadName("report.pdf.exe", "application/pdf"), "report.pdf")
+  assert.equal(safeDownloadName("evil. . ", "text/csv"), "evil.csv")
+  assert.equal(safeDownloadName('a<b>:"c.png', "image/png"), "abc.png")
+  assert.equal(safeDownloadName("../../x.sh", null), "x")
+  assert.equal(safeDownloadName(null, null), "download")
+  assert.equal(canOpenInline("application/pdf; charset=binary"), true)
+  assert.equal(canOpenInline("image/png"), true)
+  assert.equal(canOpenInline("image/svg+xml"), false)
+  assert.equal(canOpenInline("text/html"), false)
+})
+
+test("api-error: loc handling and 409", () => {
+  assert.deepEqual(parseApiError(err(422, { detail: [{ loc: ["name"], msg: "req" }] })).fieldErrors, { name: "req" })
+  assert.deepEqual(parseApiError(err(422, { detail: [{ loc: ["body"], msg: "bad body" }] })).fieldErrors, { body: "bad body" })
+  assert.deepEqual(parseApiError(err(422, { detail: [{ loc: ["query", "limit"], msg: "x" }] })).fieldErrors, { limit: "x" })
+  assert.equal(parseApiError(err(409, { detail: "Exists" })).kind, "conflict")
+})
+
+test("sort param must be allow-listed", () => {
+  const p = (q, allowed) => parseListParams(new URLSearchParams(q), {}, allowed)
+  assert.equal(p("sort=name", ["name"]).sort, "name")
+  assert.equal(p("sort=password_hash", ["name"]).sort, null)
+  assert.equal(p("sort=name").sort, null)
+  assert.equal(parseListParams(new URLSearchParams("sort=zzz"), { sort: "name" }, ["name"]).sort, "name")
+})
+
+test("csv row cap", () => {
+  assert.equal(countCsvRows("a,b\n1,2\n\n3,4\n"), 2)
+  assert.equal(countCsvRows(""), 0)
+  const big = "h\n" + "x\n".repeat(5001)
+  assert.match(validateCsvRows(big, CSV_RULE), /Too many rows \(5001\)/)
+  assert.equal(validateCsvRows("h\n" + "x\n".repeat(5000), CSV_RULE), null)
+  assert.equal(validateCsvRows(big, IMAGE_RULE), null)
+})
+
+test("dev gallery is 404-routed in production only", async () => {
+  const env = process.env.NODE_ENV
+  try {
+    process.env.NODE_ENV = "production"
+    const r = await nextConfig.rewrites()
+    assert.equal(r.beforeFiles[0].source, "/dev/:path*")
+    assert.equal(r.beforeFiles[0].destination, "/__not-found__")
+    process.env.NODE_ENV = "development"
+    assert.deepEqual(await nextConfig.rewrites(), [])
+  } finally {
+    process.env.NODE_ENV = env
+  }
 })

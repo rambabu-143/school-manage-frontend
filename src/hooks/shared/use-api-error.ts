@@ -10,7 +10,7 @@ import { parseApiError } from "@/lib/shared/api-error"
  * Maps FastAPI errors to user messages + form field errors.
  *   const { handle } = useApiError()
  *   onError: (e) => handle(e, form.setError)
- * Field errors are set on the form; anything not attributable to a field is toasted.
+ * Field errors are set on the form; a 409 becomes form.formState.errors.root.server; anything else is toasted.
  */
 export function useApiError() {
   const handle = useCallback(
@@ -21,6 +21,11 @@ export function useApiError() {
         entries.forEach(([field, message], i) =>
           setError(field as Path<T>, { type: "server", message }, { shouldFocus: i === 0 })
         )
+        return parsed
+      }
+      // conflicts (409) belong to the form as a whole: show inline under root.server
+      if (setError && parsed.kind === "conflict") {
+        setError("root.server" as Path<T>, { type: "server", message: parsed.message })
         return parsed
       }
       toast.error(parsed.message)
