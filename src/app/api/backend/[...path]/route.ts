@@ -8,6 +8,7 @@ import {
   isSameOriginRequest,
   readBodyLimited,
   sanitizeErrorBody,
+  stripTokenKeys,
   validateProxyPath,
 } from "@/lib/bff-guards"
 
@@ -48,6 +49,13 @@ async function handle(request: Request, context: RouteContext): Promise<NextResp
       await response.body?.cancel()
       headers.set("content-type", "application/json")
       return new NextResponse(generic, { status: response.status, headers })
+    }
+    const isJson = (response.headers.get("content-type") ?? "").includes("json")
+    if (isJson && response.status !== 204 && response.status !== 304 && request.method !== "HEAD") {
+      const { text, stripped } = stripTokenKeys(await response.text())
+      if (stripped) console.warn(`[bff] stripped token fields from proxied response: ${request.method} ${safePath}`)
+      headers.delete("content-length")
+      return new NextResponse(text, { status: response.status, headers })
     }
     // Stream the upstream body through (PDFs, downloads) instead of buffering it.
     const noBody = response.status === 204 || response.status === 304 || request.method === "HEAD"
