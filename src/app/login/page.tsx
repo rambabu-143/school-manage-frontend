@@ -9,6 +9,7 @@ import { GraduationCap, Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { AltLogin } from "@/components/auth/alt-login"
 import { useLogin } from "@/hooks/use-session"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -184,6 +185,12 @@ function LoginForm() {
                 )}
               </form>
             </Form>}
+            {!challenge && (
+              <AltLogin onResult={(result) => {
+                if ("requires_2fa" in result) setChallenge(result.two_factor_token)
+                else completeLogin()
+              }} />
+            )}
           </CardContent>
         </Card>
       </motion.div>
