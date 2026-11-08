@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { cookies } from "next/headers"
 
 import { BackendError, backendFetchWithToken, refreshRequest } from "@/lib/backend"
@@ -8,6 +9,8 @@ import {
   clearSessionCookies,
   setSessionCookies,
 } from "@/lib/session-cookies"
+
+const REFRESH_REUSE_MS = 30_000
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>
 
@@ -47,7 +50,7 @@ export async function authedBackendFetch(
   }
 
   try {
-    const tokens = await singleFlight(refreshToken, () => refreshRequest(refreshToken))
+    const tokens = await singleFlight(createHash("sha256").update(refreshToken).digest("hex"), () => refreshRequest(refreshToken), REFRESH_REUSE_MS)
     setSessionCookies(cookieStore, tokens)
     return backendFetchWithToken(path, tokens.access_token, init)
   } catch (error) {
