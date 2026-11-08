@@ -10,7 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "npm --prefix qa/browser test",
     "audit:dependencies": "pnpm audit",
-    "test:auth": "node --experimental-vm-modules --test tests/auth-login.test.mjs"
+    "test:auth": "node --experimental-vm-modules --test tests/auth-login.test.mjs tests/auth-completion.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
