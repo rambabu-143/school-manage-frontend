@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Newsletter, NewsletterCreateInput } from "@/types/newsletters"
 
 export function useNewsletters() {
   return useQuery({
-    queryKey: ["newsletters"],
+    queryKey: qk("newsletters"),
     queryFn: async () => {
       const { data } = await apiClient.get<Newsletter[]>("/newsletters")
       return data
@@ -26,7 +27,7 @@ export function useCreateNewsletter() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletters"] })
+      queryClient.invalidateQueries({ queryKey: qk("newsletters") })
       toast.success("Newsletter saved as draft")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -42,7 +43,7 @@ export function usePublishNewsletter() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletters"] })
+      queryClient.invalidateQueries({ queryKey: qk("newsletters") })
       toast.success("Newsletter published")
     },
     onError: (error) => toast.error(errorMessage(error)),

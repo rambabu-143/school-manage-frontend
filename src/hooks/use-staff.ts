@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Staff, StaffCreateInput, StaffUpdateInput } from "@/types/people"
 
 export function useStaff(branchId?: string) {
   return useQuery({
-    queryKey: ["staff", { branchId }],
+    queryKey: qk("staff", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<Staff[]>("/staff", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateStaff() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["staff"] })
+      queryClient.invalidateQueries({ queryKey: qk("staff") })
       toast.success("Staff member created")
     },
     onError: (error) => {
@@ -46,7 +47,7 @@ export function useUpdateStaff() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["staff"] })
+      queryClient.invalidateQueries({ queryKey: qk("staff") })
       toast.success("Staff member updated")
     },
     onError: (error) => {
@@ -63,7 +64,7 @@ export function useDeleteStaff() {
       await apiClient.delete(`/staff/${id}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["staff"] })
+      queryClient.invalidateQueries({ queryKey: qk("staff") })
       toast.success("Staff member deleted")
     },
     onError: (error) => {

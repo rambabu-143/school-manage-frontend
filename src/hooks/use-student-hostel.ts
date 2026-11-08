@@ -5,12 +5,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { HostelAllocation } from "@/types/hostel"
 
 export function useStudentHostel(studentId: string | undefined) {
   return useQuery({
-    queryKey: ["student-hostel", studentId],
+    queryKey: qk("student-hostel", studentId),
     queryFn: async () => {
       try {
         const { data } = await apiClient.get<HostelAllocation>(`/students/${studentId}/hostel`)
@@ -44,7 +45,7 @@ export function useAssignStudentHostel() {
       return data
     },
     onSuccess: (_data, { studentId }) => {
-      queryClient.invalidateQueries({ queryKey: ["student-hostel", studentId] })
+      queryClient.invalidateQueries({ queryKey: qk("student-hostel", studentId) })
       toast.success("Hostel room assigned")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -59,7 +60,7 @@ export function useRemoveStudentHostel() {
       await apiClient.delete(`/students/${studentId}/hostel`)
     },
     onSuccess: (_data, studentId) => {
-      queryClient.invalidateQueries({ queryKey: ["student-hostel", studentId] })
+      queryClient.invalidateQueries({ queryKey: qk("student-hostel", studentId) })
       toast.success("Hostel allocation removed")
     },
     onError: (error) => toast.error(errorMessage(error)),

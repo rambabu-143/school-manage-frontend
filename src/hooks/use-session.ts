@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { SESSION_KEY } from "@/lib/query-keys"
 import type { LoginInput, LoginResult, TwoFactorInput, User } from "@/types/auth"
 
 async function fetchSession(): Promise<User | null> {
@@ -14,9 +15,8 @@ async function fetchSession(): Promise<User | null> {
 
 export function useSession() {
   return useQuery({
-    queryKey: ["session"],
+    queryKey: SESSION_KEY,
     queryFn: fetchSession,
-    staleTime: 5 * 60 * 1000,
     retry: false,
   })
 }
@@ -38,7 +38,7 @@ export function useLogin() {
       return data as LoginResult
     },
     onSuccess: (result) => {
-      if ("user" in result) queryClient.setQueryData(["session"], result.user)
+      if ("user" in result) queryClient.setQueryData(SESSION_KEY, result.user)
     },
   })
 }
@@ -79,9 +79,10 @@ export function useLogout() {
     mutationFn: async () => {
       await fetch("/api/auth/logout", { method: "POST" })
     },
-    onSuccess: () => {
-      queryClient.setQueryData(["session"], null)
+    onSuccess: async () => {
+      await queryClient.cancelQueries()
       queryClient.clear()
+      queryClient.setQueryData(SESSION_KEY, null)
     },
   })
 }

@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import type { StudentAttendanceRecord } from "@/types/attendance"
 import type { Invoice } from "@/types/fees"
 import type { ReportCard } from "@/types/gradebook"
@@ -12,7 +13,7 @@ import type { DisciplinaryRecord } from "@/types/portal"
 
 export function useMyChildren() {
   return useQuery({
-    queryKey: ["portal", "children"],
+    queryKey: qk("portal", "children"),
     queryFn: async () => {
       const { data } = await apiClient.get<Student[]>("/me/children")
       return data
@@ -25,7 +26,7 @@ export function useChildAttendance(
   params: { dateFrom?: string; dateTo?: string }
 ) {
   return useQuery({
-    queryKey: ["portal", "attendance", studentId, params],
+    queryKey: qk("portal", "attendance", studentId, params),
     queryFn: async () => {
       const { data } = await apiClient.get<StudentAttendanceRecord[]>(
         `/me/children/${studentId}/attendance`,
@@ -39,7 +40,7 @@ export function useChildAttendance(
 
 export function useChildReportCard(studentId: string | undefined, examId: string | undefined) {
   return useQuery({
-    queryKey: ["portal", "report-card", studentId, examId],
+    queryKey: qk("portal", "report-card", studentId, examId),
     queryFn: async () => {
       const { data } = await apiClient.get<ReportCard>(
         `/me/children/${studentId}/report-card`,
@@ -53,7 +54,7 @@ export function useChildReportCard(studentId: string | undefined, examId: string
 
 export function useChildInvoices(studentId: string | undefined) {
   return useQuery({
-    queryKey: ["portal", "invoices", studentId],
+    queryKey: qk("portal", "invoices", studentId),
     queryFn: async () => {
       const { data } = await apiClient.get<Invoice[]>(`/me/children/${studentId}/invoices`)
       return data
@@ -64,7 +65,7 @@ export function useChildInvoices(studentId: string | undefined) {
 
 export function useChildDisciplinaryRecords(studentId: string | undefined) {
   return useQuery({
-    queryKey: ["portal", "disciplinary-records", studentId],
+    queryKey: qk("portal", "disciplinary-records", studentId),
     queryFn: async () => {
       const { data } = await apiClient.get<DisciplinaryRecord[]>(
         `/me/children/${studentId}/disciplinary-records`
@@ -77,7 +78,7 @@ export function useChildDisciplinaryRecords(studentId: string | undefined) {
 
 export function useChildObservationRemarks(studentId: string | undefined) {
   return useQuery({
-    queryKey: ["portal", "observation-remarks", studentId],
+    queryKey: qk("portal", "observation-remarks", studentId),
     queryFn: async () => {
       const { data } = await apiClient.get<ObservationRemark[]>(
         `/me/children/${studentId}/observation-remarks`

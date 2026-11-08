@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   EmailConfig,
@@ -18,7 +19,7 @@ import type {
 
 export function useEmailConfig() {
   return useQuery({
-    queryKey: ["email-config"],
+    queryKey: qk("email-config"),
     queryFn: async () => {
       try {
         const { data } = await apiClient.get<EmailConfig>("/email-config")
@@ -47,7 +48,7 @@ export function useSetEmailConfig() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["email-config"] })
+      queryClient.invalidateQueries({ queryKey: qk("email-config") })
       toast.success("Email settings saved")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -56,7 +57,7 @@ export function useSetEmailConfig() {
 
 export function useEmailMessages() {
   return useQuery({
-    queryKey: ["emails"],
+    queryKey: qk("emails"),
     queryFn: async () => {
       const { data } = await apiClient.get<EmailMessage[]>("/emails")
       return data
@@ -73,7 +74,7 @@ export function useSendEmail() {
       return data
     },
     onSuccess: (message) => {
-      queryClient.invalidateQueries({ queryKey: ["emails"] })
+      queryClient.invalidateQueries({ queryKey: qk("emails") })
       if (message.status === "sent") toast.success("Email sent")
       else if (message.status === "partial") toast.warning("Email sent to some recipients")
       else toast.error("Email failed to send")
@@ -84,7 +85,7 @@ export function useSendEmail() {
 
 export function useSmsConfig() {
   return useQuery({
-    queryKey: ["sms-config"],
+    queryKey: qk("sms-config"),
     queryFn: async () => {
       try {
         const { data } = await apiClient.get<SmsConfig>("/sms-config")
@@ -113,7 +114,7 @@ export function useSetSmsConfig() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sms-config"] })
+      queryClient.invalidateQueries({ queryKey: qk("sms-config") })
       toast.success("SMS settings saved")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -122,7 +123,7 @@ export function useSetSmsConfig() {
 
 export function useSmsMessages() {
   return useQuery({
-    queryKey: ["sms-messages"],
+    queryKey: qk("sms-messages"),
     queryFn: async () => {
       const { data } = await apiClient.get<SmsMessage[]>("/sms")
       return data
@@ -139,7 +140,7 @@ export function useSendSms() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sms-messages"] })
+      queryClient.invalidateQueries({ queryKey: qk("sms-messages") })
       toast.success("SMS sent")
     },
     onError: (error) => toast.error(errorMessage(error)),

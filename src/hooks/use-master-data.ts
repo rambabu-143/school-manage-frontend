@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   MasterDataCategory,
@@ -14,7 +15,7 @@ import type {
 
 export function useMasterData(category?: MasterDataCategory) {
   return useQuery({
-    queryKey: ["master-data", { category }],
+    queryKey: qk("master-data", { category }),
     queryFn: async () => {
       const { data } = await apiClient.get<MasterDataItem[]>("/master-data", {
         params: category ? { category } : undefined,
@@ -33,7 +34,7 @@ export function useCreateMasterDataItem() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["master-data"] })
+      queryClient.invalidateQueries({ queryKey: qk("master-data") })
       toast.success("Item created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -49,7 +50,7 @@ export function useUpdateMasterDataItem() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["master-data"] })
+      queryClient.invalidateQueries({ queryKey: qk("master-data") })
       toast.success("Item updated")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -64,7 +65,7 @@ export function useDeleteMasterDataItem() {
       await apiClient.delete(`/master-data/${id}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["master-data"] })
+      queryClient.invalidateQueries({ queryKey: qk("master-data") })
       toast.success("Item deleted")
     },
     onError: (error) => toast.error(errorMessage(error)),

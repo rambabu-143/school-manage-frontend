@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { RouteStudent, TransportRoute, TransportRouteCreateInput } from "@/types/transport"
 
 export function useTransportRoutes(branchId?: string) {
   return useQuery({
-    queryKey: ["transport-routes", { branchId }],
+    queryKey: qk("transport-routes", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<TransportRoute[]>("/transport-routes", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateTransportRoute() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transport-routes"] })
+      queryClient.invalidateQueries({ queryKey: qk("transport-routes") })
       toast.success("Route created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -37,7 +38,7 @@ export function useCreateTransportRoute() {
 
 export function useRouteStudents(routeId: string | undefined) {
   return useQuery({
-    queryKey: ["transport-routes", routeId, "students"],
+    queryKey: qk("transport-routes", routeId, "students"),
     queryFn: async () => {
       const { data } = await apiClient.get<RouteStudent[]>(
         `/transport-routes/${routeId}/students`

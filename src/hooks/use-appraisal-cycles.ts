@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { AppraisalCycle, AppraisalCycleCreateInput } from "@/types/appraisal"
 
 export function useAppraisalCycles(academicYearId?: string) {
   return useQuery({
-    queryKey: ["appraisal-cycles", { academicYearId }],
+    queryKey: qk("appraisal-cycles", { academicYearId }),
     queryFn: async () => {
       const { data } = await apiClient.get<AppraisalCycle[]>("/appraisal-cycles", {
         params: academicYearId ? { academic_year_id: academicYearId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateAppraisalCycle() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appraisal-cycles"] })
+      queryClient.invalidateQueries({ queryKey: qk("appraisal-cycles") })
       toast.success("Appraisal cycle created")
     },
     onError: (error) => toast.error(errorMessage(error)),

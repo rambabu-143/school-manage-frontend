@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { DocumentFile, DocumentUploadInput } from "@/types/documents"
 
@@ -14,7 +15,7 @@ export function useDocuments(params?: {
   galleryAlbumId?: string
 }) {
   return useQuery({
-    queryKey: ["documents", params],
+    queryKey: qk("documents", params),
     queryFn: async () => {
       const { data } = await apiClient.get<DocumentFile[]>("/documents", {
         params: {
@@ -48,7 +49,7 @@ export function useUploadDocument() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["documents"] })
+      queryClient.invalidateQueries({ queryKey: qk("documents") })
       toast.success("Document uploaded")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -63,7 +64,7 @@ export function useDeleteDocument() {
       await apiClient.delete(`/documents/${id}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["documents"] })
+      queryClient.invalidateQueries({ queryKey: qk("documents") })
       toast.success("Document deleted")
     },
     onError: (error) => toast.error(errorMessage(error)),

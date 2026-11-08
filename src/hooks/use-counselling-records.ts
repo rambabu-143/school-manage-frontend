@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   CounsellingFollowup,
@@ -14,7 +15,7 @@ import type {
 
 export function useCounsellingRecords(params?: { studentId?: string; status?: string }) {
   return useQuery({
-    queryKey: ["counselling-records", params],
+    queryKey: qk("counselling-records", params),
     queryFn: async () => {
       const { data } = await apiClient.get<CounsellingRecord[]>("/counselling-records", {
         params: { student_id: params?.studentId, status: params?.status },
@@ -33,7 +34,7 @@ export function useCreateCounsellingRecord() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["counselling-records"] })
+      queryClient.invalidateQueries({ queryKey: qk("counselling-records") })
       toast.success("Counselling record created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -51,7 +52,7 @@ export function useCloseCounsellingRecord() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["counselling-records"] })
+      queryClient.invalidateQueries({ queryKey: qk("counselling-records") })
       toast.success("Record closed")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -60,7 +61,7 @@ export function useCloseCounsellingRecord() {
 
 export function useCounsellingFollowups(recordId: string | undefined) {
   return useQuery({
-    queryKey: ["counselling-followups", recordId],
+    queryKey: qk("counselling-followups", recordId),
     queryFn: async () => {
       const { data } = await apiClient.get<CounsellingFollowup[]>(
         `/counselling-records/${recordId}/follow-ups`
@@ -83,7 +84,7 @@ export function useCreateCounsellingFollowup(recordId: string | undefined) {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["counselling-followups", recordId] })
+      queryClient.invalidateQueries({ queryKey: qk("counselling-followups", recordId) })
       toast.success("Follow-up logged")
     },
     onError: (error) => toast.error(errorMessage(error)),

@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { invalidateWithDependents } from "@/lib/invalidation"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   BoardOfDirector,
@@ -15,7 +17,7 @@ import type {
 
 export function useNotices() {
   return useQuery({
-    queryKey: ["notices"],
+    queryKey: qk("notices"),
     queryFn: async () => {
       const { data } = await apiClient.get<Notice[]>("/notices")
       return data
@@ -32,7 +34,7 @@ export function useCreateNotice() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notices"] })
+      invalidateWithDependents(queryClient, "notices")
       toast.success("Notice posted")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -41,7 +43,7 @@ export function useCreateNotice() {
 
 export function useBoardOfDirectors(activeOnly?: boolean) {
   return useQuery({
-    queryKey: ["board-of-directors", { activeOnly }],
+    queryKey: qk("board-of-directors", { activeOnly }),
     queryFn: async () => {
       const { data } = await apiClient.get<BoardOfDirector[]>("/board-of-directors", {
         params: activeOnly ? { active_only: true } : undefined,
@@ -60,7 +62,7 @@ export function useCreateBoardOfDirector() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["board-of-directors"] })
+      queryClient.invalidateQueries({ queryKey: qk("board-of-directors") })
       toast.success("Board member added")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -76,7 +78,7 @@ export function useUpdateBoardOfDirector() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["board-of-directors"] })
+      queryClient.invalidateQueries({ queryKey: qk("board-of-directors") })
       toast.success("Board member updated")
     },
     onError: (error) => toast.error(errorMessage(error)),

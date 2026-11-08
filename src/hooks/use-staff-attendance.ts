@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   MachinePunchImportInput,
@@ -13,7 +14,7 @@ import type {
 
 export function useStaffAttendance(params: { staffId?: string; dateFrom?: string; dateTo?: string }) {
   return useQuery({
-    queryKey: ["staff-attendance", params],
+    queryKey: qk("staff-attendance", params),
     queryFn: async () => {
       const { data } = await apiClient.get<StaffAttendanceRecord[]>("/attendance/staff", {
         params: {
@@ -36,7 +37,7 @@ export function useMarkStaffAttendance() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["staff-attendance"] })
+      queryClient.invalidateQueries({ queryKey: qk("staff-attendance") })
       toast.success("Attendance saved")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -55,7 +56,7 @@ export function useImportMachinePunches() {
       return data
     },
     onSuccess: (rows) => {
-      queryClient.invalidateQueries({ queryKey: ["staff-attendance"] })
+      queryClient.invalidateQueries({ queryKey: qk("staff-attendance") })
       toast.success(`Reconciled ${rows.length} day(s) of attendance`)
     },
     onError: (error) => toast.error(errorMessage(error)),

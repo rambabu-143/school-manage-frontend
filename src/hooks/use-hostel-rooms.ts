@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { HostelRoom, HostelRoomCreateInput, RoomOccupant } from "@/types/hostel"
 
 export function useHostelRooms(hostelId?: string) {
   return useQuery({
-    queryKey: ["hostel-rooms", { hostelId }],
+    queryKey: qk("hostel-rooms", { hostelId }),
     queryFn: async () => {
       const { data } = await apiClient.get<HostelRoom[]>("/hostel-rooms", {
         params: hostelId ? { hostel_id: hostelId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateHostelRoom() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["hostel-rooms"] })
+      queryClient.invalidateQueries({ queryKey: qk("hostel-rooms") })
       toast.success("Room created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -37,7 +38,7 @@ export function useCreateHostelRoom() {
 
 export function useRoomOccupants(roomId: string | undefined) {
   return useQuery({
-    queryKey: ["hostel-rooms", roomId, "occupants"],
+    queryKey: qk("hostel-rooms", roomId, "occupants"),
     queryFn: async () => {
       const { data } = await apiClient.get<RoomOccupant[]>(`/hostel-rooms/${roomId}/occupants`)
       return data

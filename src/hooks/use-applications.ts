@@ -4,13 +4,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { AdmissionApplication, ApplicationCreateInput } from "@/types/admissions"
 import type { Student } from "@/types/people"
 
 export function useApplications(params?: { branchId?: string; status?: string }) {
   return useQuery({
-    queryKey: ["applications", params],
+    queryKey: qk("applications", params),
     queryFn: async () => {
       const { data } = await apiClient.get<AdmissionApplication[]>("/admission-applications", {
         params: { branch_id: params?.branchId, status: params?.status },
@@ -32,7 +33,7 @@ export function useCreateApplication() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] })
+      queryClient.invalidateQueries({ queryKey: qk("applications") })
       toast.success("Application created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -57,7 +58,7 @@ export function useUpdateApplicationStatus() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] })
+      queryClient.invalidateQueries({ queryKey: qk("applications") })
       toast.success("Application status updated")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -76,7 +77,7 @@ export function useRejectApplication() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] })
+      queryClient.invalidateQueries({ queryKey: qk("applications") })
       toast.success("Application rejected")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -95,8 +96,8 @@ export function useEnrollApplication() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] })
-      queryClient.invalidateQueries({ queryKey: ["students"] })
+      queryClient.invalidateQueries({ queryKey: qk("applications") })
+      queryClient.invalidateQueries({ queryKey: qk("students") })
       toast.success("Student enrolled")
     },
     onError: (error) => toast.error(errorMessage(error)),

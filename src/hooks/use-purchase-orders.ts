@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   BillExtractResult,
@@ -18,7 +19,7 @@ export function usePurchaseOrders(params?: {
   status?: PurchaseOrderStatus
 }) {
   return useQuery({
-    queryKey: ["purchase-orders", params],
+    queryKey: qk("purchase-orders", params),
     queryFn: async () => {
       const { data } = await apiClient.get<PurchaseOrder[]>("/purchase-orders", {
         params: {
@@ -41,7 +42,7 @@ export function useCreatePurchaseOrder() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] })
+      queryClient.invalidateQueries({ queryKey: qk("purchase-orders") })
       toast.success("Purchase order created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -74,7 +75,7 @@ export function useUpdatePurchaseOrderStatus() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] })
+      queryClient.invalidateQueries({ queryKey: qk("purchase-orders") })
       toast.success("Purchase order status updated")
     },
     onError: (error) => toast.error(errorMessage(error)),

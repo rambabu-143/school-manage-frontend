@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { CertificateRecord, CertificateRecordCreateInput } from "@/types/certificates"
 
 export function useCertificates(studentId?: string) {
   return useQuery({
-    queryKey: ["certificates", { studentId }],
+    queryKey: qk("certificates", { studentId }),
     queryFn: async () => {
       const { data } = await apiClient.get<CertificateRecord[]>("/certificates", {
         params: studentId ? { student_id: studentId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateCertificate() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["certificates"] })
+      queryClient.invalidateQueries({ queryKey: qk("certificates") })
       toast.success("Certificate issued")
     },
     onError: (error) => toast.error(errorMessage(error)),

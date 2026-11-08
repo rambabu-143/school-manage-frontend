@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { ConcessionRenewal, ConcessionRenewalUpsertInput } from "@/types/fees"
 
 export function useConcessionRenewals(studentId?: string) {
   return useQuery({
-    queryKey: ["concession-renewals", { studentId }],
+    queryKey: qk("concession-renewals", { studentId }),
     queryFn: async () => {
       const { data } = await apiClient.get<ConcessionRenewal[]>("/concession-renewals", {
         params: studentId ? { student_id: studentId } : undefined,
@@ -28,7 +29,7 @@ export function useUpsertConcessionRenewal() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["concession-renewals"] })
+      queryClient.invalidateQueries({ queryKey: qk("concession-renewals") })
       toast.success("Case saved")
     },
     onError: (error) => toast.error(errorMessage(error)),

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   ReportCardReleaseSetting,
@@ -17,7 +18,7 @@ export function useReportCardReleaseSetting(params: {
 }) {
   const { branchId, academicYearId, gradeId } = params
   return useQuery({
-    queryKey: ["report-card-release-setting", branchId, academicYearId, gradeId],
+    queryKey: qk("report-card-release-setting", branchId, academicYearId, gradeId),
     queryFn: async () => {
       const { data } = await apiClient.get<ReportCardReleaseSetting>(
         "/report-card-release-settings",
@@ -42,7 +43,7 @@ export function useUpsertReportCardReleaseSetting() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["report-card-release-setting"] })
+      queryClient.invalidateQueries({ queryKey: qk("report-card-release-setting") })
       toast.success("Release setting saved")
     },
     onError: (error) => toast.error(errorMessage(error)),

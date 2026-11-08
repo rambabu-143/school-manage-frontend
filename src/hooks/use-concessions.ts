@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Concession, ConcessionCreateInput } from "@/types/fees"
 
 export function useConcessions(params?: { studentId?: string; academicYearId?: string }) {
   return useQuery({
-    queryKey: ["concessions", params],
+    queryKey: qk("concessions", params),
     queryFn: async () => {
       const { data } = await apiClient.get<Concession[]>("/concessions", {
         params: { student_id: params?.studentId, academic_year_id: params?.academicYearId },
@@ -28,7 +29,7 @@ export function useCreateConcession() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["concessions"] })
+      queryClient.invalidateQueries({ queryKey: qk("concessions") })
       toast.success("Concession created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -44,7 +45,7 @@ export function useRevokeConcession() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["concessions"] })
+      queryClient.invalidateQueries({ queryKey: qk("concessions") })
       toast.success("Concession revoked")
     },
     onError: (error) => toast.error(errorMessage(error)),

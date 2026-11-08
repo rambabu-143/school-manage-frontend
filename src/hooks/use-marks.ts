@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Mark, MarkBulkCreateInput } from "@/types/gradebook"
 
 export function useMarks(params: { examId?: string; subjectId?: string; studentId?: string }) {
   return useQuery({
-    queryKey: ["marks", params],
+    queryKey: qk("marks", params),
     queryFn: async () => {
       const { data } = await apiClient.get<Mark[]>("/marks", {
         params: {
@@ -33,7 +34,7 @@ export function useMarkStudents() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["marks"] })
+      queryClient.invalidateQueries({ queryKey: qk("marks") })
       toast.success("Marks saved")
     },
     onError: (error) => toast.error(errorMessage(error)),

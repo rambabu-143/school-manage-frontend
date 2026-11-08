@@ -3,11 +3,12 @@
 import { useQuery } from "@tanstack/react-query"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import type { CumulativeReport, ReportCard } from "@/types/gradebook"
 
 export function useReportCard(studentId: string | undefined, examId: string | undefined) {
   return useQuery({
-    queryKey: ["report-card", studentId, examId],
+    queryKey: qk("report-card", studentId, examId),
     queryFn: async () => {
       const { data } = await apiClient.get<ReportCard>(`/students/${studentId}/report-card`, {
         params: { exam_id: examId },
@@ -23,7 +24,7 @@ export function useCumulativeReport(
   academicYearId: string | undefined
 ) {
   return useQuery({
-    queryKey: ["cumulative-report", studentId, academicYearId],
+    queryKey: qk("cumulative-report", studentId, academicYearId),
     queryFn: async () => {
       const { data } = await apiClient.get<CumulativeReport>(
         `/students/${studentId}/cumulative-report`,

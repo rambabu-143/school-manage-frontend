@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Vendor, VendorCreateInput } from "@/types/inventory"
 
 export function useVendors(branchId?: string) {
   return useQuery({
-    queryKey: ["vendors", { branchId }],
+    queryKey: qk("vendors", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<Vendor[]>("/vendors", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateVendor() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendors"] })
+      queryClient.invalidateQueries({ queryKey: qk("vendors") })
       toast.success("Vendor created")
     },
     onError: (error) => toast.error(errorMessage(error)),

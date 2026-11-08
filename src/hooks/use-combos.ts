@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   Combo,
@@ -16,7 +17,7 @@ import type {
 
 export function useCombos(params?: { gradeId?: string; academicYearId?: string }) {
   return useQuery({
-    queryKey: ["combos", params],
+    queryKey: qk("combos", params),
     queryFn: async () => {
       const { data } = await apiClient.get<Combo[]>("/combos", {
         params: { grade_id: params?.gradeId, academic_year_id: params?.academicYearId },
@@ -35,7 +36,7 @@ export function useCreateCombo() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["combos"] })
+      queryClient.invalidateQueries({ queryKey: qk("combos") })
       toast.success("Combo created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -44,7 +45,7 @@ export function useCreateCombo() {
 
 export function useStudentCombo(studentId: string | undefined, academicYearId: string | undefined) {
   return useQuery({
-    queryKey: ["student-combo", studentId, academicYearId],
+    queryKey: qk("student-combo", studentId, academicYearId),
     queryFn: async () => {
       const { data } = await apiClient.get<StudentCombo>(`/students/${studentId}/combo`, {
         params: { academic_year_id: academicYearId },
@@ -71,7 +72,7 @@ export function useAssignStudentCombo() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["student-combo"] })
+      queryClient.invalidateQueries({ queryKey: qk("student-combo") })
       toast.success("Combo assigned")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -90,7 +91,7 @@ export function usePromoteComboStudents() {
       return data
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["student-combo"] })
+      queryClient.invalidateQueries({ queryKey: qk("student-combo") })
       toast.success(
         `${result.promoted.length} promoted` +
           (result.skipped.length ? `, ${result.skipped.length} skipped` : "")

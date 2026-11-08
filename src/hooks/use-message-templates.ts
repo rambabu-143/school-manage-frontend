@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { MessageTemplate, MessageTemplateCreateInput } from "@/types/communications"
 
 export function useMessageTemplates() {
   return useQuery({
-    queryKey: ["message-templates"],
+    queryKey: qk("message-templates"),
     queryFn: async () => {
       const { data } = await apiClient.get<MessageTemplate[]>("/message-templates")
       return data
@@ -26,7 +27,7 @@ export function useCreateMessageTemplate() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["message-templates"] })
+      queryClient.invalidateQueries({ queryKey: qk("message-templates") })
       toast.success("Template created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -41,7 +42,7 @@ export function useDeleteMessageTemplate() {
       await apiClient.delete(`/message-templates/${id}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["message-templates"] })
+      queryClient.invalidateQueries({ queryKey: qk("message-templates") })
       toast.success("Template deleted")
     },
     onError: (error) => toast.error(errorMessage(error)),

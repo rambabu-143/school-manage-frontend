@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   CcaActivity,
@@ -17,7 +18,7 @@ import type {
 
 export function useCcaActivities(branchId?: string) {
   return useQuery({
-    queryKey: ["cca-activities", { branchId }],
+    queryKey: qk("cca-activities", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<CcaActivity[]>("/cca-activities", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -36,7 +37,7 @@ export function useCreateCcaActivity() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cca-activities"] })
+      queryClient.invalidateQueries({ queryKey: qk("cca-activities") })
       toast.success("Activity created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -45,7 +46,7 @@ export function useCreateCcaActivity() {
 
 export function useCcaIndicators(activityId?: string) {
   return useQuery({
-    queryKey: ["cca-indicators", { activityId }],
+    queryKey: qk("cca-indicators", { activityId }),
     queryFn: async () => {
       const { data } = await apiClient.get<CcaIndicator[]>("/cca-indicators", {
         params: { activity_id: activityId },
@@ -65,7 +66,7 @@ export function useCreateCcaIndicator() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cca-indicators"] })
+      queryClient.invalidateQueries({ queryKey: qk("cca-indicators") })
       toast.success("Indicator created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -81,7 +82,7 @@ export function useGradeCcaStudents() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cca-report-card"] })
+      queryClient.invalidateQueries({ queryKey: qk("cca-report-card") })
       toast.success("Grades saved")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -90,7 +91,7 @@ export function useGradeCcaStudents() {
 
 export function useCcaReportCard(studentId?: string, academicYearId?: string) {
   return useQuery({
-    queryKey: ["cca-report-card", { studentId, academicYearId }],
+    queryKey: qk("cca-report-card", { studentId, academicYearId }),
     queryFn: async () => {
       const { data } = await apiClient.get<CcaReportCard>(
         `/students/${studentId}/cca-report-card`,

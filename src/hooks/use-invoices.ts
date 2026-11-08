@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Invoice, InvoiceCreateInput, Payment, PaymentCreateInput } from "@/types/fees"
 
@@ -13,7 +14,7 @@ export function useInvoices(params?: {
   status?: string
 }) {
   return useQuery({
-    queryKey: ["invoices", params],
+    queryKey: qk("invoices", params),
     queryFn: async () => {
       const { data } = await apiClient.get<Invoice[]>("/invoices", {
         params: {
@@ -36,7 +37,7 @@ export function useCreateInvoice() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      queryClient.invalidateQueries({ queryKey: qk("invoices") })
       toast.success("Invoice created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -45,7 +46,7 @@ export function useCreateInvoice() {
 
 export function usePayments(invoiceId: string | undefined) {
   return useQuery({
-    queryKey: ["payments", invoiceId],
+    queryKey: qk("payments", invoiceId),
     queryFn: async () => {
       const { data } = await apiClient.get<Payment[]>(`/invoices/${invoiceId}/payments`)
       return data
@@ -69,8 +70,8 @@ export function useRecordPayment() {
       return data
     },
     onSuccess: (_payment, { invoiceId }) => {
-      queryClient.invalidateQueries({ queryKey: ["payments", invoiceId] })
-      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      queryClient.invalidateQueries({ queryKey: qk("payments", invoiceId) })
+      queryClient.invalidateQueries({ queryKey: qk("invoices") })
       toast.success("Payment recorded")
     },
     onError: (error) => toast.error(errorMessage(error)),

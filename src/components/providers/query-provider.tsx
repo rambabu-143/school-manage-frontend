@@ -2,17 +2,14 @@
 
 import * as React from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { attachIdentityGuard } from "@/lib/identity-lifecycle"
+import { makeQueryClient } from "@/lib/query-policy"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 30 * 1000,
-        retry: 1,
-      },
-    },
-  })
+function makeClient() {
+  const client = makeQueryClient()
+  attachIdentityGuard(client)
+  return client
 }
 
 // One client per browser tab (module-level singleton), a fresh one per
@@ -20,8 +17,8 @@ function makeQueryClient() {
 let browserQueryClient: QueryClient | undefined
 
 function getQueryClient() {
-  if (typeof window === "undefined") return makeQueryClient()
-  if (!browserQueryClient) browserQueryClient = makeQueryClient()
+  if (typeof window === "undefined") return makeClient()
+  if (!browserQueryClient) browserQueryClient = makeClient()
   return browserQueryClient
 }
 

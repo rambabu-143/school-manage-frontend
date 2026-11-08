@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { ModuleKey, ModuleSetting } from "@/types/moduleaccess"
 
 export function useModuleSettings() {
   return useQuery({
-    queryKey: ["module-settings"],
+    queryKey: qk("module-settings"),
     queryFn: async () => {
       const { data } = await apiClient.get<ModuleSetting[]>("/module-settings")
       return data
@@ -28,7 +29,7 @@ export function useSetModuleEnabled() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["module-settings"] })
+      queryClient.invalidateQueries({ queryKey: qk("module-settings") })
     },
     onError: (error) => toast.error(errorMessage(error)),
   })

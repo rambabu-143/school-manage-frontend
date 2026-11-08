@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { TimetableEntry, TimetableEntryCreateInput } from "@/types/timetable"
 
 export function useTimetableEntries(params?: { sectionId?: string; staffId?: string }) {
   return useQuery({
-    queryKey: ["timetable-entries", params],
+    queryKey: qk("timetable-entries", params),
     queryFn: async () => {
       const { data } = await apiClient.get<TimetableEntry[]>("/timetable", {
         params: { section_id: params?.sectionId, staff_id: params?.staffId },
@@ -29,7 +30,7 @@ export function useCreateTimetableEntry() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["timetable-entries"] })
+      queryClient.invalidateQueries({ queryKey: qk("timetable-entries") })
       toast.success("Class scheduled")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -44,7 +45,7 @@ export function useDeleteTimetableEntry() {
       await apiClient.delete(`/timetable/${entryId}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["timetable-entries"] })
+      queryClient.invalidateQueries({ queryKey: qk("timetable-entries") })
       toast.success("Class removed")
     },
     onError: (error) => toast.error(errorMessage(error)),

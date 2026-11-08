@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   SelfNomination,
@@ -14,7 +15,7 @@ import type {
 
 export function useSelfNominations(studentId?: string) {
   return useQuery({
-    queryKey: ["self-nominations", { studentId }],
+    queryKey: qk("self-nominations", { studentId }),
     queryFn: async () => {
       const { data } = await apiClient.get<SelfNomination[]>("/self-nominations", {
         params: studentId ? { student_id: studentId } : undefined,
@@ -33,7 +34,7 @@ export function useCreateSelfNomination() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["self-nominations"] })
+      queryClient.invalidateQueries({ queryKey: qk("self-nominations") })
       toast.success("Nomination created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -42,7 +43,7 @@ export function useCreateSelfNomination() {
 
 export function useNominationReviews(nominationId: string | undefined) {
   return useQuery({
-    queryKey: ["nomination-reviews", nominationId],
+    queryKey: qk("nomination-reviews", nominationId),
     queryFn: async () => {
       const { data } = await apiClient.get<SelfNominationReview[]>(
         `/self-nominations/${nominationId}/reviews`
@@ -65,7 +66,7 @@ export function useAddNominationReview(nominationId: string) {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["nomination-reviews", nominationId] })
+      queryClient.invalidateQueries({ queryKey: qk("nomination-reviews", nominationId) })
       toast.success("Review submitted")
     },
     onError: (error) => toast.error(errorMessage(error)),

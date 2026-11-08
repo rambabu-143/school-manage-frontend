@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Alumni, AlumniCreateInput, AlumniUpdateInput } from "@/types/alumni"
 
 export function useAlumni(graduationYear?: number) {
   return useQuery({
-    queryKey: ["alumni", { graduationYear }],
+    queryKey: qk("alumni", { graduationYear }),
     queryFn: async () => {
       const { data } = await apiClient.get<Alumni[]>("/alumni", {
         params: graduationYear ? { graduation_year: graduationYear } : undefined,
@@ -28,8 +29,8 @@ export function useCreateAlumni() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["alumni"] })
-      queryClient.invalidateQueries({ queryKey: ["students"] })
+      queryClient.invalidateQueries({ queryKey: qk("alumni") })
+      queryClient.invalidateQueries({ queryKey: qk("students") })
       toast.success("Alumni record created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -45,7 +46,7 @@ export function useUpdateAlumni() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["alumni"] })
+      queryClient.invalidateQueries({ queryKey: qk("alumni") })
       toast.success("Alumni record updated")
     },
     onError: (error) => toast.error(errorMessage(error)),

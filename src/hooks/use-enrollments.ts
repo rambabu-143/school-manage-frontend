@@ -4,12 +4,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { invalidateWithDependents } from "@/lib/invalidation"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Enrollment } from "@/types/academics"
 
 export function useEnrollments(sectionId: string | undefined) {
   return useQuery({
-    queryKey: ["enrollments", { sectionId }],
+    queryKey: qk("enrollments", { sectionId }),
     queryFn: async () => {
       const { data } = await apiClient.get<Enrollment[]>("/enrollments", {
         params: { section_id: sectionId },
@@ -29,7 +31,7 @@ export function useEnrollStudent() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["enrollments"] })
+      invalidateWithDependents(queryClient, "enrollments")
       toast.success("Student enrolled")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -44,7 +46,7 @@ export function useWithdrawEnrollment() {
       await apiClient.delete(`/enrollments/${enrollmentId}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["enrollments"] })
+      invalidateWithDependents(queryClient, "enrollments")
       toast.success("Enrollment withdrawn")
     },
     onError: (error) => toast.error(errorMessage(error)),

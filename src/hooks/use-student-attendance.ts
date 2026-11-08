@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { invalidateWithDependents } from "@/lib/invalidation"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   StudentAttendanceBulkCreateInput,
@@ -17,7 +19,7 @@ export function useStudentAttendance(params: {
   dateTo?: string
 }) {
   return useQuery({
-    queryKey: ["student-attendance", params],
+    queryKey: qk("student-attendance", params),
     queryFn: async () => {
       const { data } = await apiClient.get<StudentAttendanceRecord[]>("/attendance/students", {
         params: {
@@ -44,8 +46,7 @@ export function useMarkStudentAttendance() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["student-attendance"] })
-      queryClient.invalidateQueries({ queryKey: ["section-attendance-summary"] })
+      invalidateWithDependents(queryClient, "student-attendance")
       toast.success("Attendance saved")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -57,7 +58,7 @@ export function useSectionAttendanceSummary(
   params: { dateFrom?: string; dateTo?: string }
 ) {
   return useQuery({
-    queryKey: ["section-attendance-summary", sectionId, params],
+    queryKey: qk("section-attendance-summary", sectionId, params),
     queryFn: async () => {
       const { data } = await apiClient.get<StudentAttendanceSummary[]>(
         `/sections/${sectionId}/attendance-summary`,

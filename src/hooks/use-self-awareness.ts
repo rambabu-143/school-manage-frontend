@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { SelfAwarenessForm, SelfAwarenessFormInput } from "@/types/selfawareness"
 
 export function useSelfAwarenessForms() {
   return useQuery({
-    queryKey: ["self-awareness-forms"],
+    queryKey: qk("self-awareness-forms"),
     queryFn: async () => {
       const { data } = await apiClient.get<SelfAwarenessForm[]>("/self-awareness-forms")
       return data
@@ -19,7 +20,7 @@ export function useSelfAwarenessForms() {
 
 export function useSelfAwarenessForm(studentId: string | undefined) {
   return useQuery({
-    queryKey: ["self-awareness-forms", studentId],
+    queryKey: qk("self-awareness-forms", studentId),
     queryFn: async () => {
       const { data } = await apiClient.get<SelfAwarenessForm | null>(
         `/self-awareness-forms/${studentId}`
@@ -42,7 +43,7 @@ export function useUpsertSelfAwarenessForm(studentId: string) {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["self-awareness-forms"] })
+      queryClient.invalidateQueries({ queryKey: qk("self-awareness-forms") })
       toast.success("Form saved")
     },
     onError: (error) => toast.error(errorMessage(error)),

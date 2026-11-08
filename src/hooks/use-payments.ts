@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   PaymentGatewayConfig,
@@ -16,7 +17,7 @@ import type {
 
 export function usePaymentGatewayConfig() {
   return useQuery({
-    queryKey: ["payment-gateway-config"],
+    queryKey: qk("payment-gateway-config"),
     queryFn: async () => {
       try {
         const { data } = await apiClient.get<PaymentGatewayConfig>("/payment-gateway-config")
@@ -45,7 +46,7 @@ export function useSetPaymentGatewayConfig() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payment-gateway-config"] })
+      queryClient.invalidateQueries({ queryKey: qk("payment-gateway-config") })
       toast.success("Payment gateway settings saved")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -74,7 +75,7 @@ export function useVerifyPaymentOrder() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["portal", "invoices"] })
+      queryClient.invalidateQueries({ queryKey: qk("portal", "invoices") })
       toast.success("Payment successful")
     },
     onError: (error) => toast.error(errorMessage(error)),
