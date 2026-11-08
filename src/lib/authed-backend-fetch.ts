@@ -5,6 +5,7 @@ import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
   clearSessionCookies,
+  restoreAdminCookies,
   setSessionCookies,
 } from "@/lib/session-cookies"
 
@@ -28,8 +29,15 @@ export async function authedBackendFetch(
   path: string,
   init?: RequestInit
 ): Promise<Response> {
-  const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE)?.value
-  const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value
+  let accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE)?.value
+  let refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value
+
+  // An expired 15-minute impersonation cookie leaves no live session but a
+  // parked admin pair: put the admin back instead of logging them out.
+  if (!accessToken && !refreshToken && restoreAdminCookies(cookieStore)) {
+    accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE)?.value
+    refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value
+  }
 
   if (!accessToken && !refreshToken) {
     throw new SessionExpiredError()
@@ -41,6 +49,10 @@ export async function authedBackendFetch(
   }
 
   if (!refreshToken) {
+    // Impersonation tokens have no refresh token; fall back to the admin.
+    if (restoreAdminCookies(cookieStore)) {
+      return authedBackendFetch(cookieStore, path, init)
+    }
     clearSessionCookies(cookieStore)
     throw new SessionExpiredError()
   }
