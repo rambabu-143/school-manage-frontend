@@ -2,42 +2,59 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 import { authedBackendFetch, SessionExpiredError } from "@/lib/authed-backend-fetch"
+import {
+  buildResponseHeaders,
+  buildUpstreamHeaders,
+  isSameOriginRequest,
+  readBodyLimited,
+  sanitizeErrorBody,
+  validateProxyPath,
+} from "@/lib/bff-guards"
 
 type RouteContext = { params: Promise<{ path: string[] }> }
 
+const NO_STORE = { "Cache-Control": "private, no-store" }
+const fail = (error: string, status: number) =>
+  NextResponse.json({ error }, { status, headers: NO_STORE })
+
 async function handle(request: Request, context: RouteContext): Promise<NextResponse> {
+  if (!isSameOriginRequest(request.method, request.headers)) return fail("Cross-origin request blocked", 403)
+
   const { path } = await context.params
-  const search = new URL(request.url).search
-  const targetPath = `/${path.join("/")}${search}`
+  const safePath = validateProxyPath(path)
+  if (!safePath) return fail("Invalid path", 400)
+  const targetPath = `${safePath}${new URL(request.url).search}`
 
   const hasBody = !["GET", "HEAD"].includes(request.method)
-  const contentType = request.headers.get("content-type") ?? undefined
-  // multipart bodies (file uploads) carry a boundary in their Content-Type
-  // that must be forwarded verbatim - re-encoding as JSON text would corrupt
-  // the file bytes and drop the boundary.
-  const isMultipart = contentType?.startsWith("multipart/form-data") ?? false
+  let body: ArrayBuffer | undefined
+  if (hasBody) {
+    const read = await readBodyLimited(request)
+    if (!read) return fail("Request body too large", 413)
+    body = read
+  }
   const cookieStore = await cookies()
 
   try {
     const response = await authedBackendFetch(cookieStore, targetPath, {
       method: request.method,
-      headers: hasBody ? { "Content-Type": isMultipart ? contentType! : "application/json" } : undefined,
-      body: hasBody ? (isMultipart ? await request.arrayBuffer() : await request.text()) : undefined,
+      headers: buildUpstreamHeaders(request.headers, hasBody),
+      body,
+      signal: request.signal, // client abort cancels the upstream call
     })
 
-    // arrayBuffer (not text) so binary responses like file downloads pass through intact.
-    const body = await response.arrayBuffer()
-    const headers: Record<string, string> = {
-      "Content-Type": response.headers.get("Content-Type") ?? "application/json",
+    const headers = buildResponseHeaders(response.headers)
+    const generic = sanitizeErrorBody(response.status)
+    if (generic) {
+      await response.body?.cancel()
+      headers.set("content-type", "application/json")
+      return new NextResponse(generic, { status: response.status, headers })
     }
-    const disposition = response.headers.get("Content-Disposition")
-    if (disposition) headers["Content-Disposition"] = disposition
-    return new NextResponse(body.byteLength ? body : null, { status: response.status, headers })
+    // Stream the upstream body through (PDFs, downloads) instead of buffering it.
+    const noBody = response.status === 204 || response.status === 304 || request.method === "HEAD"
+    return new NextResponse(noBody ? null : response.body, { status: response.status, headers })
   } catch (error) {
-    if (error instanceof SessionExpiredError) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
-    }
-    return NextResponse.json({ error: "Could not reach the backend" }, { status: 502 })
+    if (error instanceof SessionExpiredError) return fail("Not authenticated", 401)
+    return fail("Could not reach the backend", 502)
   }
 }
 

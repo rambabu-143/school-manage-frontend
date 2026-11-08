@@ -9,6 +9,7 @@ import { GraduationCap, Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { safeNext } from "@/lib/safe-redirect"
 import { useLogin } from "@/hooks/use-session"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -46,7 +47,7 @@ function LoginForm() {
 
   function completeLogin() {
     const next = searchParams.get("next")
-    router.replace(next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard")
+    router.replace(safeNext(next))
     router.refresh()
   }
 
