@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Topbar } from "@/components/layout/topbar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ImpersonationBanner } from "@/components/auth/impersonation-banner"
+import { StatusScreen } from "@/components/auth/status-screen"
+import { canAccessPath } from "@/lib/role-guard"
 import { useSession } from "@/hooks/use-session"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -45,7 +48,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden">
+      <ImpersonationBanner user={user} />
+      <div className="flex min-h-0 flex-1 overflow-hidden">
       <Sidebar role={user.role} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar user={user} />
@@ -58,10 +63,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
             >
-              {children}
+              {canAccessPath(user.role, pathname) ? children : (
+                <StatusScreen title="You don&apos;t have access to this page">Your role doesn&apos;t include this area. Ask a school admin if you think that&apos;s a mistake.</StatusScreen>
+              )}
             </motion.div>
           </AnimatePresence>
         </main>
+      </div>
       </div>
     </div>
   )

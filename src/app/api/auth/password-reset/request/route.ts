@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server"
 
+import { readJson, rejectCrossSite } from "@/lib/bff"
 import { requestPasswordReset } from "@/lib/backend"
 
 export async function POST(request: Request) {
-  const { email } = (await request.json()) as { email?: string }
+  const blocked = rejectCrossSite(request, { json: true })
+  if (blocked) return blocked
+  const { email } = (await readJson(request)) as { email?: string }
 
   if (!email) {
     return NextResponse.json({ error: "Email is required" }, { status: 400 })

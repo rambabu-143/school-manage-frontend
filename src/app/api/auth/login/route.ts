@@ -1,10 +1,13 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
+import { rejectCrossSite } from "@/lib/bff"
 import { BackendError, getCurrentUser, loginRequest, verifyTwoFactorRequest } from "@/lib/backend"
 import { setSessionCookies } from "@/lib/session-cookies"
 
 export async function POST(request: Request) {
+  const blocked = rejectCrossSite(request, { json: true })
+  if (blocked) return blocked
   const input = await request.json().catch(() => null)
   const isVerification = typeof input?.two_factor_token === "string" &&
     input.two_factor_token.length > 0 && typeof input?.code === "string" &&
