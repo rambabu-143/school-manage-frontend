@@ -221,3 +221,35 @@ test("role guard is default-deny for unknown paths", async () => {
   assert.equal(guard.canAccessPath("teacher", "/mystery"), false)
   assert.equal(guard.canAccessPath("school_admin", "/mystery"), true)
 })
+
+async function realBff() {
+  return loadTs("src/lib/bff.ts", {
+    "next/headers": { cookies: async () => ({}) }, "next/server": nextServer,
+    "@/lib/authed-backend-fetch": { SessionExpiredError: class {}, authedBackendFetch: async () => null },
+    "@/lib/session-cookies": { setSessionCookies() {} },
+  })
+}
+
+test("CSRF guard honours x-forwarded-host/proto behind a proxy", async () => {
+  const bff = await realBff()
+  const req = (h) => new Request("http://internal:3000/x", { method: "POST", headers: h })
+  assert.equal(bff.rejectCrossSite(req({ origin: "https://school.test", host: "internal:3000", "x-forwarded-host": "school.test, other", "x-forwarded-proto": "https" })), null)
+  assert.equal(bff.rejectCrossSite(req({ origin: "http://school.test", "x-forwarded-host": "school.test", "x-forwarded-proto": "https" })).status, 403)
+  assert.equal(bff.rejectCrossSite(req({ origin: "https://school.test", host: "internal:3000" })).status, 403)
+})
+
+test("login and password-reset routes reject cross-site and text/plain, and bad JSON is 400", async () => {
+  const bff = await realBff()
+  const backend = { BackendError: class extends Error {}, loginRequest: async () => ({}), verifyTwoFactorRequest: async () => ({}), getCurrentUser: async () => ({}),
+    confirmPasswordReset: async () => {}, requestPasswordReset: async () => {} }
+  const mocks = { "next/headers": { cookies: async () => ({}) }, "next/server": nextServer, "@/lib/bff": bff, "@/lib/backend": backend,
+    "@/lib/session-cookies": { setSessionCookies() {} } }
+  for (const path of ["login", "password-reset/request", "password-reset/confirm"]) {
+    const route = await loadTs(`src/app/api/auth/${path}/route.ts`, mocks)
+    const post = (headers, body) => route.POST(new Request("http://app.test/x", { method: "POST", headers, body }))
+    assert.equal((await post({ "sec-fetch-site": "cross-site", ...JSON_H }, "{}")).status, 403, path)
+    assert.equal((await post({ origin: "http://evil.test", host: "app.test", ...JSON_H }, "{}")).status, 403, path)
+    assert.equal((await post({ "content-type": "text/plain" }, "{}")).status, 415, path)
+    assert.equal((await post(JSON_H, "not json")).status, 400, path)
+  }
+})

@@ -64,8 +64,14 @@ export function rejectCrossSite(request: Request, opts: { json?: boolean } = {})
   }
   const origin = request.headers.get("origin")
   if (origin) {
+    // Same host derivation as PR #4's bff-guards: first x-forwarded-host, else host.
+    const host = (request.headers.get("x-forwarded-host")?.split(",")[0] ?? request.headers.get("host") ?? new URL(request.url).host).trim()
+    const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim()
     let ok = false
-    try { ok = new URL(origin).host === (request.headers.get("host") ?? new URL(request.url).host) } catch {}
+    try {
+      const o = new URL(origin)
+      ok = o.host === host && (!proto || o.protocol === `${proto}:`)
+    } catch {}
     if (!ok) return NextResponse.json({ error: "Request blocked." }, { status: 403 })
   }
   if (opts.json && !(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {

@@ -15,6 +15,7 @@ async function loadRoute({ loginResult, verifyError } = {}) {
   const mocks = {
     "next/headers": { cookies: async () => { calls.cookies++; return {} } },
     "next/server": { NextResponse: { json: (body, init) => Response.json(body, init) } },
+    "@/lib/bff": { rejectCrossSite: () => null },
     "@/lib/session-cookies": { setSessionCookies: (_, tokens) => calls.sessions.push(tokens) },
     "@/lib/backend": {
       BackendError,
