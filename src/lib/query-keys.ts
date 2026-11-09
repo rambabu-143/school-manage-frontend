@@ -102,6 +102,16 @@ export type QueryDomain =
   | "transport-slabs"
   | "transport-stops"
   | "vendors"
+  | "app-settings"
+  | "app-uploads"
+  | "app-versions"
+  | "ar-settings"
+  | "board-results"
+  | "calendar-settings"
+  | "module-access"
+  | "transport-renewal"
+  | "birthday-wishes"
+  | "my-staff"
 
 export type QueryScope = {
   userId: string
