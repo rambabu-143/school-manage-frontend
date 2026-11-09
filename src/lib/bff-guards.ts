@@ -1,6 +1,11 @@
 // Pure request/response guards for the /api/backend BFF proxy (unit-tested).
 
 export const MAX_BODY_BYTES = 25 * 1024 * 1024
+/** Largest JSON response buffered for token stripping; bigger ones are refused (502). */
+export const MAX_JSON_RESPONSE_BYTES = 5 * 1024 * 1024
+
+/** Plain JSON only; NDJSON / event-stream keep streaming. */
+export const isPlainJson = (contentType: string | null) => /^application\/([\w.+-]+\+)?json\s*(;|$)/i.test(contentType ?? "")
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"])
 
 /** CSRF: mutating requests must come from our own origin (Origin, else Sec-Fetch-Site). */
@@ -50,7 +55,7 @@ export function stripTokenKeys(text: string): { text: string; stripped: boolean 
   const walk = (v: unknown): unknown => {
     if (Array.isArray(v)) return v.map(walk)
     if (v && typeof v === "object") {
-      const out: Record<string, unknown> = {}
+      const out: Record<string, unknown> = Object.create(null) // null proto: a "__proto__" key stays a plain property
       for (const [k, val] of Object.entries(v)) {
         if (k === "access_token" || k === "refresh_token") found = true
         else out[k] = walk(val)

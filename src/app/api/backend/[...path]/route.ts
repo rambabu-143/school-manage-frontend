@@ -5,7 +5,9 @@ import { authedBackendFetch, SessionExpiredError } from "@/lib/authed-backend-fe
 import {
   buildResponseHeaders,
   buildUpstreamHeaders,
+  isPlainJson,
   isSameOriginRequest,
+  MAX_JSON_RESPONSE_BYTES,
   readBodyLimited,
   sanitizeErrorBody,
   stripTokenKeys,
@@ -50,9 +52,15 @@ async function handle(request: Request, context: RouteContext): Promise<NextResp
       headers.set("content-type", "application/json")
       return new NextResponse(generic, { status: response.status, headers })
     }
-    const isJson = (response.headers.get("content-type") ?? "").includes("json")
+    const isJson = isPlainJson(response.headers.get("content-type"))
     if (isJson && response.status !== 204 && response.status !== 304 && request.method !== "HEAD") {
-      const { text, stripped } = stripTokenKeys(await response.text())
+      if (Number(response.headers.get("content-length") ?? 0) > MAX_JSON_RESPONSE_BYTES) {
+        await response.body?.cancel()
+        return fail("Response too large", 502)
+      }
+      const raw = await response.text()
+      if (raw.length > MAX_JSON_RESPONSE_BYTES) return fail("Response too large", 502)
+      const { text, stripped } = stripTokenKeys(raw)
       if (stripped) console.warn(`[bff] stripped token fields from proxied response: ${request.method} ${safePath}`)
       headers.delete("content-length")
       return new NextResponse(text, { status: response.status, headers })

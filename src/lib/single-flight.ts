@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto"
+
 /**
  * Share one promise per key. Successful results are kept for ttlMs because
  * backend refresh tokens are single-use: a request still carrying the old
@@ -25,3 +27,6 @@ export function singleFlight<T>(key: string, fn: () => Promise<T>, ttlMs = 0): P
 }
 
 export const _resetSingleFlight = () => inflight.clear()
+
+export const forgetSingleFlight = (key: string) => inflight.delete(key)
+export const refreshTokenKey = (token: string) => createHash("sha256").update(token).digest("hex")
