@@ -2,13 +2,15 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 import { BackendError, backendFetch, getCurrentUser } from "@/lib/backend"
-import { readJson } from "@/lib/bff"
+import { rateLimited, readJson, rejectCrossSite } from "@/lib/bff"
 import { decodeClaims } from "@/lib/jwt-claims"
 import { setSessionCookies } from "@/lib/session-cookies"
 
 const NONCE_COOKIE = "g_nonce"
 
 export async function POST(request: Request) {
+  const blocked = rejectCrossSite(request, { json: true })
+  if (blocked) return blocked
   const { id_token } = await readJson(request)
   const cookieStore = await cookies()
   const expected = cookieStore.get(NONCE_COOKIE)?.value
@@ -26,6 +28,7 @@ export async function POST(request: Request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_token }),
     })
+    if (response.status === 429) return rateLimited(response, "Too many attempts. Please try again later.")
     if (!response.ok) return NextResponse.json({ error: "We couldn't find an account for that Google user." }, { status: 401 })
     const result = await response.json()
     if ("requires_2fa" in result) return NextResponse.json(result)
