@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   IdCardData,
@@ -14,7 +15,7 @@ import type {
 
 export function useStudentIdCard(studentId: string | undefined) {
   return useQuery({
-    queryKey: ["id-card", studentId],
+    queryKey: qk("id-card", studentId),
     queryFn: async () => {
       const { data } = await apiClient.get<IdCardData>(`/students/${studentId}/id-card`)
       return data
@@ -25,7 +26,7 @@ export function useStudentIdCard(studentId: string | undefined) {
 
 export function useMyChildIdCard(studentId: string | undefined) {
   return useQuery({
-    queryKey: ["portal", "id-card", studentId],
+    queryKey: qk("portal", "id-card", studentId),
     queryFn: async () => {
       const { data } = await apiClient.get<IdCardData>(`/me/children/${studentId}/id-card`)
       return data
@@ -46,7 +47,7 @@ export function useRequestIdCardUpdate(studentId: string | undefined) {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["id-card-requests"] })
+      queryClient.invalidateQueries({ queryKey: qk("id-card-requests") })
       toast.success("Request submitted")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -55,7 +56,7 @@ export function useRequestIdCardUpdate(studentId: string | undefined) {
 
 export function useIdCardUpdateRequests(status?: "pending" | "resolved") {
   return useQuery({
-    queryKey: ["id-card-requests", { status }],
+    queryKey: qk("id-card-requests", { status }),
     queryFn: async () => {
       const { data } = await apiClient.get<IdCardUpdateRequest[]>("/id-card-requests", {
         params: status ? { status } : undefined,
@@ -80,8 +81,8 @@ export function useUploadStudentPhoto() {
     },
     onSuccess: (result) => {
       if (result.passed) {
-        queryClient.invalidateQueries({ queryKey: ["students"] })
-        queryClient.invalidateQueries({ queryKey: ["id-card"] })
+        queryClient.invalidateQueries({ queryKey: qk("students") })
+        queryClient.invalidateQueries({ queryKey: qk("id-card") })
         toast.success("Photo accepted")
       } else {
         toast.error(result.reason)
@@ -102,7 +103,7 @@ export function useResolveIdCardUpdateRequest() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["id-card-requests"] })
+      queryClient.invalidateQueries({ queryKey: qk("id-card-requests") })
       toast.success("Marked resolved")
     },
     onError: (error) => toast.error(errorMessage(error)),

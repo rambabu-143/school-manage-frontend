@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Requisition, RequisitionCreateInput } from "@/types/inventory"
 
 export function useRequisitions(params?: { branchId?: string; status?: string }) {
   return useQuery({
-    queryKey: ["requisitions", params],
+    queryKey: qk("requisitions", params),
     queryFn: async () => {
       const { data } = await apiClient.get<Requisition[]>("/requisitions", {
         params: { branch_id: params?.branchId, status: params?.status },
@@ -28,7 +29,7 @@ export function useCreateRequisition() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["requisitions"] })
+      queryClient.invalidateQueries({ queryKey: qk("requisitions") })
       toast.success("Requisition submitted")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -44,7 +45,7 @@ function useRequisitionAction(action: "approve" | "reject" | "fulfill", successM
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["requisitions"] })
+      queryClient.invalidateQueries({ queryKey: qk("requisitions") })
       toast.success(successMessage)
     },
     onError: (error) => toast.error(errorMessage(error)),

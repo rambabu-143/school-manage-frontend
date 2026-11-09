@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { PromotionResult, Section, SectionCreateInput } from "@/types/academics"
 
 export function useSections(params?: { gradeId?: string; academicYearId?: string }) {
   return useQuery({
-    queryKey: ["sections", params],
+    queryKey: qk("sections", params),
     queryFn: async () => {
       const { data } = await apiClient.get<Section[]>("/sections", {
         params: {
@@ -31,7 +32,7 @@ export function useCreateSection() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sections"] })
+      queryClient.invalidateQueries({ queryKey: qk("sections") })
       toast.success("Section created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -58,7 +59,7 @@ export function usePromoteStudents() {
       return data
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["enrollments"] })
+      queryClient.invalidateQueries({ queryKey: qk("enrollments") })
       if (result.skipped.length > 0) {
         toast.warning(
           `Promoted ${result.promoted.length}, skipped ${result.skipped.length}`,

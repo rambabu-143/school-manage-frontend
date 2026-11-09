@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { invalidateWithDependents } from "@/lib/invalidation"
+import { qk } from "@/lib/query-keys"
 import { api } from "@/lib/typed-api"
 import { errorMessage } from "@/lib/error-message"
 import type {
@@ -21,7 +23,7 @@ export function useStudents(params?: {
   search?: string
 }) {
   return useQuery({
-    queryKey: ["students", params],
+    queryKey: qk("students", params),
     queryFn: async () => {
       // Query params are checked against the contract. The cast keeps the legacy
       // Student type (guardians required) until it is replaced by the schema type.
@@ -48,7 +50,7 @@ export function useCreateStudent() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["students"] })
+      invalidateWithDependents(queryClient, "students")
       toast.success("Student created")
     },
     onError: (error) => {
@@ -68,7 +70,7 @@ export function useUpdateStudent() {
       })) as Student
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["students"] })
+      invalidateWithDependents(queryClient, "students")
       toast.success("Student updated")
     },
     onError: (error) => {
@@ -85,7 +87,7 @@ export function useDeleteStudent() {
       await apiClient.delete(`/students/${id}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["students"] })
+      invalidateWithDependents(queryClient, "students")
       toast.success("Student deleted")
     },
     onError: (error) => {
@@ -109,7 +111,7 @@ export function useAddGuardian() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["students"] })
+      invalidateWithDependents(queryClient, "students")
       toast.success("Guardian added")
     },
     onError: (error) => {

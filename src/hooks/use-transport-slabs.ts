@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { TransportSlab, TransportSlabCreateInput } from "@/types/transport"
 
 export function useTransportSlabs(branchId?: string) {
   return useQuery({
-    queryKey: ["transport-slabs", { branchId }],
+    queryKey: qk("transport-slabs", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<TransportSlab[]>("/transport-slabs", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateTransportSlab() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transport-slabs"] })
+      queryClient.invalidateQueries({ queryKey: qk("transport-slabs") })
       toast.success("Fare slab created")
     },
     onError: (error) => toast.error(errorMessage(error)),

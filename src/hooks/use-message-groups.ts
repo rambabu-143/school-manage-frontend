@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { MessageGroup, MessageGroupCreateInput } from "@/types/communications"
 
 export function useMessageGroups() {
   return useQuery({
-    queryKey: ["message-groups"],
+    queryKey: qk("message-groups"),
     queryFn: async () => {
       const { data } = await apiClient.get<MessageGroup[]>("/message-groups")
       return data
@@ -26,7 +27,7 @@ export function useCreateMessageGroup() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["message-groups"] })
+      queryClient.invalidateQueries({ queryKey: qk("message-groups") })
       toast.success("Group created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -41,7 +42,7 @@ export function useDeleteMessageGroup() {
       await apiClient.delete(`/message-groups/${id}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["message-groups"] })
+      queryClient.invalidateQueries({ queryKey: qk("message-groups") })
       toast.success("Group deleted")
     },
     onError: (error) => toast.error(errorMessage(error)),

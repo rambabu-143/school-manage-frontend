@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { StreamSelection, StreamSelectionCreateInput } from "@/types/streams"
 
 export function useStreamSelections(params: { studentId?: string; academicYearId?: string }) {
   return useQuery({
-    queryKey: ["stream-selections", params],
+    queryKey: qk("stream-selections", params),
     queryFn: async () => {
       const { data } = await apiClient.get<StreamSelection[]>("/stream-selections", {
         params: { student_id: params.studentId, academic_year_id: params.academicYearId },
@@ -29,7 +30,7 @@ export function useCreateStreamSelection() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["stream-selections"] })
+      queryClient.invalidateQueries({ queryKey: qk("stream-selections") })
       toast.success("Stream selection created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -47,7 +48,7 @@ export function useUpdateStreamSelection() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["stream-selections"] })
+      queryClient.invalidateQueries({ queryKey: qk("stream-selections") })
       toast.success("Stream selection updated")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -65,7 +66,7 @@ export function useSetStreamSelectionLocked() {
       return data
     },
     onSuccess: (selection) => {
-      queryClient.invalidateQueries({ queryKey: ["stream-selections"] })
+      queryClient.invalidateQueries({ queryKey: qk("stream-selections") })
       toast.success(selection.is_locked ? "Selection locked" : "Selection unlocked")
     },
     onError: (error) => toast.error(errorMessage(error)),

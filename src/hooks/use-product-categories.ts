@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { ProductCategory, ProductCategoryCreateInput } from "@/types/inventory"
 
 export function useProductCategories(branchId?: string) {
   return useQuery({
-    queryKey: ["product-categories", { branchId }],
+    queryKey: qk("product-categories", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<ProductCategory[]>("/product-categories", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateProductCategory() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-categories"] })
+      queryClient.invalidateQueries({ queryKey: qk("product-categories") })
       toast.success("Category created")
     },
     onError: (error) => toast.error(errorMessage(error)),

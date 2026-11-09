@@ -1,22 +1,36 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient, type QueryFunctionContext } from "@tanstack/react-query"
 
+import { nextSessionContext } from "@/lib/identity-lifecycle"
+import { SESSION_CONTEXT_KEY, SESSION_KEY } from "@/lib/query-keys"
 import type { LoginInput, LoginResult, TwoFactorInput, User } from "@/types/auth"
 
-async function fetchSession(): Promise<User | null> {
+type SessionContext = { branch_id: string | null; academic_year_id: string | null }
+
+async function fetchSession({ client }: QueryFunctionContext): Promise<User | null> {
   const response = await fetch("/api/auth/me")
   if (response.status === 401) return null
   if (!response.ok) throw new Error("Failed to load session")
   const data = (await response.json()) as { user: User }
+  // Active branch / academic year scope the query cache; write them before the
+  // user so the identity guard sees both. A transient failure keeps the previous
+  // context (only a 401 clears it) so the scope does not flap.
+  const prev = client.getQueryData<SessionContext | null>(SESSION_CONTEXT_KEY)
+  try {
+    const res = await fetch("/api/backend/auth/session")
+    const next = nextSessionContext(prev, res.status, res.ok ? ((await res.json()) as SessionContext) : undefined)
+    if (next !== prev) client.setQueryData(SESSION_CONTEXT_KEY, next)
+  } catch {
+    // network error: keep previous
+  }
   return data.user
 }
 
 export function useSession() {
   return useQuery({
-    queryKey: ["session"],
+    queryKey: SESSION_KEY,
     queryFn: fetchSession,
-    staleTime: 5 * 60 * 1000,
     retry: false,
   })
 }
@@ -38,7 +52,7 @@ export function useLogin() {
       return data as LoginResult
     },
     onSuccess: (result) => {
-      if ("user" in result) queryClient.setQueryData(["session"], result.user)
+      if ("user" in result) queryClient.setQueryData(SESSION_KEY, result.user)
     },
   })
 }
@@ -79,9 +93,10 @@ export function useLogout() {
     mutationFn: async () => {
       await fetch("/api/auth/logout", { method: "POST" })
     },
-    onSuccess: () => {
-      queryClient.setQueryData(["session"], null)
+    onSuccess: async () => {
+      await queryClient.cancelQueries()
       queryClient.clear()
+      queryClient.setQueryData(SESSION_KEY, null)
     },
   })
 }

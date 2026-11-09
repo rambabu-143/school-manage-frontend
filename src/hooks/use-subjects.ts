@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Subject, SubjectCreateInput } from "@/types/gradebook"
 
 export function useSubjects(branchId?: string) {
   return useQuery({
-    queryKey: ["subjects", { branchId }],
+    queryKey: qk("subjects", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<Subject[]>("/subjects", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateSubject() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subjects"] })
+      queryClient.invalidateQueries({ queryKey: qk("subjects") })
       toast.success("Subject created")
     },
     onError: (error) => toast.error(errorMessage(error)),

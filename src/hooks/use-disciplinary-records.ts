@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { DisciplinaryRecord, DisciplinaryRecordCreateInput } from "@/types/disciplinary"
 
 export function useDisciplinaryRecords(params?: { studentId?: string; status?: string }) {
   return useQuery({
-    queryKey: ["disciplinary-records", params],
+    queryKey: qk("disciplinary-records", params),
     queryFn: async () => {
       const { data } = await apiClient.get<DisciplinaryRecord[]>("/disciplinary-records", {
         params: { student_id: params?.studentId, status: params?.status },
@@ -28,7 +29,7 @@ export function useCreateDisciplinaryRecord() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["disciplinary-records"] })
+      queryClient.invalidateQueries({ queryKey: qk("disciplinary-records") })
       toast.success("Disciplinary record created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -47,7 +48,7 @@ export function useResolveDisciplinaryRecord() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["disciplinary-records"] })
+      queryClient.invalidateQueries({ queryKey: qk("disciplinary-records") })
       toast.success("Record resolved")
     },
     onError: (error) => toast.error(errorMessage(error)),

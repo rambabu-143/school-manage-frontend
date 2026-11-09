@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   Event,
@@ -17,7 +18,7 @@ import type {
 
 export function useEvents() {
   return useQuery({
-    queryKey: ["events"],
+    queryKey: qk("events"),
     queryFn: async () => {
       const { data } = await apiClient.get<Event[]>("/events")
       return data
@@ -34,7 +35,7 @@ export function useCreateEvent() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["events"] })
+      queryClient.invalidateQueries({ queryKey: qk("events") })
       toast.success("Event created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -43,7 +44,7 @@ export function useCreateEvent() {
 
 export function useEventParticipants(eventId: string | undefined) {
   return useQuery({
-    queryKey: ["event-participants", eventId],
+    queryKey: qk("event-participants", eventId),
     queryFn: async () => {
       const { data } = await apiClient.get<EventParticipant[]>(
         `/events/${eventId}/participants`
@@ -66,7 +67,7 @@ export function useAddEventParticipant(eventId: string) {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["event-participants", eventId] })
+      queryClient.invalidateQueries({ queryKey: qk("event-participants", eventId) })
       toast.success("Participant registered")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -75,7 +76,7 @@ export function useAddEventParticipant(eventId: string) {
 
 export function useEventScores(eventId: string | undefined) {
   return useQuery({
-    queryKey: ["event-scores", eventId],
+    queryKey: qk("event-scores", eventId),
     queryFn: async () => {
       const { data } = await apiClient.get<EventScore[]>(`/events/${eventId}/scores`)
       return data
@@ -93,7 +94,7 @@ export function useAddEventScore(eventId: string) {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["event-scores", eventId] })
+      queryClient.invalidateQueries({ queryKey: qk("event-scores", eventId) })
       toast.success("Score submitted")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -102,7 +103,7 @@ export function useAddEventScore(eventId: string) {
 
 export function useEventPhotos(eventId: string | undefined) {
   return useQuery({
-    queryKey: ["event-photos", eventId],
+    queryKey: qk("event-photos", eventId),
     queryFn: async () => {
       const { data } = await apiClient.get<EventPhoto[]>(`/events/${eventId}/photos`)
       return data
@@ -120,7 +121,7 @@ export function useAddEventPhoto(eventId: string) {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["event-photos", eventId] })
+      queryClient.invalidateQueries({ queryKey: qk("event-photos", eventId) })
       toast.success("Photo added")
     },
     onError: (error) => toast.error(errorMessage(error)),

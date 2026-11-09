@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { LeaveApplication, LeaveApplicationCreateInput } from "@/types/hr"
 
 export function useLeaveApplications(params?: { staffId?: string; status?: string }) {
   return useQuery({
-    queryKey: ["leave-applications", params],
+    queryKey: qk("leave-applications", params),
     queryFn: async () => {
       const { data } = await apiClient.get<LeaveApplication[]>("/leave-applications", {
         params: { staff_id: params?.staffId, status: params?.status },
@@ -28,7 +29,7 @@ export function useCreateLeaveApplication() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leave-applications"] })
+      queryClient.invalidateQueries({ queryKey: qk("leave-applications") })
       toast.success("Leave application submitted")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -47,7 +48,7 @@ export function useApproveLeaveApplication() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leave-applications"] })
+      queryClient.invalidateQueries({ queryKey: qk("leave-applications") })
       toast.success("Leave approved")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -66,7 +67,7 @@ export function useRejectLeaveApplication() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leave-applications"] })
+      queryClient.invalidateQueries({ queryKey: qk("leave-applications") })
       toast.success("Leave rejected")
     },
     onError: (error) => toast.error(errorMessage(error)),

@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Grade, GradeCreateInput } from "@/types/academics"
 
 export function useGrades(branchId?: string) {
   return useQuery({
-    queryKey: ["grades", { branchId }],
+    queryKey: qk("grades", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<Grade[]>("/grades", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateGrade() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["grades"] })
+      queryClient.invalidateQueries({ queryKey: qk("grades") })
       toast.success("Grade created")
     },
     onError: (error) => toast.error(errorMessage(error)),

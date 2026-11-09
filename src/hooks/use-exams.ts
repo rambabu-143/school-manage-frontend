@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Exam, ExamCreateInput } from "@/types/gradebook"
 
 export function useExams(academicYearId?: string) {
   return useQuery({
-    queryKey: ["exams", { academicYearId }],
+    queryKey: qk("exams", { academicYearId }),
     queryFn: async () => {
       const { data } = await apiClient.get<Exam[]>("/exams", {
         params: academicYearId ? { academic_year_id: academicYearId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateExam() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["exams"] })
+      queryClient.invalidateQueries({ queryKey: qk("exams") })
       toast.success("Exam created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -44,7 +45,7 @@ export function useSetExamLocked() {
       return data
     },
     onSuccess: (exam) => {
-      queryClient.invalidateQueries({ queryKey: ["exams"] })
+      queryClient.invalidateQueries({ queryKey: qk("exams") })
       toast.success(exam.is_locked ? "Exam locked" : "Exam unlocked")
     },
     onError: (error) => toast.error(errorMessage(error)),

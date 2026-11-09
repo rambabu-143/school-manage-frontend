@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   SyllabusProgressUpdateInput,
@@ -17,7 +18,7 @@ export function useSyllabusTopics(params?: {
   academicYearId?: string
 }) {
   return useQuery({
-    queryKey: ["syllabus-topics", params],
+    queryKey: qk("syllabus-topics", params),
     queryFn: async () => {
       const { data } = await apiClient.get<SyllabusTopic[]>("/syllabus-topics", {
         params: {
@@ -40,7 +41,7 @@ export function useCreateSyllabusTopic() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["syllabus-topics"] })
+      queryClient.invalidateQueries({ queryKey: qk("syllabus-topics") })
       toast.success("Topic created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -62,7 +63,7 @@ export function useUpdateSyllabusProgress() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["section-syllabus-coverage"] })
+      queryClient.invalidateQueries({ queryKey: qk("section-syllabus-coverage") })
       toast.success("Progress updated")
     },
     onError: (error) => toast.error(errorMessage(error)),

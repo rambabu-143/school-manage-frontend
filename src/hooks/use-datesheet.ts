@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { DatesheetEntry, DatesheetEntryCreateInput } from "@/types/datesheet"
 
 export function useDatesheetEntries(params?: { examId?: string; sectionId?: string }) {
   return useQuery({
-    queryKey: ["datesheet-entries", params],
+    queryKey: qk("datesheet-entries", params),
     queryFn: async () => {
       const { data } = await apiClient.get<DatesheetEntry[]>("/datesheet", {
         params: { exam_id: params?.examId, section_id: params?.sectionId },
@@ -29,7 +30,7 @@ export function useCreateDatesheetEntry() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["datesheet-entries"] })
+      queryClient.invalidateQueries({ queryKey: qk("datesheet-entries") })
       toast.success("Datesheet entry added")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -44,7 +45,7 @@ export function useDeleteDatesheetEntry() {
       await apiClient.delete(`/datesheet/${entryId}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["datesheet-entries"] })
+      queryClient.invalidateQueries({ queryKey: qk("datesheet-entries") })
       toast.success("Datesheet entry removed")
     },
     onError: (error) => toast.error(errorMessage(error)),

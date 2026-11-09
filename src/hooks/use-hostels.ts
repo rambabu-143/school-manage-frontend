@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Hostel, HostelCreateInput, HostelOccupant } from "@/types/hostel"
 
 export function useHostels(branchId?: string) {
   return useQuery({
-    queryKey: ["hostels", { branchId }],
+    queryKey: qk("hostels", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<Hostel[]>("/hostels", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -21,7 +22,7 @@ export function useHostels(branchId?: string) {
 
 export function useHostelOccupants(hostelId: string | undefined) {
   return useQuery({
-    queryKey: ["hostels", hostelId, "occupants"],
+    queryKey: qk("hostels", hostelId, "occupants"),
     queryFn: async () => {
       const { data } = await apiClient.get<HostelOccupant[]>(`/hostels/${hostelId}/occupants`)
       return data
@@ -39,7 +40,7 @@ export function useCreateHostel() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["hostels"] })
+      queryClient.invalidateQueries({ queryKey: qk("hostels") })
       toast.success("Hostel created")
     },
     onError: (error) => toast.error(errorMessage(error)),

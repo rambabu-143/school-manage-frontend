@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Club, ClubCreateInput } from "@/types/clubs"
 
 export function useClubs(branchId?: string) {
   return useQuery({
-    queryKey: ["clubs", { branchId }],
+    queryKey: qk("clubs", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<Club[]>("/clubs", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateClub() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clubs"] })
+      queryClient.invalidateQueries({ queryKey: qk("clubs") })
       toast.success("Club created")
     },
     onError: (error) => toast.error(errorMessage(error)),

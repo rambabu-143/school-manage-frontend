@@ -5,12 +5,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { HouseMembership } from "@/types/houses"
 
 export function useStudentHouse(studentId: string | undefined) {
   return useQuery({
-    queryKey: ["student-house", studentId],
+    queryKey: qk("student-house", studentId),
     queryFn: async () => {
       try {
         const { data } = await apiClient.get<HouseMembership>(`/students/${studentId}/house`)
@@ -35,7 +36,7 @@ export function useAssignStudentHouse() {
       return data
     },
     onSuccess: (_data, { studentId }) => {
-      queryClient.invalidateQueries({ queryKey: ["student-house", studentId] })
+      queryClient.invalidateQueries({ queryKey: qk("student-house", studentId) })
       toast.success("House assigned")
     },
     onError: (error) => toast.error(errorMessage(error)),

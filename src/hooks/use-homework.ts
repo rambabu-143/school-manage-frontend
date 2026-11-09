@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { HomeworkAssignment, HomeworkAssignmentCreateInput } from "@/types/homework"
 
 export function useHomework(sectionId?: string, subjectId?: string) {
   return useQuery({
-    queryKey: ["homework", { sectionId, subjectId }],
+    queryKey: qk("homework", { sectionId, subjectId }),
     queryFn: async () => {
       const { data } = await apiClient.get<HomeworkAssignment[]>("/homework", {
         params: {
@@ -31,7 +32,7 @@ export function useCreateHomework() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["homework"] })
+      queryClient.invalidateQueries({ queryKey: qk("homework") })
       toast.success("Homework assigned")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -46,7 +47,7 @@ export function useDeleteHomework() {
       await apiClient.delete(`/homework/${homeworkId}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["homework"] })
+      queryClient.invalidateQueries({ queryKey: qk("homework") })
       toast.success("Homework deleted")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -55,7 +56,7 @@ export function useDeleteHomework() {
 
 export function useMyChildHomework(studentId: string | undefined) {
   return useQuery({
-    queryKey: ["portal", "homework", studentId],
+    queryKey: qk("portal", "homework", studentId),
     queryFn: async () => {
       const { data } = await apiClient.get<HomeworkAssignment[]>(
         `/me/children/${studentId}/homework`

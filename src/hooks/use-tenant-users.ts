@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { User, UserCreateInput } from "@/types/auth"
 
 export function useTenantUsers() {
   return useQuery({
-    queryKey: ["tenant-users"],
+    queryKey: qk("tenant-users"),
     queryFn: async () => {
       const { data } = await apiClient.get<User[]>("/auth/users")
       return data
@@ -26,7 +27,7 @@ export function useCreateTenantUser() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tenant-users"] })
+      queryClient.invalidateQueries({ queryKey: qk("tenant-users") })
       toast.success("User created")
     },
     onError: (error) => toast.error(errorMessage(error)),

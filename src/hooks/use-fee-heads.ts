@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { FeeHead, FeeHeadCreateInput } from "@/types/fees"
 
 export function useFeeHeads(branchId?: string) {
   return useQuery({
-    queryKey: ["fee-heads", { branchId }],
+    queryKey: qk("fee-heads", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<FeeHead[]>("/fee-heads", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateFeeHead() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["fee-heads"] })
+      queryClient.invalidateQueries({ queryKey: qk("fee-heads") })
       toast.success("Fee head created")
     },
     onError: (error) => toast.error(errorMessage(error)),

@@ -30,7 +30,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
-  return NextResponse.next()
+  const response = NextResponse.next()
+  // Authenticated app pages must never be stored by shared/browser caches.
+  if (hasSession) response.headers.set("Cache-Control", "private, no-store")
+  return response
 }
 
 export const config = {

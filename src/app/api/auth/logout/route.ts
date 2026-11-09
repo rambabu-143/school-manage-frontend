@@ -8,6 +8,7 @@ import {
   REFRESH_TOKEN_COOKIE,
   clearSessionCookies,
 } from "@/lib/session-cookies"
+import { forgetSingleFlight, refreshTokenKey } from "@/lib/single-flight"
 
 export async function POST(request: Request) {
   const blocked = rejectCrossSite(request)
@@ -18,6 +19,8 @@ export async function POST(request: Request) {
   const tokens = [REFRESH_TOKEN_COOKIE, ADMIN_REFRESH_TOKEN_COOKIE]
     .map((name) => cookieStore.get(name)?.value)
     .filter((t): t is string => Boolean(t))
+  // A logged-out token must not be re-served from the 30 s refresh cache.
+  for (const token of tokens) forgetSingleFlight(refreshTokenKey(token))
   clearSessionCookies(cookieStore)
   // Best effort: the cookies are already gone either way.
   await Promise.all(

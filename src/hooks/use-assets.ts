@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Asset, AssetCreateInput, AssetStatus } from "@/types/inventory"
 
 export function useAssets(params?: { branchId?: string; status?: AssetStatus }) {
   return useQuery({
-    queryKey: ["assets", params],
+    queryKey: qk("assets", params),
     queryFn: async () => {
       const { data } = await apiClient.get<Asset[]>("/assets", {
         params: { branch_id: params?.branchId, status: params?.status },
@@ -28,7 +29,7 @@ export function useCreateAsset() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["assets"] })
+      queryClient.invalidateQueries({ queryKey: qk("assets") })
       toast.success("Asset created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -44,7 +45,7 @@ export function useUpdateAssetStatus() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["assets"] })
+      queryClient.invalidateQueries({ queryKey: qk("assets") })
       toast.success("Asset status updated")
     },
     onError: (error) => toast.error(errorMessage(error)),

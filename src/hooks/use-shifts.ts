@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
   Shift,
@@ -14,7 +15,7 @@ import type {
 
 export function useShifts(branchId?: string) {
   return useQuery({
-    queryKey: ["shifts", { branchId }],
+    queryKey: qk("shifts", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<Shift[]>("/shifts", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -33,7 +34,7 @@ export function useCreateShift() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shifts"] })
+      queryClient.invalidateQueries({ queryKey: qk("shifts") })
       toast.success("Shift created")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -49,7 +50,7 @@ export function useAssignStaffShift() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shifts"] })
+      queryClient.invalidateQueries({ queryKey: qk("shifts") })
       toast.success("Staff assigned to shift")
     },
     onError: (error) => toast.error(errorMessage(error)),

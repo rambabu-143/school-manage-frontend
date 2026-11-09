@@ -174,6 +174,7 @@ test("impersonate DELETE with stale stash is 409 and swaps nothing", async () =>
 
 test("logout during impersonation revokes both refresh tokens and clears everything", async () => {
   const revoked = []
+  const forgotten = []
   const jar = fakeCookies({ access_token: impToken, admin_access_token: "A", admin_refresh_token: "ADMIN_R" })
   const cookies = await cookieLib()
   const bff = await loadTs("src/lib/bff.ts", {
@@ -183,11 +184,13 @@ test("logout during impersonation revokes both refresh tokens and clears everyth
   })
   const route = await loadTs("src/app/api/auth/logout/route.ts", {
     "next/headers": { cookies: async () => jar }, "next/server": nextServer, "@/lib/bff": bff, "@/lib/session-cookies": cookies,
+    "@/lib/single-flight": { refreshTokenKey: (t) => `k:${t}`, forgetSingleFlight: (k) => forgotten.push(k) },
     "@/lib/backend": { backendFetch: async (_p, init) => { revoked.push(JSON.parse(init.body).refresh_token); return new Response(null, { status: 204 }) } },
   })
   const res = await route.POST(new Request("http://t", { method: "POST" }))
   assert.equal(res.status, 200)
   assert.deepEqual(revoked, ["ADMIN_R"])
+  assert.deepEqual(forgotten, ["k:ADMIN_R"]) // the 30 s refresh cache must forget revoked tokens
   assert.equal(jar.jar.size, 0)
 })
 

@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { Room, RoomCreateInput } from "@/types/rooms"
 
 export function useRooms(branchId?: string) {
   return useQuery({
-    queryKey: ["rooms", { branchId }],
+    queryKey: qk("rooms", { branchId }),
     queryFn: async () => {
       const { data } = await apiClient.get<Room[]>("/rooms", {
         params: branchId ? { branch_id: branchId } : undefined,
@@ -28,7 +29,7 @@ export function useCreateRoom() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rooms"] })
+      queryClient.invalidateQueries({ queryKey: qk("rooms") })
       toast.success("Room added")
     },
     onError: (error) => toast.error(errorMessage(error)),

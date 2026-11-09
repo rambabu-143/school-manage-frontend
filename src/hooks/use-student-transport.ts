@@ -5,12 +5,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type { StudentTransport } from "@/types/transport"
 
 export function useStudentTransport(studentId: string | undefined) {
   return useQuery({
-    queryKey: ["student-transport", studentId],
+    queryKey: qk("student-transport", studentId),
     queryFn: async () => {
       try {
         const { data } = await apiClient.get<StudentTransport>(
@@ -46,7 +47,7 @@ export function useAssignStudentTransport() {
       return data
     },
     onSuccess: (_data, { studentId }) => {
-      queryClient.invalidateQueries({ queryKey: ["student-transport", studentId] })
+      queryClient.invalidateQueries({ queryKey: qk("student-transport", studentId) })
       toast.success("Transport assigned")
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -61,7 +62,7 @@ export function useRemoveStudentTransport() {
       await apiClient.delete(`/students/${studentId}/transport`)
     },
     onSuccess: (_data, studentId) => {
-      queryClient.invalidateQueries({ queryKey: ["student-transport", studentId] })
+      queryClient.invalidateQueries({ queryKey: qk("student-transport", studentId) })
       toast.success("Transport assignment removed")
     },
     onError: (error) => toast.error(errorMessage(error)),

@@ -4,13 +4,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { qk } from "@/lib/query-keys"
 import { api } from "@/lib/typed-api"
 import { errorMessage } from "@/lib/error-message"
 import type { Branch, BranchCreateInput } from "@/types/branches"
 
 export function useBranches() {
   return useQuery({
-    queryKey: ["branches"],
+    queryKey: qk("branches"),
     queryFn: async () => {
       return (await api("get", "/branches")) as Branch[]
     },
@@ -26,7 +27,7 @@ export function useCreateBranch() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branches"] })
+      queryClient.invalidateQueries({ queryKey: qk("branches") })
       toast.success("Branch created")
     },
     onError: (error) => {

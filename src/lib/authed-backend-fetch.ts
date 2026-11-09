@@ -1,6 +1,7 @@
 import { cookies } from "next/headers"
 
 import { BackendError, backendFetchWithToken, refreshRequest } from "@/lib/backend"
+import { refreshTokenKey, singleFlight } from "@/lib/single-flight"
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -8,6 +9,8 @@ import {
   restoreAdminCookies,
   setSessionCookies,
 } from "@/lib/session-cookies"
+
+const REFRESH_REUSE_MS = 30_000
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>
 
@@ -52,7 +55,7 @@ export async function authedBackendFetch(
   }
 
   try {
-    const tokens = await refreshRequest(refreshToken)
+    const tokens = await singleFlight(refreshTokenKey(refreshToken), () => refreshRequest(refreshToken), REFRESH_REUSE_MS)
     setSessionCookies(cookieStore, tokens)
     return backendFetchWithToken(path, tokens.access_token, init)
   } catch (error) {
