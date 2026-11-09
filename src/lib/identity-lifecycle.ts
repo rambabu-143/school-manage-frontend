@@ -8,6 +8,20 @@ export function userToScope(user: UserLike, ctx?: Pick<QueryScope, "branchId" | 
   return user ? { userId: user.id, tenantId: user.tenant_id, ...ctx } : null
 }
 
+const same = (a?: string | null, b?: string | null) => (a ?? null) === (b ?? null)
+/** Same user + tenant, and each of branch / year is unchanged or only filled in (or cleared by a failure). */
+function isRefinement(a: QueryScope, b: QueryScope) {
+  if (a.userId !== b.userId || a.tenantId !== b.tenantId) return false
+  const ok = (x?: string | null, y?: string | null) => same(x, y) || x == null || y == null
+  return ok(a.branchId, b.branchId) && ok(a.academicYearId, b.academicYearId)
+}
+
+/** /auth/session result -> context to keep. Only a 401 clears it; transient failures keep the previous one. */
+export function nextSessionContext<T>(prev: T, status: number, body: T | undefined): T | null {
+  if (status === 401) return null
+  return status >= 200 && status < 300 && body !== undefined ? body : prev
+}
+
 /** Cancel in-flight work and drop every cached query that is not the session itself. */
 export function purgeOtherScopes(client: QueryClient, keep: string | null) {
   const predicate = (q: { queryKey: readonly unknown[] }) =>
@@ -23,11 +37,21 @@ export function purgeOtherScopes(client: QueryClient, keep: string | null) {
  */
 export function createIdentityGuard(client: QueryClient) {
   let owner: string | null = null
+  let ownerScope: QueryScope | null = null
   return {
     owner: () => owner,
     sync(scope: QueryScope | null): boolean {
       const next = scope ? scopeKey(scope) : null
+      if (scope && ownerScope && isRefinement(ownerScope, scope)) {
+        // Same user, branch / year went unknown -> known (or a context fetch
+        // failed and is unknown again): keep the applied scope so the app does
+        // not purge and remount over unsaved UI state.
+        if (scope.branchId != null || scope.academicYearId != null) ownerScope = scope
+        owner = scopeKey(ownerScope)
+        return false
+      }
       setQueryScope(scope)
+      ownerScope = scope
       if (next === owner) return false
       const hadOwner = owner !== null
       owner = next

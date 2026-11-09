@@ -2,8 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient, type QueryFunctionContext } from "@tanstack/react-query"
 
+import { nextSessionContext } from "@/lib/identity-lifecycle"
 import { SESSION_CONTEXT_KEY, SESSION_KEY } from "@/lib/query-keys"
 import type { LoginInput, LoginResult, TwoFactorInput, User } from "@/types/auth"
+
+type SessionContext = { branch_id: string | null; academic_year_id: string | null }
 
 async function fetchSession({ client }: QueryFunctionContext): Promise<User | null> {
   const response = await fetch("/api/auth/me")
@@ -11,12 +14,15 @@ async function fetchSession({ client }: QueryFunctionContext): Promise<User | nu
   if (!response.ok) throw new Error("Failed to load session")
   const data = (await response.json()) as { user: User }
   // Active branch / academic year scope the query cache; write them before the
-  // user so the identity guard sees both. Best effort: unscoped on failure.
+  // user so the identity guard sees both. A transient failure keeps the previous
+  // context (only a 401 clears it) so the scope does not flap.
+  const prev = client.getQueryData<SessionContext | null>(SESSION_CONTEXT_KEY)
   try {
-    const ctx = await fetch("/api/backend/auth/session")
-    client.setQueryData(SESSION_CONTEXT_KEY, ctx.ok ? await ctx.json() : null)
+    const res = await fetch("/api/backend/auth/session")
+    const next = nextSessionContext(prev, res.status, res.ok ? ((await res.json()) as SessionContext) : undefined)
+    if (next !== prev) client.setQueryData(SESSION_CONTEXT_KEY, next)
   } catch {
-    client.setQueryData(SESSION_CONTEXT_KEY, null)
+    // network error: keep previous
   }
   return data.user
 }
