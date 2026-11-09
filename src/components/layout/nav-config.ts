@@ -71,6 +71,9 @@ const ADMIN_AND_ACCOUNTANT_ROLES: readonly Role[] = [
   "accountant",
 ]
 
+// CATS import/reports are gated by FULL_BRANCH_ACCESS (super/school admin only).
+const FULL_ACCESS_ROLES: readonly Role[] = ["super_admin", "school_admin"]
+
 // Admissions endpoints are admin-only (require_role(*ADMIN_ROLES) throughout).
 const ADMIN_ONLY_ROLES: readonly Role[] = ["super_admin", "school_admin", "branch_admin"]
 
@@ -98,6 +101,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Academics", href: "/academics", icon: BookOpen, roles: STAFF_ROLES },
   { label: "Timetable", href: "/timetable", icon: Clock, roles: STAFF_ROLES },
   { label: "Attendance", href: "/attendance", icon: CalendarCheck, roles: STAFF_ROLES },
+  { label: "School Calendar", href: "/school-calendar", icon: CalendarDays, roles: STAFF_ROLES },
+  { label: "Birthday Wishes", href: "/birthday-wishes", icon: PartyPopper, roles: STAFF_ROLES },
+  { label: "CATS / Biometric", href: "/hr/cats", icon: CalendarCheck, roles: FULL_ACCESS_ROLES },
   { label: "Leave", href: "/hr", icon: CalendarOff, roles: STAFF_ROLES },
   { label: "Gradebook", href: "/gradebook", icon: GraduationCap, roles: STAFF_ROLES },
   {
