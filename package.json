@@ -10,7 +10,11 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "npm --prefix qa/browser test",
     "audit:dependencies": "pnpm audit",
-    "test:auth": "node --experimental-vm-modules --test tests/auth-login.test.mjs tests/auth-completion.test.mjs"
+    "test:auth": "node --experimental-vm-modules --test tests/auth-login.test.mjs tests/auth-completion.test.mjs",
+    "test:shared": "node --test tests/shared.test.mjs",
+    "gen:api": "openapi-typescript contracts/openapi.json -o src/lib/api-types.ts",
+    "check:api": "node scripts/check-api-drift.mjs",
+    "check:endpoints": "node scripts/check-frontend-endpoints.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -46,6 +50,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
