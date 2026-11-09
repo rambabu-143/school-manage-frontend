@@ -1,11 +1,14 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { LogOut, Menu, Moon, Sun } from "lucide-react"
+import { Eye, LogOut, Menu, Moon, ShieldCheck, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { NAV_ITEMS } from "@/components/layout/nav-config"
+import { ScopeSwitcher } from "@/components/auth/scope-switcher"
+import { SwitchUserDialog } from "@/components/auth/switch-user-dialog"
 import { NotificationsBell } from "@/components/layout/notifications-bell"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -20,6 +23,8 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useLogout } from "@/hooks/use-session"
 import { formatRole } from "@/lib/format-role"
+import { canImpersonate } from "@/lib/role-guard"
+import { useSessionScope } from "@/hooks/use-identity"
 import type { Role, User } from "@/types/auth"
 
 function initialsFor(email: string) {
@@ -61,6 +66,10 @@ export function Topbar({ user }: { user: User }) {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
   const logout = useLogout()
+  const [switchOpen, setSwitchOpen] = React.useState(false)
+  const { data: scope } = useSessionScope()
+  const canSwitch = canImpersonate(user.role) && !scope?.impersonation
+  const staffLike = user.role !== "parent" && user.role !== "student"
 
   function handleLogout() {
     logout.mutate(undefined, {
@@ -75,6 +84,7 @@ export function Topbar({ user }: { user: User }) {
     <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b bg-background px-4">
       <div className="flex items-center gap-2">
         <MobileNav role={user.role} />
+        {staffLike && <ScopeSwitcher />}
       </div>
 
       <div className="flex items-center gap-2">
@@ -109,6 +119,15 @@ export function Topbar({ user }: { user: User }) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/settings/security"><ShieldCheck className="size-4" />Security</Link>
+            </DropdownMenuItem>
+            {canSwitch && (
+              <DropdownMenuItem onSelect={() => setSwitchOpen(true)}>
+                <Eye className="size-4" />
+                View as someone else
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onSelect={handleLogout} disabled={logout.isPending}>
               <LogOut className="size-4" />
               Log out
@@ -116,6 +135,7 @@ export function Topbar({ user }: { user: User }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <SwitchUserDialog open={switchOpen} onOpenChange={setSwitchOpen} role={user.role} />
     </header>
   )
 }

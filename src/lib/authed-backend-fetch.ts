@@ -6,6 +6,7 @@ import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
   clearSessionCookies,
+  restoreAdminCookies,
   setSessionCookies,
 } from "@/lib/session-cookies"
 
@@ -44,6 +45,11 @@ export async function authedBackendFetch(
   }
 
   if (!refreshToken) {
+    // An impersonation token the backend just rejected (expired) has no
+    // refresh token; restoreAdminCookies only acts if it carries "imp".
+    if (restoreAdminCookies(cookieStore)) {
+      return authedBackendFetch(cookieStore, path, init)
+    }
     clearSessionCookies(cookieStore)
     throw new SessionExpiredError()
   }

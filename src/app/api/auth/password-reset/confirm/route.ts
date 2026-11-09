@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server"
 
+import { readJson, rejectCrossSite } from "@/lib/bff"
 import { BackendError, confirmPasswordReset } from "@/lib/backend"
 
 export async function POST(request: Request) {
-  const { token, newPassword } = (await request.json()) as {
+  const blocked = rejectCrossSite(request, { json: true })
+  if (blocked) return blocked
+  const { token, newPassword } = (await readJson(request)) as {
     token?: string
     newPassword?: string
   }
