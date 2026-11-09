@@ -50,6 +50,30 @@ export function rotate(data: unknown, cookieStore: CookieStore) {
   return NextResponse.json({ ok: true })
 }
 
+/**
+ * CSRF guard for state-changing /api/auth routes. Rejects cross-site browser
+ * requests (Sec-Fetch-Site / Origin) and, for routes with a body, anything that
+ * is not application/json (so text/plain form posts are refused).
+ * ponytail: replace with the shared isSameOriginRequest guard (PR #4,
+ * src/lib/bff-guards.ts) once that is merged.
+ */
+export function rejectCrossSite(request: Request, opts: { json?: boolean } = {}): NextResponse | null {
+  const site = request.headers.get("sec-fetch-site")
+  if (site && site !== "same-origin" && site !== "none") {
+    return NextResponse.json({ error: "Request blocked." }, { status: 403 })
+  }
+  const origin = request.headers.get("origin")
+  if (origin) {
+    let ok = false
+    try { ok = new URL(origin).host === (request.headers.get("host") ?? new URL(request.url).host) } catch {}
+    if (!ok) return NextResponse.json({ error: "Request blocked." }, { status: 403 })
+  }
+  if (opts.json && !(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {
+    return NextResponse.json({ error: "Unsupported request." }, { status: 415 })
+  }
+  return null
+}
+
 export async function readJson(request: Request): Promise<Record<string, unknown>> {
   const body = await request.json().catch(() => null)
   return body && typeof body === "object" ? (body as Record<string, unknown>) : {}
@@ -57,4 +81,12 @@ export async function readJson(request: Request): Promise<Record<string, unknown
 
 export function isUuid(v: unknown): v is string {
   return typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
+}
+
+/** 429 from the backend stays 429 and keeps its Retry-After. */
+export function rateLimited(response: Response, message: string): NextResponse {
+  const headers: Record<string, string> = {}
+  const retry = response.headers.get("retry-after")
+  if (retry) headers["Retry-After"] = retry
+  return NextResponse.json({ error: message }, { status: 429, headers })
 }

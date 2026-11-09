@@ -11,7 +11,7 @@ export async function loadTs(relPath, mocks = {}, globals = {}) {
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
   })
-  const context = vm.createContext({ Response, Request, Buffer, JSON, ...globals })
+  const context = vm.createContext({ Response, Request, Buffer, JSON, URL, URLSearchParams, ...globals })
   const mod = new vm.SourceTextModule(outputText, { context })
   await mod.link((specifier) => {
     const exports = mocks[specifier]
