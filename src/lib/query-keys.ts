@@ -102,6 +102,15 @@ export type QueryDomain =
   | "transport-slabs"
   | "transport-stops"
   | "vendors"
+  | "admission-registrations"
+  | "admission-reports"
+  | "admission-setting"
+  | "admission-siblings"
+  | "admission-tally"
+  | "mcop-login-report"
+  | "promotion-slip"
+  | "session-promotion"
+  | "student-medical-history"
 
 export type QueryScope = {
   userId: string

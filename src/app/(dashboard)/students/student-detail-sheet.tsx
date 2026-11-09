@@ -20,6 +20,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
+import { StudentExtras } from "./student-extras"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -405,6 +406,8 @@ export function StudentDetailSheet({ student, onOpenChange }: StudentDetailSheet
             </Form>
           </div>
         </div>
+
+        <div className="px-4"><StudentExtras studentId={student.id} guardians={student.guardians ?? []} /></div>
 
         <SheetFooter>
           <AlertDialog>

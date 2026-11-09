@@ -4,6 +4,8 @@ import * as React from "react"
 
 import { GradeSelect } from "@/components/grade-select"
 import { DataTable } from "@/components/data-table/data-table"
+import Link from "next/link"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useStudents } from "@/hooks/use-students"
@@ -40,7 +42,12 @@ export default function StudentsPage() {
             {gradeId ? " in this grade" : ""}
           </p>
         </div>
-        <StudentFormSheet />
+        <div className="flex gap-2">
+          <Button variant="outline" asChild><Link href="/students/import">Bulk import</Link></Button>
+          <Button variant="outline" asChild><Link href="/students/promotion">Promotion</Link></Button>
+          <Button variant="outline" asChild><Link href="/students/mcop-login">MCOP login report</Link></Button>
+          <StudentFormSheet />
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
