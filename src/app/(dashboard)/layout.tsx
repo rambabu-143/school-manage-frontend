@@ -10,7 +10,7 @@ import { Topbar } from "@/components/layout/topbar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ImpersonationBanner } from "@/components/auth/impersonation-banner"
 import { StatusScreen } from "@/components/auth/status-screen"
-import { canAccess, rolesForPath } from "@/lib/role-guard"
+import { canAccessPath } from "@/lib/role-guard"
 import { useSession } from "@/hooks/use-session"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -63,8 +63,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
             >
-              {canAccess(user.role, rolesForPath(pathname)) ? children : (
-                <StatusScreen title="You don't have access to this page">Your role doesn't include this area. Ask a school admin if you think that's a mistake.</StatusScreen>
+              {canAccessPath(user.role, pathname) ? children : (
+                <StatusScreen title="You don&apos;t have access to this page">Your role doesn&apos;t include this area. Ask a school admin if you think that&apos;s a mistake.</StatusScreen>
               )}
             </motion.div>
           </AnimatePresence>

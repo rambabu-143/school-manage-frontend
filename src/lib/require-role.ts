@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 
 import { backendFetchWithToken } from "@/lib/backend"
 import { ACCESS_TOKEN_COOKIE } from "@/lib/session-cookies"
+import { NAV_ITEMS } from "@/components/layout/nav-config"
 import { canAccess } from "@/lib/role-guard"
 import type { Role, User } from "@/types/auth"
 
@@ -26,4 +27,9 @@ export async function requireRole(allowed?: readonly Role[]): Promise<User | nul
   }
   if (!canAccess(user.role, allowed)) redirect("/forbidden")
   return user
+}
+
+/** Server guard for a top-level section, with roles taken from nav-config. */
+export async function requireSectionRole(href: string) {
+  return requireRole(NAV_ITEMS.find((i) => i.href === href)?.roles)
 }

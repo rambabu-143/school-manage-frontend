@@ -34,3 +34,15 @@ export function rolesForPath(pathname: string): readonly Role[] | undefined {
   ).sort((a, b) => b.href.length - a.href.length)[0]
   return match?.roles
 }
+
+// Dashboard areas that have no nav entry but every signed-in role may open.
+const OPEN_PREFIXES = ["/settings", "/forbidden"]
+
+/** Default-deny: a path is open only if its nav entry lists the role (or
+ * lists none), or it is explicitly open. Unknown paths are admin-only. */
+export function canAccessPath(role: Role, pathname: string): boolean {
+  if (OPEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true
+  const known = NAV_ITEMS.some((i) => pathname === i.href || pathname.startsWith(`${i.href}/`))
+  if (!known) return canImpersonate(role)
+  return canAccess(role, rolesForPath(pathname))
+}
