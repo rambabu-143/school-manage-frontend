@@ -1,7 +1,7 @@
-// Single hook point for "who/where the user is acting as just changed"
-// (branch switch, academic-year switch, impersonation start/exit, login via
-// another method). The query-cache owner subscribes once and clears or
-// invalidates caches; the auth hooks only call onIdentityChange().
+// Pub/sub for "who/where the user is acting as just changed" (branch / year
+// switch, impersonation start or exit). The only subscriber is the query-cache
+// owner (attachIdentityGuard in identity-lifecycle.ts), which purges the cache
+// via purgeOtherScopes; callers just announce the change.
 
 type Listener = () => void
 
@@ -12,8 +12,6 @@ export function subscribeIdentityChange(listener: Listener): () => void {
   return () => listeners.delete(listener)
 }
 
-/** Returns true if anyone handled it, so callers can fall back to their own clearing. */
-export function onIdentityChange(): boolean {
+export function onIdentityChange(): void {
   listeners.forEach((listener) => listener())
-  return listeners.size > 0
 }

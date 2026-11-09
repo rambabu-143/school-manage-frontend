@@ -8,19 +8,27 @@ export const MAX_JSON_RESPONSE_BYTES = 5 * 1024 * 1024
 export const isPlainJson = (contentType: string | null) => /^application\/([\w.+-]+\+)?json\s*(;|$)/i.test(contentType ?? "")
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"])
 
-/** CSRF: mutating requests must come from our own origin (Origin, else Sec-Fetch-Site). */
+/**
+ * The one CSRF check for every mutating BFF route (/api/backend and /api/auth).
+ * Cross-site Sec-Fetch-Site is always refused; otherwise Origin must match the
+ * public host (first x-forwarded-host, else host) and scheme (x-forwarded-proto
+ * when present); with no Origin, Sec-Fetch-Site must say same-origin / none.
+ */
 export function isSameOriginRequest(method: string, headers: Headers): boolean {
   if (SAFE_METHODS.has(method.toUpperCase())) return true
+  const site = headers.get("sec-fetch-site")
+  if (site && site !== "same-origin" && site !== "none") return false
   const host = (headers.get("x-forwarded-host")?.split(",")[0] ?? headers.get("host"))?.trim()
+  const proto = headers.get("x-forwarded-proto")?.split(",")[0]?.trim()
   const origin = headers.get("origin")
   if (origin) {
     try {
-      return !!host && new URL(origin).host === host
+      const o = new URL(origin)
+      return !!host && o.host === host && (!proto || o.protocol === `${proto}:`)
     } catch {
       return false
     }
   }
-  const site = headers.get("sec-fetch-site")
   return site === "same-origin" || site === "none"
 }
 

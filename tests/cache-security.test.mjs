@@ -22,6 +22,10 @@ test("CSRF: mutating needs same Origin; safe methods pass", () => {
   assert.equal(isSameOriginRequest("PATCH", H({ host: "a.com", "sec-fetch-site": "cross-site" })), false)
   assert.equal(isSameOriginRequest("PUT", H({ host: "a.com", "sec-fetch-site": "same-origin" })), true)
   assert.equal(isSameOriginRequest("POST", H({ host: "int:3000", "x-forwarded-host": "a.com", origin: "https://a.com" })), true)
+  // cross-site Sec-Fetch-Site wins even with a matching Origin; scheme must match x-forwarded-proto
+  assert.equal(isSameOriginRequest("POST", H({ host: "a.com", origin: "https://a.com", "sec-fetch-site": "cross-site" })), false)
+  assert.equal(isSameOriginRequest("POST", H({ host: "a.com", origin: "http://a.com", "x-forwarded-proto": "https" })), false)
+  assert.equal(isSameOriginRequest("POST", H({ host: "a.com", origin: "https://a.com", "x-forwarded-proto": "https" })), true)
 })
 
 test("path guard: traversal, encoded separators, denied prefixes", () => {
