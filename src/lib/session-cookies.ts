@@ -1,5 +1,7 @@
 import type { cookies as nextCookies } from "next/headers"
 
+import { decodeClaims } from "@/lib/jwt-claims"
+
 export const ACCESS_TOKEN_COOKIE = "access_token"
 export const REFRESH_TOKEN_COOKIE = "refresh_token"
 // While impersonating, the admin's own token pair is parked here (httpOnly,
@@ -33,6 +35,10 @@ export function setSessionCookies(
     ...baseCookieOptions,
     maxAge: REFRESH_TOKEN_MAX_AGE,
   })
+  // Any normal sign-in/refresh ends an impersonation context: a parked admin
+  // pair must never survive into another person's session.
+  cookieStore.delete(ADMIN_ACCESS_TOKEN_COOKIE)
+  cookieStore.delete(ADMIN_REFRESH_TOKEN_COOKIE)
 }
 
 export function clearSessionCookies(cookieStore: CookieStore) {
@@ -40,6 +46,12 @@ export function clearSessionCookies(cookieStore: CookieStore) {
   cookieStore.delete(REFRESH_TOKEN_COOKIE)
   cookieStore.delete(ADMIN_ACCESS_TOKEN_COOKIE)
   cookieStore.delete(ADMIN_REFRESH_TOKEN_COOKIE)
+}
+
+/** True only while the live access token itself carries the "imp" claim. The
+ * parked admin cookies alone never prove an impersonation is active. */
+export function isImpersonatingNow(cookieStore: CookieStore): boolean {
+  return Boolean(decodeClaims(cookieStore.get(ACCESS_TOKEN_COOKIE)?.value).imp)
 }
 
 export function hasAdminStash(cookieStore: CookieStore): boolean {
@@ -60,13 +72,14 @@ export function startImpersonationCookies(
   if (access) {
     cookieStore.set(ADMIN_ACCESS_TOKEN_COOKIE, access, {
       ...baseCookieOptions,
-      maxAge: ACCESS_TOKEN_MAX_AGE,
+      maxAge: expiresInSeconds,
     })
   }
   if (refresh) {
+    // Dies with the impersonation token, so it cannot be picked up later.
     cookieStore.set(ADMIN_REFRESH_TOKEN_COOKIE, refresh, {
       ...baseCookieOptions,
-      maxAge: REFRESH_TOKEN_MAX_AGE,
+      maxAge: expiresInSeconds,
     })
   }
   cookieStore.set(ACCESS_TOKEN_COOKIE, impersonationToken, {
@@ -76,8 +89,14 @@ export function startImpersonationCookies(
   cookieStore.delete(REFRESH_TOKEN_COOKIE)
 }
 
-/** Swap the parked admin pair back in. Returns false if nothing was parked. */
+/** Swap the parked admin pair back in. Returns false (and drops any stale
+ * parked tokens) unless an impersonation is actually active right now. */
 export function restoreAdminCookies(cookieStore: CookieStore): boolean {
+  if (!isImpersonatingNow(cookieStore)) {
+    cookieStore.delete(ADMIN_ACCESS_TOKEN_COOKIE)
+    cookieStore.delete(ADMIN_REFRESH_TOKEN_COOKIE)
+    return false
+  }
   const access = cookieStore.get(ADMIN_ACCESS_TOKEN_COOKIE)?.value
   const refresh = cookieStore.get(ADMIN_REFRESH_TOKEN_COOKIE)?.value
   if (!access && !refresh) return false
