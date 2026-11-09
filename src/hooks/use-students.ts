@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { apiClient } from "@/lib/api-client"
 import { invalidateWithDependents } from "@/lib/invalidation"
 import { qk } from "@/lib/query-keys"
+import { api } from "@/lib/typed-api"
 import { errorMessage } from "@/lib/error-message"
 import type {
   GuardianCreateInput,
@@ -24,8 +25,10 @@ export function useStudents(params?: {
   return useQuery({
     queryKey: qk("students", params),
     queryFn: async () => {
-      const { data } = await apiClient.get<Student[]>("/students", {
-        params: {
+      // Query params are checked against the contract. The cast keeps the legacy
+      // Student type (guardians required) until it is replaced by the schema type.
+      const students = await api("get", "/students", {
+        query: {
           branch_id: params?.branchId || undefined,
           grade_id: params?.gradeId || undefined,
           section_id: params?.sectionId || undefined,
@@ -33,7 +36,7 @@ export function useStudents(params?: {
           search: params?.search || undefined,
         },
       })
-      return data
+      return students as Student[]
     },
   })
 }
@@ -61,8 +64,10 @@ export function useUpdateStudent() {
 
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: StudentUpdateInput }) => {
-      const { data } = await apiClient.put<Student>(`/students/${id}`, input)
-      return data
+      return (await api("put", "/students/{student_id}", {
+        path: { student_id: id },
+        body: input,
+      })) as Student
     },
     onSuccess: () => {
       invalidateWithDependents(queryClient, "students")
