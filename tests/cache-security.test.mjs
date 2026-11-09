@@ -5,10 +5,10 @@ import { QueryClient } from "@tanstack/react-query"
 
 import { stripTokenKeys, isSameOriginRequest, validateProxyPath, buildUpstreamHeaders, buildResponseHeaders, sanitizeErrorBody, readBodyLimited } from "../src/lib/bff-guards.ts"
 import { safeNext } from "../src/lib/safe-redirect.ts"
-import { singleFlight, _resetSingleFlight } from "../src/lib/single-flight.ts"
+import { singleFlight, _resetSingleFlight, forgetSingleFlight, refreshTokenKey } from "../src/lib/single-flight.ts"
 import { qk, scopeKey, setQueryScope, subscribeQueryScope, getScopeKey } from "../src/lib/query-keys.ts"
 import { staleTimeFor, shouldRetry, pollInterval } from "../src/lib/query-policy.ts"
-import { createIdentityGuard, attachIdentityGuard, ctxToScopeCtx } from "../src/lib/identity-lifecycle.ts"
+import { createIdentityGuard, attachIdentityGuard, ctxToScopeCtx, nextSessionContext } from "../src/lib/identity-lifecycle.ts"
 import { domainsToInvalidate } from "../src/lib/invalidation.ts"
 
 const H = (o) => new Headers(o)
@@ -99,7 +99,7 @@ test("freshness policy and retry", () => {
 test("identity lifecycle purges other scopes, keeps session", () => {
   const client = new QueryClient()
   const guard = createIdentityGuard(client)
-  const A = { userId: "a", tenantId: "t" }
+  const A = { userId: "a", tenantId: "t", branchId: "a1" }
   const B = { userId: "b", tenantId: "t" }
   client.setQueryData(["session"], { id: "a" })
   assert.equal(guard.sync(A), false)
@@ -139,13 +139,33 @@ test("session cookie flags", async () => {
   assert.match(src, /secure: process\.env\.NODE_ENV === "production"/)
 })
 
-test("every token-returning operation in the OpenAPI snapshot is denied by the proxy", () => {
-  const { operations } = JSON.parse(fs.readFileSync(new URL("./fixtures/token-returning-ops.json", import.meta.url), "utf8"))
-  assert.ok(operations.length >= 9)
-  for (const op of operations) {
-    const segs = op.path.split("/").filter(Boolean)
-    assert.equal(validateProxyPath(segs), null, `${op.method} ${op.path}`)
+// Derived from the contract snapshot (contracts/openapi.json, shared with PR #2), so a new
+// token-returning operation fails this test until the proxy denies it.
+function tokenReturningOps(spec) {
+  const schemas = spec.components?.schemas ?? {}
+  const has = (o, seen = new Set()) => {
+    if (Array.isArray(o)) return o.some((v) => has(v, seen))
+    if (!o || typeof o !== "object") return false
+    if (o.$ref) {
+      const n = o.$ref.split("/").pop()
+      if (seen.has(n)) return false
+      return has(schemas[n], new Set(seen).add(n))
+    }
+    if (o.properties && ("access_token" in o.properties || "refresh_token" in o.properties)) return true
+    return Object.values(o).some((v) => has(v, seen))
   }
+  const ops = []
+  for (const [path, item] of Object.entries(spec.paths))
+    for (const [method, op] of Object.entries(item))
+      if (op && typeof op === "object" && has(op.responses)) ops.push({ method, path: path.replace(/^\/api\/v1/, "") })
+  return ops
+}
+
+test("every token-returning operation in the OpenAPI snapshot is denied by the proxy", () => {
+  const spec = JSON.parse(fs.readFileSync(new URL("../contracts/openapi.json", import.meta.url), "utf8"))
+  const ops = tokenReturningOps(spec)
+  assert.ok(ops.length >= 9, `found ${ops.length}`)
+  for (const op of ops) assert.equal(validateProxyPath(op.path.split("/").filter(Boolean)), null, `${op.method} ${op.path}`)
 })
 
 test("auth/* is default-deny with a tiny allow-list", () => {
@@ -203,6 +223,54 @@ test("branch and academic year re-scope the cache; identity events refetch sessi
   client.invalidateQueries = () => { refetched++; return Promise.resolve() }
   fire()
   assert.equal(refetched, 1)
+  unsub()
+  setQueryScope(null)
+})
+
+test("stripTokenKeys keeps a legit __proto__ key and drops tokens", () => {
+  const r = stripTokenKeys('{"__proto__":{"x":1},"access_token":"a","ok":1}')
+  assert.equal(r.stripped, true)
+  assert.ok(Object.prototype.hasOwnProperty.call(JSON.parse(r.text), "__proto__"))
+  assert.equal(JSON.parse(r.text).ok, 1)
+  assert.doesNotMatch(r.text, /access_token/)
+  assert.equal(({}).x, undefined)
+})
+
+test("logout forgets the cached refresh result", async () => {
+  _resetSingleFlight()
+  let n = 0
+  const key = refreshTokenKey("tok")
+  await singleFlight(key, async () => ++n, 60_000)
+  forgetSingleFlight(key)
+  await singleFlight(key, async () => ++n, 60_000)
+  assert.equal(n, 2)
+  _resetSingleFlight()
+})
+
+test("transient /auth/session failures keep the previous context", () => {
+  const prev = { branch_id: "b", academic_year_id: "y" }
+  for (const status of [429, 500, 502, 0]) assert.equal(nextSessionContext(prev, status, undefined), prev)
+  assert.equal(nextSessionContext(prev, 401, undefined), null)
+  const fresh = { branch_id: "b2", academic_year_id: "y" }
+  assert.equal(nextSessionContext(prev, 200, fresh), fresh)
+})
+
+test("unknown -> known branch/year for the same user does not purge or re-scope", () => {
+  const client = new QueryClient()
+  const guard = createIdentityGuard(client)
+  const U = { userId: "u", tenantId: "t" }
+  let scopeChanges = 0
+  const unsub = subscribeQueryScope(() => scopeChanges++)
+  guard.sync(U) // context unknown
+  client.setQueryData(qk("students"), [1])
+  const before = scopeChanges
+  assert.equal(guard.sync({ ...U, branchId: "b", academicYearId: "y" }), false)
+  assert.equal(scopeChanges, before)
+  assert.deepEqual(client.getQueryData(qk("students")), [1])
+  // a real switch afterwards still purges
+  assert.equal(guard.sync({ ...U, branchId: "b2", academicYearId: "y" }), true)
+  // a failed refetch must not flip known -> unknown for the same user
+  assert.equal(guard.sync({ ...U, branchId: "b2", academicYearId: "y" }), false)
   unsub()
   setQueryScope(null)
 })
