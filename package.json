@@ -11,6 +11,7 @@
     "test:e2e": "npm --prefix qa/browser test",
     "audit:dependencies": "pnpm audit",
     "test:auth": "node --experimental-vm-modules --test tests/auth-login.test.mjs",
+    "test:shared": "node --test tests/shared.test.mjs",
     "gen:api": "openapi-typescript contracts/openapi.json -o src/lib/api-types.ts",
     "check:api": "node scripts/check-api-drift.mjs",
     "check:endpoints": "node scripts/check-frontend-endpoints.mjs"
