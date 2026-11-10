@@ -102,6 +102,22 @@ export type QueryDomain =
   | "transport-slabs"
   | "transport-stops"
   | "vendors"
+  | "aar-forms"
+  | "aar-ratings"
+  | "employee-master"
+  | "flexi-shift-masters"
+  | "flexi-shifts"
+  | "hr-dashboard"
+  | "hr-reports"
+  | "house-teachers"
+  | "leave-balances"
+  | "leave-role-assignments"
+  | "leave-roles"
+  | "leave-types"
+  | "school-heads"
+  | "staff-grades"
+  | "standard-teachers"
+  | "teacher-assignment"
 
 export type QueryScope = {
   userId: string

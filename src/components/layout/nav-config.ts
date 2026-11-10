@@ -99,6 +99,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Timetable", href: "/timetable", icon: Clock, roles: STAFF_ROLES },
   { label: "Attendance", href: "/attendance", icon: CalendarCheck, roles: STAFF_ROLES },
   { label: "Leave", href: "/hr", icon: CalendarOff, roles: STAFF_ROLES },
+  { label: "HR Admin", href: "/hr-admin", icon: UserCog, roles: ADMIN_ONLY_ROLES },
   { label: "Gradebook", href: "/gradebook", icon: GraduationCap, roles: STAFF_ROLES },
   {
     label: "Homework",
