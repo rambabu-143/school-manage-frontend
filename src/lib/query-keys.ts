@@ -111,7 +111,6 @@ export type QueryDomain =
   | "module-access"
   | "transport-renewal"
   | "birthday-wishes"
-  | "my-staff"
 
 export type QueryScope = {
   userId: string

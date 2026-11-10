@@ -11,6 +11,7 @@ import { useCreateLeaveApplication, useLeaveApplications } from "@/hooks/use-lea
 import { useSession } from "@/hooks/use-session"
 import { useStaff } from "@/hooks/use-staff"
 import { useStaffAttendance } from "@/hooks/use-staff-attendance"
+import { usePeriods } from "@/hooks/use-periods"
 import { useTimetableEntries } from "@/hooks/use-timetable"
 import { LEAVE_TYPES, type LeaveType } from "@/types/hr"
 
@@ -50,19 +51,28 @@ function Attendance({ staffId }: { staffId: string }) {
   if (isPending) return <Skeleton className="h-20" />
   if (isError) return <p role="alert" className="text-sm text-destructive">Could not load attendance.</p>
   if (!data.length) return <Msg>No attendance records.</Msg>
-  return <ul className="divide-y rounded-lg border">{data.slice(0, 60).map((a) => <li key={a.id} className="p-3 text-sm">{a.date}: {a.status}{a.in_time ? ` (${a.in_time}${a.out_time ? `-${a.out_time}` : ""})` : ""}</li>)}</ul>
+  return (
+    <>
+      <ul className="divide-y rounded-lg border">{data.slice(0, 60).map((a) => <li key={a.id} className="p-3 text-sm">{a.date}: {a.status}{a.in_time ? ` (${a.in_time}${a.out_time ? `-${a.out_time}` : ""})` : ""}</li>)}</ul>
+      {data.length > 60 && <Msg>Showing the first 60 of {data.length} records.</Msg>}
+    </>
+  )
 }
 
 function Timetable({ staffId }: { staffId: string }) {
   const { data, isPending, isError } = useTimetableEntries({ staffId })
+  const periods = usePeriods()
+  const periodName = (id: string) => periods.data?.find((p) => p.id === id)?.name ?? "-"
   if (isPending) return <Skeleton className="h-20" />
   if (isError) return <p role="alert" className="text-sm text-destructive">Could not load timetable.</p>
   if (!data.length) return <Msg>No timetable entries assigned.</Msg>
-  return <ul className="divide-y rounded-lg border">{data.map((t) => <li key={t.id} className="p-3 text-sm capitalize">{t.day_of_week}: period {t.period_id.slice(0, 8)}</li>)}</ul>
+  return <ul className="divide-y rounded-lg border">{data.map((t) => <li key={t.id} className="p-3 text-sm capitalize">{t.day_of_week}: {periodName(t.period_id)}</li>)}</ul>
 }
 
 export default function MyWorkspacePage() {
   const { data: user } = useSession()
+  // ponytail: fetches the whole staff list and finds the caller client-side; fine for one school (hundreds),
+  // swap for a /staff/me or user_id filter if the backend adds one.
   const staff = useStaff()
   const me = staff.data?.find((s) => s.user_id === user?.id)
   return (

@@ -43,29 +43,3 @@ export function TransportRenewalTab({ studentId }: { studentId: string }) {
     </div>
   )
 }
-
-export function ConsentTab({ studentId }: { studentId: string }) {
-  const qc = useQueryClient()
-  const set = useMutation({
-    mutationFn: (consent: boolean) => api("put", "/students/{student_id}/social-media-consent", { path: { student_id: studentId }, body: { consent } }),
-    onSuccess: () => { toast.success("Consent saved"); qc.invalidateQueries({ queryKey: qk("portal") }) },
-    onError: (e) => toast.error(errorMessage(e)),
-  })
-  return (
-    <div className="space-y-2">
-      <p className="text-sm">Allow the school to feature this child on its social media.</p>
-      <div className="flex gap-2">
-        <Button disabled={set.isPending} onClick={() => set.mutate(true)}>I consent</Button>
-        <Button variant="outline" disabled={set.isPending} onClick={() => set.mutate(false)}>I do not consent</Button>
-      </div>
-    </div>
-  )
-}
-
-export function BirthdayWishesTab() {
-  const q = useQuery({ queryKey: qk("birthday-wishes"), queryFn: () => api("get", "/birthday-wishes", { query: { limit: 20 } }) })
-  if (q.isPending) return <Skeleton className="h-16" />
-  if (q.isError) return <p role="alert" className="text-sm text-destructive">{errorMessage(q.error)}</p>
-  if (!q.data.length) return <p className="text-sm text-muted-foreground">No birthday wishes configured.</p>
-  return <ul className="divide-y rounded-lg border">{q.data.map((w) => <li key={w.id} className="p-3 text-sm"><b>{w.type}</b> {w.text}</li>)}</ul>
-}

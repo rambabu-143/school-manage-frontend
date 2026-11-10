@@ -1,4 +1,9 @@
+"use client"
+
 import Link from "next/link"
+
+import { useSession } from "@/hooks/use-session"
+import { canAccessPath } from "@/lib/role-guard"
 
 const LINKS = [
   ["/settings/profile", "Profile", "Your account, password and two-step sign-in"],
@@ -14,12 +19,14 @@ const LINKS = [
 ] as const
 
 export default function SettingsHub() {
+  const { data: user } = useSession()
+  const links = LINKS.filter(([href]) => !!user && canAccessPath(user.role, href))
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Settings</h1>
       <p className="text-sm text-muted-foreground">Admin-only pages are rejected by the server for other roles.</p>
       <ul className="grid gap-3 sm:grid-cols-2">
-        {LINKS.map(([href, title, desc]) => (
+        {links.map(([href, title, desc]) => (
           <li key={href}>
             <Link href={href} className="block rounded-lg border p-4 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">
               <p className="font-medium">{title}</p>

@@ -4,6 +4,7 @@ import { useState } from "react"
 
 import { AcademicYearSelect } from "@/components/academic-year-select"
 import { BranchSelect } from "@/components/branch-select"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -16,6 +17,7 @@ export default function CalendarSettingsPage() {
   const [start, setStart] = useState("")
   const [end, setEnd] = useState("")
   const { data, isPending, isError, refetch } = useCalendarSettings(branch, year)
+  const [deleting, setDeleting] = useState<{ id: string; label: string } | null>(null)
   const create = useCreateCalendarSetting()
   const del = useDeleteCalendarSetting()
   const ready = branch && year && mod.trim() && start && end && start <= end
@@ -33,7 +35,7 @@ export default function CalendarSettingsPage() {
           {data.map((s) => (
             <li key={s.id} className="flex items-center justify-between gap-2 p-3 text-sm">
               <span><b>{s.module}</b> {s.start_date} to {s.end_date}{s.is_open_till_today ? " (open till today)" : ""}</span>
-              <Button size="sm" variant="outline" disabled={del.isPending} aria-label={`Delete ${s.module} setting`} onClick={() => del.mutate(s.id)}>Delete</Button>
+              <Button size="sm" variant="outline" disabled={del.isPending} aria-label={`Delete ${s.module} setting`} onClick={() => setDeleting({ id: s.id, label: `${s.module} ${s.start_date} to ${s.end_date}` })}>Delete</Button>
             </li>
           ))}
         </ul>
@@ -44,6 +46,16 @@ export default function CalendarSettingsPage() {
         <div><label htmlFor="cs-e" className="text-sm font-medium">End</label><Input id="cs-e" type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
         <Button type="submit" disabled={!ready || create.isPending}>Add</Button>
       </form>
+      <ConfirmDialog
+        open={!!deleting}
+        onOpenChange={(o) => !o && setDeleting(null)}
+        title="Delete calendar setting?"
+        description={deleting ? `This permanently deletes the calendar setting "${deleting.label}". This action is recorded in the audit log and cannot be undone.` : ""}
+        confirmLabel="Delete"
+        destructive
+        isPending={del.isPending}
+        onConfirm={() => deleting && del.mutate(deleting.id, { onSettled: () => setDeleting(null) })}
+      />
     </div>
   )
 }

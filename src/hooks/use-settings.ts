@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { api, type ApiBody } from "@/lib/typed-api"
-import { qk, type QueryDomain } from "@/lib/query-keys"
+import { qk, SESSION_KEY, type QueryDomain } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 
 /** Mutation that toasts and invalidates one domain. */
@@ -20,8 +20,19 @@ function useSave<V>(domain: QueryDomain, fn: (v: V) => Promise<unknown>, msg: st
   })
 }
 
-export const useRenameSchool = () =>
-  useSave("branches", (name: string) => api("put", "/tenants/me", { body: { name } }), "School renamed")
+export function useRenameSchool() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (name: string) => api("put", "/tenants/me", { body: { name } }),
+    onSuccess: () => {
+      toast.success("School renamed")
+      // session user carries the tenant; branches list is tenant-scoped too
+      qc.invalidateQueries({ queryKey: SESSION_KEY })
+      qc.invalidateQueries({ queryKey: qk("branches") })
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  })
+}
 
 export function useAppSettings(academicYearId?: string) {
   return useQuery({

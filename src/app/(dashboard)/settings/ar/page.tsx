@@ -4,6 +4,7 @@ import { useState } from "react"
 
 import { AcademicYearSelect } from "@/components/academic-year-select"
 import { BranchSelect } from "@/components/branch-select"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -17,6 +18,7 @@ export default function ArSettingsPage() {
   const [time, setTime] = useState("")
   const [standards, setStandards] = useState("")
   const { data, isPending, isError, refetch } = useArSettings(branch, year)
+  const [deleting, setDeleting] = useState<{ id: string; label: string } | null>(null)
   const create = useCreateArSetting()
   const toggle = useToggleArLive()
   const del = useDeleteArSetting()
@@ -35,8 +37,8 @@ export default function ArSettingsPage() {
             <li key={s.id} className="flex items-center justify-between gap-2 p-3 text-sm">
               <span>{s.start_date} {s.start_time} {s.standards.length ? `(${s.standards.join(", ")})` : ""}</span>
               <span className="flex items-center gap-2">
-                <Switch aria-label="AR live" checked={s.is_ar_live} disabled={toggle.isPending} onCheckedChange={(live) => toggle.mutate({ id: s.id, live })} />
-                <Button size="sm" variant="outline" disabled={del.isPending} onClick={() => del.mutate(s.id)}>Delete</Button>
+                <Switch aria-label={`AR live ${s.start_date} ${s.start_time}`} checked={s.is_ar_live} disabled={toggle.isPending} onCheckedChange={(live) => toggle.mutate({ id: s.id, live })} />
+                <Button size="sm" variant="outline" disabled={del.isPending} aria-label={`Delete AR setting ${s.start_date} ${s.start_time}`} onClick={() => setDeleting({ id: s.id, label: `${s.start_date} ${s.start_time}` })}>Delete</Button>
               </span>
             </li>
           ))}
@@ -51,6 +53,16 @@ export default function ArSettingsPage() {
         <div><label htmlFor="ar-s" className="text-sm font-medium">Standards (comma separated)</label><Input id="ar-s" value={standards} onChange={(e) => setStandards(e.target.value)} /></div>
         <Button type="submit" disabled={!branch || !year || !date || !time || create.isPending}>Add</Button>
       </form>
+      <ConfirmDialog
+        open={!!deleting}
+        onOpenChange={(o) => !o && setDeleting(null)}
+        title="Delete AR setting?"
+        description={deleting ? `This permanently deletes the AR setting starting ${deleting.label}. This action is recorded in the audit log and cannot be undone.` : ""}
+        confirmLabel="Delete"
+        destructive
+        isPending={del.isPending}
+        onConfirm={() => deleting && del.mutate(deleting.id, { onSettled: () => setDeleting(null) })}
+      />
     </div>
   )
 }

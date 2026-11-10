@@ -1,6 +1,6 @@
 "use client"
 
-import { BirthdayWishesTab, ConsentTab, TransportRenewalTab } from "./actions-tab"
+import { TransportRenewalTab } from "./actions-tab"
 import * as React from "react"
 
 import {
@@ -77,8 +77,6 @@ export default function PortalPage() {
             <TabsTrigger value="observations">Observations</TabsTrigger>
             <TabsTrigger value="id-card">ID Card</TabsTrigger>
             <TabsTrigger value="transport">Transport renewal</TabsTrigger>
-            <TabsTrigger value="consent">Consent</TabsTrigger>
-            <TabsTrigger value="wishes">Birthday wishes</TabsTrigger>
           </TabsList>
           <TabsContent value="attendance">
             <AttendanceTab studentId={student.id} />
@@ -103,12 +101,6 @@ export default function PortalPage() {
           </TabsContent>
           <TabsContent value="transport">
             <TransportRenewalTab studentId={student.id} />
-          </TabsContent>
-          <TabsContent value="consent">
-            <ConsentTab studentId={student.id} />
-          </TabsContent>
-          <TabsContent value="wishes">
-            <BirthdayWishesTab />
           </TabsContent>
         </Tabs>
       )}
