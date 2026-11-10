@@ -57,3 +57,11 @@ export const WEEKDAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY",
 export function validRange(from: string, to: string): boolean {
   return !!from && !!to && from <= to
 }
+
+/** Parse a JSON-object textarea; null when empty, throws message-less Error when invalid. */
+export function parseJsonObject(text: string): Record<string, unknown> | null {
+  if (!text.trim()) return null
+  const v: unknown = JSON.parse(text)
+  if (v === null || typeof v !== "object" || Array.isArray(v)) throw new Error("Expected a JSON object")
+  return v as Record<string, unknown>
+}

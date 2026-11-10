@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-const { humanize, cellText, columnKeys, toggleId, isCountsOnly, sectionProgress, balanceEntries, validRange } =
+const { humanize, cellText, columnKeys, toggleId, isCountsOnly, sectionProgress, balanceEntries, validRange, parseJsonObject } =
   await import("../src/lib/hr/rows.ts")
 
 test("humanize / cellText", () => {
@@ -43,4 +43,11 @@ test("validRange", () => {
   assert.equal(validRange("2026-01-01", "2026-01-01"), true)
   assert.equal(validRange("2026-02-01", "2026-01-01"), false)
   assert.equal(validRange("", "2026-01-01"), false)
+})
+
+test("parseJsonObject", () => {
+  assert.equal(parseJsonObject("  "), null)
+  assert.deepEqual(parseJsonObject('{"a":1}'), { a: 1 })
+  assert.throws(() => parseJsonObject("[1]"))
+  assert.throws(() => parseJsonObject("{bad"))
 })
