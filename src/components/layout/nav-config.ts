@@ -43,6 +43,9 @@ import {
   UserCog,
   Users,
   UsersRound,
+  Settings,
+  Database,
+  UserRound,
 } from "lucide-react"
 
 import type { Role } from "@/types/auth"
@@ -53,6 +56,8 @@ export interface NavItem {
   icon: LucideIcon
   /** Omit to show for every role. */
   roles?: readonly Role[]
+  /** Guarded route with no sidebar entry. */
+  hidden?: boolean
 }
 
 const STAFF_ROLES: readonly Role[] = [
@@ -181,4 +186,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "My Children", href: "/portal", icon: UserCheck, roles: ["parent"] },
   { label: "Master Data", href: "/master-data", icon: Library, roles: ADMIN_ONLY_ROLES },
   { label: "Module Settings", href: "/module-settings", icon: ToggleLeft, roles: ADMIN_ONLY_ROLES },
+  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "School", href: "/settings/school", icon: Settings, roles: ["super_admin", "school_admin"], hidden: true },
+  { label: "App settings", href: "/settings/app", icon: Settings, roles: ADMIN_ONLY_ROLES, hidden: true },
+  { label: "Calendar settings", href: "/settings/calendar", icon: Settings, roles: ADMIN_ONLY_ROLES, hidden: true },
+  { label: "AR settings", href: "/settings/ar", icon: Settings, roles: ADMIN_ONLY_ROLES, hidden: true },
+  { label: "Module access", href: "/settings/module-access", icon: Settings, roles: ADMIN_ONLY_ROLES, hidden: true },
+  { label: "Student Records", href: "/student-records", icon: Database, roles: ADMIN_AND_TEACHER_ROLES },
+  { label: "My Workspace", href: "/my", icon: UserRound, roles: STAFF_ROLES },
 ]

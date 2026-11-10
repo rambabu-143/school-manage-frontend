@@ -17,7 +17,7 @@ export function Sidebar({ role }: { role: Role }) {
   const collapsed = useUIStore((state) => state.sidebarCollapsed)
   const toggleSidebar = useUIStore((state) => state.toggleSidebar)
 
-  const items = NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(role))
+  const items = NAV_ITEMS.filter((item) => !item.hidden && (!item.roles || item.roles.includes(role)))
 
   return (
     <aside
