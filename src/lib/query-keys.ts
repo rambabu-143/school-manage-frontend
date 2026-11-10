@@ -58,6 +58,7 @@ export type QueryDomain =
   | "message-templates"
   | "module-settings"
   | "newsletters"
+  | "ops"
   | "nomination-reviews"
   | "notices"
   | "notifications"
