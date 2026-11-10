@@ -127,3 +127,12 @@ test("dev gallery is 404-routed in production only", async () => {
     process.env.NODE_ENV = env
   }
 })
+
+test("calendar: hex validation and csv export with formula guard", async () => {
+  const { isHexColor, toCsv } = await import("../src/lib/shared/calendar.ts")
+  assert.ok(isHexColor("#fff") && isHexColor("#A1b2C3"))
+  assert.ok(!isHexColor("fff") && !isHexColor("#ffff") && !isHexColor("red"))
+  assert.equal(toCsv([{ a: "x,y", b: "=1+1" }, { a: 'q"' , c: 2 }]), 'a,b,c\n"x,y",\'=1+1,\n"q""",,2')
+  const e = parseApiError(err(422, { detail: { errors: [{ row: 2, error: "bad" }] } }))
+  assert.deepEqual(e.rowErrors, [{ row: 2, message: "bad" }])
+})

@@ -58,6 +58,7 @@ export type QueryDomain =
   | "message-templates"
   | "module-settings"
   | "newsletters"
+  | "ops"
   | "nomination-reviews"
   | "notices"
   | "notifications"
@@ -98,6 +99,16 @@ export type QueryDomain =
   | "syllabus-topics"
   | "tenant-users"
   | "timetable-entries"
+  | "attendance-reasons"
+  | "attendance-reports"
+  | "birthday-wishes"
+  | "calendar-events"
+  | "calendar-holidays"
+  | "cats-reports"
+  | "disciplinary-reasons"
+  | "school-days"
+  | "transport-attendance"
+  | "attendance-terms"
   | "transport-routes"
   | "transport-slabs"
   | "transport-stops"
@@ -111,6 +122,7 @@ export type QueryDomain =
   | "promotion-slip"
   | "session-promotion"
   | "student-medical-history"
+  | "exam-records"
 
 export type QueryScope = {
   userId: string

@@ -34,6 +34,7 @@ import {
   Receipt,
   ShieldAlert,
   Smile,
+  Crosshair,
   Sparkles,
   SplitSquareVertical,
   Vote,
@@ -73,6 +74,9 @@ const ADMIN_AND_ACCOUNTANT_ROLES: readonly Role[] = [
   "accountant",
 ]
 
+// CATS import/reports are gated by FULL_BRANCH_ACCESS (super/school admin only).
+const FULL_ACCESS_ROLES: readonly Role[] = ["super_admin", "school_admin"]
+
 // Admissions endpoints are admin-only (require_role(*ADMIN_ROLES) throughout).
 const ADMIN_ONLY_ROLES: readonly Role[] = ["super_admin", "school_admin", "branch_admin"]
 
@@ -105,6 +109,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Academics", href: "/academics", icon: BookOpen, roles: STAFF_ROLES },
   { label: "Timetable", href: "/timetable", icon: Clock, roles: STAFF_ROLES },
   { label: "Attendance", href: "/attendance", icon: CalendarCheck, roles: STAFF_ROLES },
+  { label: "School Calendar", href: "/school-calendar", icon: CalendarDays, roles: STAFF_ROLES },
+  { label: "Birthday Wishes", href: "/birthday-wishes", icon: PartyPopper, roles: STAFF_ROLES },
+  { label: "CATS / Biometric", href: "/hr/cats", icon: CalendarCheck, roles: FULL_ACCESS_ROLES },
   { label: "Leave", href: "/hr", icon: CalendarOff, roles: STAFF_ROLES },
   { label: "Gradebook", href: "/gradebook", icon: GraduationCap, roles: STAFF_ROLES },
   {
@@ -150,6 +157,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: SplitSquareVertical,
     roles: ADMIN_AND_TEACHER_ROLES,
   },
+  {
+    label: "Exams & Records",
+    href: "/exam-records",
+    icon: FileText,
+    roles: ADMIN_AND_TEACHER_ROLES,
+  },
   { label: "Syllabus", href: "/syllabus", icon: ListChecks, roles: ADMIN_AND_TEACHER_ROLES },
   { label: "Appraisal", href: "/appraisal", icon: NotebookText, roles: STAFF_ROLES },
   { label: "Houses", href: "/houses", icon: Flag, roles: ADMIN_AND_TEACHER_ROLES },
@@ -171,6 +184,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: Smile,
     roles: ADMIN_AND_TEACHER_ROLES,
   },
+  { label: "Shooting", href: "/shooting", icon: Crosshair, roles: ADMIN_AND_TEACHER_ROLES },
   { label: "My Children", href: "/portal", icon: UserCheck, roles: ["parent"] },
   { label: "Master Data", href: "/master-data", icon: Library, roles: ADMIN_ONLY_ROLES },
   { label: "Module Settings", href: "/module-settings", icon: ToggleLeft, roles: ADMIN_ONLY_ROLES },

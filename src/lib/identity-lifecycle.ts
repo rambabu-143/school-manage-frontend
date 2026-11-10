@@ -83,6 +83,11 @@ export function attachIdentityGuard(client: QueryClient, subscribeIdentity?: (cb
       guard.sync(userToScope(event.query.state.data as UserLike, ctxToScopeCtx(ctx)))
     }
   })
-  subscribeIdentity?.(() => void client.invalidateQueries({ queryKey: SESSION_KEY }))
+  // Explicit identity change (branch / year switch, impersonation start or exit):
+  // drop every cached query now, then refetch the session so the guard re-scopes.
+  subscribeIdentity?.(() => {
+    purgeOtherScopes(client, null)
+    void client.invalidateQueries({ queryKey: SESSION_KEY })
+  })
   return guard
 }
