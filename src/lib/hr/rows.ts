@@ -39,16 +39,23 @@ export function sectionProgress(r: { total_students: number; rated: number; fina
 export type BalanceCell = { carry_forward: string; credit_in_jan: string; credit_in_july: string }
 
 /** Only edited cells with valid non-negative numbers are sent. */
+const balanceOk = (v: string) => v.trim() !== "" && Number.isFinite(Number(v)) && Number(v) >= 0
+const balanceValid = (c: BalanceCell) => balanceOk(c.carry_forward) && balanceOk(c.credit_in_jan) && balanceOk(c.credit_in_july)
+
+/** Edit keys whose cell has an invalid value (these are not sent). */
+export function invalidBalanceKeys(edits: Record<string, BalanceCell>): string[] {
+  return Object.entries(edits).filter(([, c]) => !balanceValid(c)).map(([k]) => k)
+}
+
 export function balanceEntries(
   edits: Record<string, BalanceCell>
 ): { staff_id: string; leave_type_master_id: string; carry_forward: string; credit_in_jan: string; credit_in_july: string }[] {
-  const ok = (v: string) => v.trim() !== "" && Number.isFinite(Number(v)) && Number(v) >= 0
   return Object.entries(edits)
     .map(([key, c]) => {
       const [staff_id, leave_type_master_id] = key.split(":")
       return { staff_id, leave_type_master_id, ...c }
     })
-    .filter((e) => ok(e.carry_forward) && ok(e.credit_in_jan) && ok(e.credit_in_july))
+    .filter(balanceValid)
 }
 
 export const WEEKDAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"] as const

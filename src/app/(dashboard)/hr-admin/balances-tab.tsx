@@ -9,9 +9,7 @@ import { StaffSelect } from "@/components/staff-select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useLeaveTypes, useSaveBalances, useStaffLeaveBalances } from "@/hooks/use-hr-admin"
-import { balanceEntries, type BalanceCell } from "@/lib/hr/rows"
-
-const ZERO: BalanceCell = { carry_forward: "0", credit_in_jan: "0", credit_in_july: "0" }
+import { balanceEntries, invalidBalanceKeys, type BalanceCell } from "@/lib/hr/rows"
 
 export function BalancesTab() {
   const [year, setYear] = React.useState<string>()
@@ -23,9 +21,14 @@ export function BalancesTab() {
   const [typeId, setTypeId] = React.useState<string>()
 
   const key = `${staff}:${typeId}`
-  const cell = edits[key] ?? ZERO
-  const set = (k: keyof BalanceCell, v: string) => setEdits({ ...edits, [key]: { ...cell, [k]: v } })
+  // start from the loaded balance: the backend PUT overwrites all three values
+  const loaded = balances.data?.find((r) => String(r.leave_type_master_id) === typeId)
+  const cell: BalanceCell | undefined = edits[key] ?? (loaded ? {
+    carry_forward: String(loaded.carry_forward ?? "0"), credit_in_jan: String(loaded.credit_in_jan ?? "0"), credit_in_july: String(loaded.credit_in_july ?? "0"),
+  } : undefined)
+  const set = (k: keyof BalanceCell, v: string) => cell && setEdits({ ...edits, [key]: { ...cell, [k]: v } })
   const entries = balanceEntries(edits)
+  const invalid = invalidBalanceKeys(edits).length
 
   return (
     <div className="flex flex-col gap-4">
@@ -49,14 +52,16 @@ export function BalancesTab() {
                 {types.data?.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.code})</option>)}
               </select>
             </Field>
-            {typeId && (["carry_forward", "credit_in_jan", "credit_in_july"] as const).map((k) => (
+            {typeId && cell && (["carry_forward", "credit_in_jan", "credit_in_july"] as const).map((k) => (
               <Field key={k} label={k === "carry_forward" ? "Carry forward" : k === "credit_in_jan" ? "Credit in Jan" : "Credit in Jul"}>
                 <Input type="number" min={0} step="0.5" value={cell[k]} onChange={(e) => set(k, e.target.value)} />
               </Field>
             ))}
           </div>
+          {typeId && !cell && <p className="text-sm text-muted-foreground">Loading current balance...</p>}
+          {invalid > 0 && <p role="alert" className="text-sm text-destructive">{invalid} edited leave type(s) have an empty or negative value and will not be saved.</p>}
           <div className="flex items-center gap-3">
-            <Button type="submit" disabled={!entries.length || save.isPending}>{save.isPending ? "Saving..." : `Save ${entries.length || ""} change(s)`}</Button>
+            <Button type="submit" disabled={!entries.length || save.isPending || balances.isPending}>{save.isPending ? "Saving..." : `Save ${entries.length || ""} change(s)`}</Button>
             <span className="text-xs text-muted-foreground">Changes across leave types accumulate until saved.</span>
           </div>
         </form>

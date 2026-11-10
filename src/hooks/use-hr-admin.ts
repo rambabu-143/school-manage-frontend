@@ -5,6 +5,7 @@ import { toast } from "sonner"
 
 import { useApiError } from "@/hooks/shared/use-api-error"
 import { api, type ApiBody } from "@/lib/typed-api"
+import { domainsToInvalidate } from "@/lib/invalidation"
 import { qk, type QueryDomain } from "@/lib/query-keys"
 import type { Row } from "@/lib/hr/rows"
 
@@ -15,7 +16,7 @@ export function useAct<V, R>(fn: (v: V) => Promise<R>, domains: QueryDomain[], s
   return useMutation({
     mutationFn: fn,
     onSuccess: () => {
-      domains.forEach((d) => qc.invalidateQueries({ queryKey: qk(d) }))
+      new Set(domains.flatMap(domainsToInvalidate)).forEach((d) => qc.invalidateQueries({ queryKey: qk(d) }))
       if (success) toast.success(success)
     },
     onError: (e) => {

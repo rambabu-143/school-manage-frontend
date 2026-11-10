@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-const { humanize, cellText, columnKeys, toggleId, isCountsOnly, sectionProgress, balanceEntries, validRange, parseJsonObject } =
+const { humanize, cellText, columnKeys, toggleId, isCountsOnly, sectionProgress, balanceEntries, invalidBalanceKeys, validRange, parseJsonObject } =
   await import("../src/lib/hr/rows.ts")
 
 test("humanize / cellText", () => {
@@ -50,4 +50,9 @@ test("parseJsonObject", () => {
   assert.deepEqual(parseJsonObject('{"a":1}'), { a: 1 })
   assert.throws(() => parseJsonObject("[1]"))
   assert.throws(() => parseJsonObject("{bad"))
+})
+
+test("invalidBalanceKeys lists cells balanceEntries drops", () => {
+  const good = { carry_forward: "1", credit_in_jan: "2", credit_in_july: "3" }
+  assert.deepEqual(invalidBalanceKeys({ "s1:t1": good, "s2:t1": { ...good, credit_in_jan: "" }, "s3:t1": { ...good, carry_forward: "-1" } }), ["s2:t1", "s3:t1"])
 })

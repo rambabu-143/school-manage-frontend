@@ -48,7 +48,7 @@ export default function StaffAarPage() {
             <TabsTrigger value="report">Report</TabsTrigger>
           </TabsList>
           <TabsContent value="form"><FormPanel staffId={target} cycleId={cycle} isSelf={isSelf} /></TabsContent>
-          <TabsContent value="assessor"><AssessorPanel cycleId={cycle} /></TabsContent>
+          <TabsContent value="assessor"><AssessorPanel cycleId={cycle} own={own} /></TabsContent>
           <TabsContent value="ratings"><RatingsPanel staffId={target} cycleId={cycle} isAdmin={isAdmin} /></TabsContent>
           <TabsContent value="report"><ReportPanel staffId={target} cycleId={cycle} isSelf={isSelf} /></TabsContent>
         </Tabs>
@@ -102,15 +102,67 @@ function FormEditor({ data, staffId, cycleId, isSelf }: { data: NonNullable<Retu
   )
 }
 
-function AssessorPanel({ cycleId }: { cycleId: string }) {
+function AssessorPanel({ cycleId, own }: { cycleId: string; own?: string }) {
   const q = useAssessorForms(cycleId)
+  const [open, setOpen] = React.useState<string>()
   return (
-    <RowsTable rows={q.data} isLoading={q.isPending} error={q.error} onRetry={() => q.refetch()} empty="You are not an assessor in this cycle."
-      columns={[
-        { id: "s", header: "Staff", cell: ({ row }) => row.original.staff.name },
-        { accessorKey: "role", header: "Role" },
-        { id: "f", header: "Form", cell: ({ row }) => (row.original.form ? (row.original.form.is_submit ? "Submitted" : "Draft") : "Not started") },
-      ]} />
+    <div className="flex flex-col gap-4">
+      <RowsTable rows={q.data} isLoading={q.isPending} error={q.error} onRetry={() => q.refetch()} empty="You are not an assessor in this cycle."
+        columns={[
+          { id: "s", header: "Staff", cell: ({ row }) => row.original.staff.name },
+          { accessorKey: "role", header: "Role" },
+          { id: "f", header: "Form", cell: ({ row }) => (row.original.form ? (row.original.form.is_submit ? "Submitted" : "Draft") : "Not started") },
+          { id: "a", header: () => <span className="sr-only">Actions</span>, cell: ({ row }) => (
+            <div className="flex justify-end"><Button size="sm" variant="outline" aria-label={`Open form for ${row.original.staff.name}`} onClick={() => setOpen(row.original.staff.id)}>Open</Button></div>) },
+        ]} />
+      {open && <AssessorForm key={`${open}:${cycleId}`} staffId={open} cycleId={cycleId} own={own} />}
+    </div>
+  )
+}
+
+/** Assessor view of a rated teacher's form: the backend only accepts the caller's own `assessment` entry. */
+function AssessorForm({ staffId, cycleId, own }: { staffId: string; cycleId: string; own?: string }) {
+  const q = useAarForm(staffId, cycleId)
+  if (q.isPending) return <p className="text-sm text-muted-foreground">Loading form...</p>
+  if (q.isError) return <p role="alert" className="text-sm text-destructive">{parseApiError(q.error).message}</p>
+  return <AssessorEditor key={`${q.data.form?.id}:${q.dataUpdatedAt}`} data={q.data} staffId={staffId} cycleId={cycleId} own={own} />
+}
+
+function AssessorEditor({ data, staffId, cycleId, own }: { data: NonNullable<ReturnType<typeof useAarForm>["data"]>; staffId: string; cycleId: string; own?: string }) {
+  const save = useSaveAarForm()
+  const form = data.form
+  const mine = (form?.assessors ?? []).find((a) => a.assessor_staff_id === own)
+  const initial = mine ? Object.fromEntries(Object.entries(mine).filter(([k]) => k !== "assessor_staff_id")) : null
+  const [text, setText] = React.useState(initial ? JSON.stringify(initial, null, 2) : "")
+  const [err, setErr] = React.useState<string | null>(null)
+
+  function onSave(e: React.FormEvent) {
+    e.preventDefault()
+    try {
+      const assessment = parseJsonObject(text)
+      if (!assessment) return setErr("Enter your assessment as a JSON object.")
+      setErr(null)
+      // assessors may send only `assessment` (no self_assessment / is_submit)
+      save.mutate({ form_id: form?.id, body: { cycle_id: cycleId, staff_id: staffId, assessment } })
+    } catch {
+      setErr("Assessment must be a valid JSON object.")
+    }
+  }
+
+  return (
+    <form className="flex flex-col gap-3 rounded-md border p-4" onSubmit={onSave}>
+      <div className="flex items-center gap-2 text-sm">
+        <span className="font-medium">{data.staff.name}</span>
+        <span className="text-muted-foreground">{data.staff.designation}</span>
+        <Badge variant="secondary">{form?.is_submit ? "Submitted by teacher" : form ? "Draft" : "Not started"}</Badge>
+      </div>
+      {form?.self_assessment && <pre className="max-h-48 overflow-auto rounded-md bg-muted p-2 text-xs">{JSON.stringify(form.self_assessment, null, 2)}</pre>}
+      <Field label="My assessment (JSON object)">
+        <Textarea rows={8} className="font-mono text-xs" value={text} onChange={(e) => setText(e.target.value)} aria-invalid={!!err} />
+      </Field>
+      {err && <p role="alert" className="text-sm text-destructive">{err}</p>}
+      <div><Button type="submit" disabled={save.isPending}>{save.isPending ? "Saving..." : "Save assessment"}</Button></div>
+    </form>
   )
 }
 

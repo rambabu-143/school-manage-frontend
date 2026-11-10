@@ -12,6 +12,7 @@ import { useGrades } from "@/hooks/use-grades"
 import { useSectionAssignments, useSetClassTeacher, useSetHelperTeacher, useAddStandardTeacher, useRemoveStandardTeacher, useStandardTeachers } from "@/hooks/use-teacher-assignment"
 import { useStaff } from "@/hooks/use-staff"
 import type { components } from "@/lib/api-types"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 
 type SA = components["schemas"]["SectionAssignmentRead"]
 
@@ -25,6 +26,7 @@ export function ClassHelperTab({ canEdit }: { canEdit: boolean }) {
   const helper = useSetHelperTeacher()
   const std = useStandardTeachers()
   const addStd = useAddStandardTeacher()
+  const [rmT, setRmT] = React.useState<{ id: string; staff_name: string } | null>(null)
   const rmStd = useRemoveStandardTeacher()
   const [target, setTarget] = React.useState<{ row: SA; role: "class" | "helper" } | null>(null)
   const [pick, setPick] = React.useState<string>()
@@ -84,9 +86,13 @@ export function ClassHelperTab({ canEdit }: { canEdit: boolean }) {
           columns={[
             { accessorKey: "grade_name", header: "Grade" }, { accessorKey: "staff_name", header: "Teacher" },
             ...(canEdit ? [{ id: "a", header: () => <span className="sr-only">Actions</span>, cell: ({ row }: { row: { original: { id: string; staff_name: string } } }) => (
-              <div className="flex justify-end"><Button size="sm" variant="ghost" aria-label={`Remove ${row.original.staff_name}`} onClick={() => rmStd.mutate(row.original.id)}>Remove</Button></div>) }] : []),
+              <div className="flex justify-end"><Button size="sm" variant="ghost" aria-label={`Remove ${row.original.staff_name}`} onClick={() => setRmT(row.original)}>Remove</Button></div>) }] : []),
           ]} />
       </section>
+
+      <ConfirmDialog open={!!rmT} onOpenChange={(o) => !o && setRmT(null)} destructive isPending={rmStd.isPending} confirmLabel="Remove"
+        title="Remove grade teacher?" description={rmT ? `This removes ${rmT.staff_name} as grade teacher.` : ""}
+        onConfirm={() => rmT && rmStd.mutate(rmT.id, { onSettled: () => setRmT(null) })} />
 
       <Dialog open={!!target} onOpenChange={(o) => !o && !busy && setTarget(null)}>
         <DialogContent>

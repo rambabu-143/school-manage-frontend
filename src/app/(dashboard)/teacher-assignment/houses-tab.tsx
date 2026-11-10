@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { useHouses } from "@/hooks/use-houses"
 import { useAddHouseTeacher, useHouseIncharge, useHouseTeachers, useRemoveHouseTeacher, useSetHouseIncharge } from "@/hooks/use-teacher-assignment"
 import { useStaff } from "@/hooks/use-staff"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 
 export function HousesTab({ canEdit }: { canEdit: boolean }) {
   const incharge = useHouseIncharge()
@@ -17,6 +18,7 @@ export function HousesTab({ canEdit }: { canEdit: boolean }) {
   const staff = useStaff()
   const setIn = useSetHouseIncharge()
   const add = useAddHouseTeacher()
+  const [rmT, setRmT] = React.useState<{ id: string; staff_name: string } | null>(null)
   const rm = useRemoveHouseTeacher()
   const [house, setHouse] = React.useState<string>()
   const [ids, setIds] = React.useState<string[]>([])
@@ -59,9 +61,12 @@ export function HousesTab({ canEdit }: { canEdit: boolean }) {
           columns={[
             { accessorKey: "house_name", header: "House" }, { accessorKey: "staff_name", header: "Teacher" },
             ...(canEdit ? [{ id: "a", header: () => <span className="sr-only">Actions</span>, cell: ({ row }: { row: { original: { id: string; staff_name: string } } }) => (
-              <div className="flex justify-end"><Button size="sm" variant="ghost" aria-label={`Remove ${row.original.staff_name}`} onClick={() => rm.mutate(row.original.id)}>Remove</Button></div>) }] : []),
+              <div className="flex justify-end"><Button size="sm" variant="ghost" aria-label={`Remove ${row.original.staff_name}`} onClick={() => setRmT(row.original)}>Remove</Button></div>) }] : []),
           ]} />
       </section>
+      <ConfirmDialog open={!!rmT} onOpenChange={(o) => !o && setRmT(null)} destructive isPending={rm.isPending} confirmLabel="Remove"
+        title="Remove house teacher?" description={rmT ? `This removes ${rmT.staff_name} as house teacher.` : ""}
+        onConfirm={() => rmT && rm.mutate(rmT.id, { onSettled: () => setRmT(null) })} />
     </div>
   )
 }

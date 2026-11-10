@@ -56,8 +56,8 @@ export function ApplicationsTab() {
           { id: "a", header: () => <span className="sr-only">Actions</span>, cell: ({ row }) => (
             <div className="flex justify-end gap-1">
               {row.original.status === "pending" && <>
-                <Button variant="ghost" size="icon-sm" aria-label="Approve" onClick={() => { setComment(""); setReview({ app: row.original, action: "approve" }) }}><Check /></Button>
-                <Button variant="ghost" size="icon-sm" aria-label="Reject" onClick={() => { setComment(""); setReview({ app: row.original, action: "reject" }) }}><X /></Button>
+                <Button variant="ghost" size="icon-sm" aria-label={`Approve leave for ${staffName(staff.data, row.original.staff_id)}, ${row.original.start_date} to ${row.original.end_date}`} onClick={() => { setComment(""); setReview({ app: row.original, action: "approve" }) }}><Check /></Button>
+                <Button variant="ghost" size="icon-sm" aria-label={`Reject leave for ${staffName(staff.data, row.original.staff_id)}, ${row.original.start_date} to ${row.original.end_date}`} onClick={() => { setComment(""); setReview({ app: row.original, action: "reject" }) }}><X /></Button>
               </>}
               <Button variant="ghost" size="icon-sm" aria-label="Delete application" onClick={() => setRm(row.original)}><Trash2 /></Button>
             </div>) },

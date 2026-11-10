@@ -28,6 +28,7 @@ export function RolesTab() {
   const delRole = useDeleteLeaveRole()
   const assign = useAssignRole()
   const unassign = useUnassignRole()
+  const [rmA, setRmA] = React.useState<{ staff_id: string; leave_role_id: string } | null>(null)
   const setApprover = useSetApprover()
 
   const [edit, setEdit] = React.useState<{ id?: string } | null>(null)
@@ -78,7 +79,7 @@ export function RolesTab() {
                 { id: "a", header: () => <span className="sr-only">Actions</span>, cell: ({ row }) => {
                   const r = row.original as Record<string, unknown>
                   const s = String(r.staff_id ?? ""), lr = String(r.leave_role_id ?? "")
-                  return <div className="flex justify-end"><Button variant="ghost" size="icon-sm" aria-label="Remove role assignment" disabled={!s || !lr} onClick={() => unassign.mutate({ staff_id: s, leave_role_id: lr })}><Trash2 /></Button></div>
+                  return <div className="flex justify-end"><Button variant="ghost" size="icon-sm" aria-label="Remove role assignment" disabled={!s || !lr} onClick={() => setRmA({ staff_id: s, leave_role_id: lr })}><Trash2 /></Button></div>
                 } },
               ]} />
           </section>
@@ -118,6 +119,9 @@ export function RolesTab() {
       <ConfirmDialog open={!!rm} onOpenChange={(o) => !o && setRm(null)} destructive isPending={delRole.isPending} confirmLabel="Delete"
         title="Delete leave role?" description={rm ? `This deletes leave role "${rm.name}" and its staff assignments. It is recorded in the audit log.` : ""}
         onConfirm={() => rm && delRole.mutate(rm.id, { onSettled: () => setRm(null) })} />
+      <ConfirmDialog open={!!rmA} onOpenChange={(o) => !o && setRmA(null)} destructive isPending={unassign.isPending} confirmLabel="Remove"
+        title="Remove role assignment?" description="This removes the leave role from the staff member. It is recorded in the audit log."
+        onConfirm={() => rmA && unassign.mutate(rmA, { onSettled: () => setRmA(null) })} />
     </div>
   )
 }

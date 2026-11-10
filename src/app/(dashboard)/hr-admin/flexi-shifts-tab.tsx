@@ -33,6 +33,7 @@ export function FlexiShiftsTab() {
   const delM = useDeleteFlexiMaster()
   const create = useCreateFlexiSchedule()
   const delS = useDeleteFlexiSchedule()
+  const [rmS, setRmS] = React.useState<{ id: string } | null>(null)
   const bulk = useBulkAssignShift()
 
   const [edit, setEdit] = React.useState<{ id?: string } | null>(null)
@@ -89,7 +90,7 @@ export function FlexiShiftsTab() {
             { id: "d", header: "Dates", cell: ({ row }) => `${row.original.from_date} to ${row.original.to_date}` },
             { id: "w", header: "Days", cell: ({ row }) => row.original.days.map((d) => d.slice(0, 3)).join(", ") },
             { id: "n", header: "Staff", cell: ({ row }) => row.original.staff_ids.length },
-            { id: "a", header: () => <span className="sr-only">Actions</span>, cell: ({ row }) => <div className="flex justify-end"><Button variant="ghost" size="icon-sm" aria-label="Delete schedule" onClick={() => delS.mutate(row.original.id)}><Trash2 /></Button></div> },
+            { id: "a", header: () => <span className="sr-only">Actions</span>, cell: ({ row }) => <div className="flex justify-end"><Button variant="ghost" size="icon-sm" aria-label="Delete schedule" onClick={() => setRmS(row.original)}><Trash2 /></Button></div> },
           ]} />
       </section>
 
@@ -127,6 +128,9 @@ export function FlexiShiftsTab() {
       <ConfirmDialog open={!!rm} onOpenChange={(o) => !o && setRm(null)} destructive isPending={delM.isPending} confirmLabel="Delete"
         title="Delete flexi shift?" description={rm ? `This deletes flexi shift "${rm.name}". It is recorded in the audit log.` : ""}
         onConfirm={() => rm && delM.mutate(rm.id, { onSettled: () => setRm(null) })} />
+      <ConfirmDialog open={!!rmS} onOpenChange={(o) => !o && setRmS(null)} destructive isPending={delS.isPending} confirmLabel="Delete"
+        title="Delete schedule?" description="This deletes the flexi shift schedule. It is recorded in the audit log."
+        onConfirm={() => rmS && delS.mutate(rmS.id, { onSettled: () => setRmS(null) })} />
     </div>
   )
 }
