@@ -2,6 +2,8 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+import Link from "next/link"
+
 import { MachineImportTab } from "./machine-import-tab"
 import { MarkAttendanceTab } from "./mark-attendance-tab"
 import { StaffAttendanceTab } from "./staff-attendance-tab"
@@ -15,6 +17,11 @@ export default function AttendancePage() {
         <p className="text-sm text-muted-foreground">
           Mark daily attendance and review section summaries.
         </p>
+        <nav aria-label="Attendance tools" className="mt-2 flex flex-wrap gap-3 text-sm">
+          {[["/attendance/school-days", "School days & terms"], ["/attendance/transport", "Transport"], ["/attendance/reports", "Reports"], ["/attendance/reasons", "Reasons"]].map(([h, l]) => (
+            <Link key={h} href={h} className="underline">{l}</Link>
+          ))}
+        </nav>
       </div>
 
       <Tabs defaultValue="mark">

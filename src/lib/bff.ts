@@ -1,6 +1,7 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
+import { isPlainJson, isSameOriginRequest } from "@/lib/bff-guards"
 import { authedBackendFetch, SessionExpiredError } from "@/lib/authed-backend-fetch"
 import { setSessionCookies } from "@/lib/session-cookies"
 
@@ -50,31 +51,12 @@ export function rotate(data: unknown, cookieStore: CookieStore) {
   return NextResponse.json({ ok: true })
 }
 
-/**
- * CSRF guard for state-changing /api/auth routes. Rejects cross-site browser
- * requests (Sec-Fetch-Site / Origin) and, for routes with a body, anything that
- * is not application/json (so text/plain form posts are refused).
- * ponytail: replace with the shared isSameOriginRequest guard (PR #4,
- * src/lib/bff-guards.ts) once that is merged.
- */
+/** Route-level wrapper over the shared guard: 403 cross-site, 415 non-JSON body when `json`. */
 export function rejectCrossSite(request: Request, opts: { json?: boolean } = {}): NextResponse | null {
-  const site = request.headers.get("sec-fetch-site")
-  if (site && site !== "same-origin" && site !== "none") {
+  if (!isSameOriginRequest(request.method, request.headers)) {
     return NextResponse.json({ error: "Request blocked." }, { status: 403 })
   }
-  const origin = request.headers.get("origin")
-  if (origin) {
-    // Same host derivation as PR #4's bff-guards: first x-forwarded-host, else host.
-    const host = (request.headers.get("x-forwarded-host")?.split(",")[0] ?? request.headers.get("host") ?? new URL(request.url).host).trim()
-    const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim()
-    let ok = false
-    try {
-      const o = new URL(origin)
-      ok = o.host === host && (!proto || o.protocol === `${proto}:`)
-    } catch {}
-    if (!ok) return NextResponse.json({ error: "Request blocked." }, { status: 403 })
-  }
-  if (opts.json && !(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {
+  if (opts.json && !isPlainJson(request.headers.get("content-type"))) {
     return NextResponse.json({ error: "Unsupported request." }, { status: 415 })
   }
   return null

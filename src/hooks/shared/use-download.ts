@@ -16,10 +16,13 @@ export function useDownload() {
   const [isLoading, setLoading] = useState(false)
 
   const download = useCallback(
-    async (path: string, opts: { params?: Record<string, unknown>; fallbackName?: string; open?: boolean } = {}) => {
+    async (path: string, opts: { params?: Record<string, unknown>; fallbackName?: string; open?: boolean; body?: unknown } = {}) => {
       setLoading(true)
       try {
-        const res = await apiClient.get<Blob>(path, { params: opts.params, responseType: "blob" })
+        const res =
+          opts.body !== undefined
+            ? await apiClient.post<Blob>(path, opts.body, { params: opts.params, responseType: "blob" })
+            : await apiClient.get<Blob>(path, { params: opts.params, responseType: "blob" })
         const type = res.data.type || String(res.headers["content-type"] ?? "")
         const name = safeDownloadName(
           filenameFromDisposition(res.headers["content-disposition"]) ?? opts.fallbackName ?? null,
