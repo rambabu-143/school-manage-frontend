@@ -106,6 +106,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Birthday Wishes", href: "/birthday-wishes", icon: PartyPopper, roles: STAFF_ROLES },
   { label: "CATS / Biometric", href: "/hr/cats", icon: CalendarCheck, roles: FULL_ACCESS_ROLES },
   { label: "Leave", href: "/hr", icon: CalendarOff, roles: STAFF_ROLES },
+  { label: "HR Admin", href: "/hr-admin", icon: UserCog, roles: ADMIN_ONLY_ROLES },
+  { label: "Teacher Assignment", href: "/teacher-assignment", icon: UsersRound, roles: ADMIN_AND_TEACHER_ROLES },
+  { label: "Staff AAR", href: "/staff-aar", icon: NotebookText, roles: STAFF_ROLES },
   { label: "Gradebook", href: "/gradebook", icon: GraduationCap, roles: STAFF_ROLES },
   {
     label: "Homework",
