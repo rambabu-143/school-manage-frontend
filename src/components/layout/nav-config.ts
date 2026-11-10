@@ -52,6 +52,8 @@ export interface NavItem {
   icon: LucideIcon
   /** Omit to show for every role. */
   roles?: readonly Role[]
+  /** Route-guard entry only; not shown in the sidebar. */
+  hidden?: boolean
 }
 
 const STAFF_ROLES: readonly Role[] = [
@@ -94,6 +96,11 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Branches", href: "/branches", icon: Building2, roles: STAFF_ROLES },
   { label: "Users", href: "/users", icon: UserCog, roles: ADMIN_ONLY_ROLES },
   { label: "Students", href: "/students", icon: Users, roles: STAFF_ROLES },
+  // Longest prefix wins in role-guard; these backend routes are admin-only.
+  { label: "Bulk import", href: "/students/import", icon: Users, roles: ADMIN_ONLY_ROLES, hidden: true },
+  { label: "MCOP login report", href: "/students/mcop-login", icon: Users, roles: ADMIN_ONLY_ROLES, hidden: true },
+  // Slip/list are readable by staff, but promote/demote (the page's purpose) are admin-only.
+  { label: "Promotion", href: "/students/promotion", icon: Users, roles: ADMIN_ONLY_ROLES, hidden: true },
   { label: "Staff", href: "/staff", icon: UsersRound, roles: STAFF_ROLES },
   { label: "Academics", href: "/academics", icon: BookOpen, roles: STAFF_ROLES },
   { label: "Timetable", href: "/timetable", icon: Clock, roles: STAFF_ROLES },

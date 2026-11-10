@@ -19,7 +19,12 @@ export default function McopLoginPage() {
   const [name, setName] = React.useState("")
   const [gradeId, setGradeId] = React.useState<string>()
   const [page, setPage] = React.useState(0)
-  const q = useMcopLoginReport({ filter, name: name.trim() || null, grade_id: gradeId ?? null, limit: LIMIT, offset: page * LIMIT })
+  const [debouncedName, setDebouncedName] = React.useState("")
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebouncedName(name.trim()), 300)
+    return () => clearTimeout(t)
+  }, [name])
+  const q = useMcopLoginReport({ filter, name: debouncedName || null, grade_id: gradeId ?? null, limit: LIMIT, offset: page * LIMIT })
   const rows = q.data ?? []
 
   return (

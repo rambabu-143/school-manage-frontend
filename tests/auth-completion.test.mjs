@@ -214,6 +214,24 @@ test("429 keeps status and Retry-After", async () => {
   assert.equal(res.headers.get("retry-after"), "42")
 })
 
+test("students admin-only subpaths override the all-staff students entry", async () => {
+  const guard = await loadTs("src/lib/role-guard.ts", {
+    "@/components/layout/nav-config": {
+      NAV_ITEMS: [
+        { href: "/students", roles: ["school_admin", "teacher", "accountant"] },
+        { href: "/students/import", roles: ["school_admin"] },
+        { href: "/students/mcop-login", roles: ["school_admin"] },
+        { href: "/students/promotion", roles: ["school_admin"] },
+      ],
+    },
+  })
+  for (const p of ["/students/import", "/students/mcop-login", "/students/promotion"]) {
+    assert.equal(guard.canAccessPath("teacher", p), false)
+    assert.equal(guard.canAccessPath("school_admin", p), true)
+  }
+  assert.equal(guard.canAccessPath("teacher", "/students"), true)
+})
+
 test("role guard is default-deny for unknown paths", async () => {
   const guard = await loadTs("src/lib/role-guard.ts", {
     "@/components/layout/nav-config": { NAV_ITEMS: [{ href: "/users", roles: ["school_admin"] }, { href: "/notices" }] },

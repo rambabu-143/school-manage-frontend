@@ -9,19 +9,27 @@ import { qk } from "@/lib/query-keys"
 import { IMAGE_RULE } from "@/lib/shared/file-validation"
 import { errorMessage } from "@/lib/error-message"
 import { api } from "@/lib/typed-api"
+import { useSession } from "@/hooks/use-session"
+import { ADMIN_ROLES } from "@/types/auth"
 
 type PhotoResult = { passed: boolean; reason: string }
 
 /** Student photo + guardian photo uploads and the medical change history. */
 export function StudentExtras({ studentId, guardians }: { studentId: string; guardians: { id: string; name: string }[] }) {
   const qc = useQueryClient()
+  const { data: user } = useSession()
+  const isAdmin = !!user && ADMIN_ROLES.includes(user.role)
+  // Backend 403s accountants on medical history.
+  const canSeeMedical = isAdmin || user?.role === "teacher"
   const history = useQuery({
+    enabled: canSeeMedical,
     queryKey: qk("student-medical-history", studentId),
     queryFn: () => api("get", "/students/{student_id}/medical-history", { path: { student_id: studentId } }),
   })
   const upload = (path: string) => (
     <FileUpload<PhotoResult>
       path={path}
+      successMessage={(r) => (r.passed ? "Upload complete." : null)}
       rule={IMAGE_RULE}
       onSuccess={(r) => {
         if (r.passed) qc.invalidateQueries({ queryKey: qk("students") })
@@ -31,7 +39,7 @@ export function StudentExtras({ studentId, guardians }: { studentId: string; gua
   )
   return (
     <div className="space-y-4">
-      <section aria-label="Photos" className="space-y-2">
+      {isAdmin && <section aria-label="Photos" className="space-y-2">
         <h3 className="text-sm font-medium">Student photo (PNG/JPEG)</h3>
         {upload(`/students/${studentId}/photo`)}
         {guardians.map((g) => (
@@ -40,8 +48,8 @@ export function StudentExtras({ studentId, guardians }: { studentId: string; gua
             {upload(`/students/${studentId}/guardians/${g.id}/photo`)}
           </div>
         ))}
-      </section>
-      <section aria-label="Medical history" className="space-y-2">
+      </section>}
+      {canSeeMedical && <section aria-label="Medical history" className="space-y-2">
         <h3 className="text-sm font-medium">Medical history</h3>
         {history.isPending ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
@@ -61,7 +69,7 @@ export function StudentExtras({ studentId, guardians }: { studentId: string; gua
             ))}
           </ul>
         )}
-      </section>
+      </section>}
     </div>
   )
 }

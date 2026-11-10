@@ -8,6 +8,8 @@ import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useSession } from "@/hooks/use-session"
+import { ADMIN_ROLES } from "@/types/auth"
 import { useStudents } from "@/hooks/use-students"
 import type { Student } from "@/types/people"
 
@@ -16,6 +18,8 @@ import { StudentDetailSheet } from "./student-detail-sheet"
 import { StudentFormSheet } from "./student-form-sheet"
 
 export default function StudentsPage() {
+  const { data: user } = useSession()
+  const isAdmin = !!user && ADMIN_ROLES.includes(user.role)
   const [gradeId, setGradeId] = React.useState<string>()
   const { data: students, isPending } = useStudents({ gradeId })
   const [search, setSearch] = React.useState("")
@@ -43,9 +47,13 @@ export default function StudentsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild><Link href="/students/import">Bulk import</Link></Button>
-          <Button variant="outline" asChild><Link href="/students/promotion">Promotion</Link></Button>
-          <Button variant="outline" asChild><Link href="/students/mcop-login">MCOP login report</Link></Button>
+          {isAdmin && (
+            <>
+              <Button variant="outline" asChild><Link href="/students/import">Bulk import</Link></Button>
+              <Button variant="outline" asChild><Link href="/students/promotion">Promotion</Link></Button>
+              <Button variant="outline" asChild><Link href="/students/mcop-login">MCOP login report</Link></Button>
+            </>
+          )}
           <StudentFormSheet />
         </div>
       </div>
