@@ -65,7 +65,7 @@ export function parseRetryAfter(value: string | undefined, now = Date.now()): nu
 function rowErrorsFrom(v: unknown): RowError[] {
   if (!Array.isArray(v)) return []
   return v.flatMap((e) =>
-    isObj(e) && typeof e.row === "number" ? [{ row: e.row, message: String(e.message ?? "Invalid row") }] : []
+    isObj(e) && typeof e.row === "number" ? [{ row: e.row, message: String(e.message ?? e.error ?? "Invalid row") }] : []
   )
 }
 

@@ -5,7 +5,9 @@ import { fakeCookies, loadTs } from "./helpers/load-ts.mjs"
 
 const impToken = `h.${Buffer.from(JSON.stringify({ imp: "admin" })).toString("base64url")}.s`
 const nextServer = { NextResponse: { json: (b, i) => Response.json(b, i) } }
-const JSON_H = { "Content-Type": "application/json" }
+const SAME = { "sec-fetch-site": "same-origin" }
+const JSON_H = { "Content-Type": "application/json", ...SAME }
+const guards = await loadTs("src/lib/bff-guards.ts", {})
 const UUID = "11111111-1111-4111-8111-111111111111"
 
 async function cookieLib() {
@@ -39,6 +41,7 @@ async function impersonateRoute(backend) {
   const jar = fakeCookies({ access_token: "A", refresh_token: "R" })
   const cookies = await cookieLib()
   const bff = await loadTs("src/lib/bff.ts", {
+    "@/lib/bff-guards": guards,
     "next/headers": { cookies: async () => jar },
     "next/server": nextServer,
     "@/lib/authed-backend-fetch": {
@@ -75,13 +78,14 @@ test("impersonate rejects bad id and surfaces backend 403", async () => {
 
 test("impersonate DELETE without a parked session is 409", async () => {
   const { route } = await impersonateRoute(() => Response.json({}))
-  assert.equal((await route.DELETE(new Request("http://t", { method: "DELETE" }))).status, 409)
+  assert.equal((await route.DELETE(new Request("http://t", { method: "DELETE", headers: SAME }))).status, 409)
 })
 
 test("switch-branch rotates cookies from the backend token pair", async () => {
   const jar = fakeCookies({ access_token: "A", refresh_token: "R" })
   const cookies = await cookieLib()
   const bff = await loadTs("src/lib/bff.ts", {
+    "@/lib/bff-guards": guards,
     "next/headers": { cookies: async () => jar },
     "next/server": nextServer,
     "@/lib/authed-backend-fetch": {
@@ -167,7 +171,7 @@ test("a normal sign-in clears parked admin tokens", async () => {
 test("impersonate DELETE with stale stash is 409 and swaps nothing", async () => {
   const { route, jar } = await impersonateRoute(() => Response.json({}))
   jar.jar.set("admin_access_token", "A")
-  assert.equal((await route.DELETE(new Request("http://t", { method: "DELETE" }))).status, 409)
+  assert.equal((await route.DELETE(new Request("http://t", { method: "DELETE", headers: SAME }))).status, 409)
   assert.equal(jar.jar.get("access_token"), "A")
   assert.equal(jar.jar.has("admin_access_token"), false)
 })
@@ -178,6 +182,7 @@ test("logout during impersonation revokes both refresh tokens and clears everyth
   const jar = fakeCookies({ access_token: impToken, admin_access_token: "A", admin_refresh_token: "ADMIN_R" })
   const cookies = await cookieLib()
   const bff = await loadTs("src/lib/bff.ts", {
+    "@/lib/bff-guards": guards,
     "next/headers": { cookies: async () => jar }, "next/server": nextServer,
     "@/lib/authed-backend-fetch": { SessionExpiredError: class extends Error {}, authedBackendFetch: async () => Response.json({}) },
     "@/lib/session-cookies": cookies,
@@ -187,7 +192,7 @@ test("logout during impersonation revokes both refresh tokens and clears everyth
     "@/lib/single-flight": { refreshTokenKey: (t) => `k:${t}`, forgetSingleFlight: (k) => forgotten.push(k) },
     "@/lib/backend": { backendFetch: async (_p, init) => { revoked.push(JSON.parse(init.body).refresh_token); return new Response(null, { status: 204 }) } },
   })
-  const res = await route.POST(new Request("http://t", { method: "POST" }))
+  const res = await route.POST(new Request("http://t", { method: "POST", headers: SAME }))
   assert.equal(res.status, 200)
   assert.deepEqual(revoked, ["ADMIN_R"])
   assert.deepEqual(forgotten, ["k:ADMIN_R"]) // the 30 s refresh cache must forget revoked tokens
@@ -196,17 +201,20 @@ test("logout during impersonation revokes both refresh tokens and clears everyth
 
 test("CSRF guard rejects cross-site, bad origin and non-JSON bodies", async () => {
   const bff = await loadTs("src/lib/bff.ts", {
+    "@/lib/bff-guards": guards,
     "next/headers": { cookies: async () => ({}) }, "next/server": nextServer, "@/lib/authed-backend-fetch": { SessionExpiredError: class {}, authedBackendFetch: async () => null }, "@/lib/session-cookies": { setSessionCookies() {} },
   })
   const req = (headers) => new Request("http://app.test/x", { method: "POST", headers })
   assert.equal(bff.rejectCrossSite(req({ "sec-fetch-site": "cross-site" })).status, 403)
   assert.equal(bff.rejectCrossSite(req({ origin: "http://evil.test", host: "app.test" })).status, 403)
-  assert.equal(bff.rejectCrossSite(req({ "content-type": "text/plain" }), { json: true }).status, 415)
+  assert.equal(bff.rejectCrossSite(req({ "content-type": "text/plain", ...SAME }), { json: true }).status, 415)
+  assert.equal(bff.rejectCrossSite(req({ "content-type": "application/json" }), { json: true }).status, 403) // no origin signal
   assert.equal(bff.rejectCrossSite(req({ "sec-fetch-site": "same-origin", origin: "http://app.test", host: "app.test", "content-type": "application/json" }), { json: true }), null)
 })
 
 test("429 keeps status and Retry-After", async () => {
   const bff = await loadTs("src/lib/bff.ts", {
+    "@/lib/bff-guards": guards,
     "next/headers": { cookies: async () => ({}) }, "next/server": { NextResponse: { json: (b, i) => Response.json(b, i) } }, "@/lib/authed-backend-fetch": { SessionExpiredError: class {}, authedBackendFetch: async () => null }, "@/lib/session-cookies": { setSessionCookies() {} },
   })
   const res = bff.rateLimited(new Response(null, { status: 429, headers: { "retry-after": "42" } }), "slow down")
@@ -231,6 +239,7 @@ test("role guard is default-deny for unknown paths", async () => {
 
 async function realBff() {
   return loadTs("src/lib/bff.ts", {
+    "@/lib/bff-guards": guards,
     "next/headers": { cookies: async () => ({}) }, "next/server": nextServer,
     "@/lib/authed-backend-fetch": { SessionExpiredError: class {}, authedBackendFetch: async () => null },
     "@/lib/session-cookies": { setSessionCookies() {} },
@@ -254,9 +263,9 @@ test("login and password-reset routes reject cross-site and text/plain, and bad 
   for (const path of ["login", "password-reset/request", "password-reset/confirm"]) {
     const route = await loadTs(`src/app/api/auth/${path}/route.ts`, mocks)
     const post = (headers, body) => route.POST(new Request("http://app.test/x", { method: "POST", headers, body }))
-    assert.equal((await post({ "sec-fetch-site": "cross-site", ...JSON_H }, "{}")).status, 403, path)
+    assert.equal((await post({ ...JSON_H, "sec-fetch-site": "cross-site" }, "{}")).status, 403, path)
     assert.equal((await post({ origin: "http://evil.test", host: "app.test", ...JSON_H }, "{}")).status, 403, path)
-    assert.equal((await post({ "content-type": "text/plain" }, "{}")).status, 415, path)
+    assert.equal((await post({ "content-type": "text/plain", ...SAME }, "{}")).status, 415, path)
     assert.equal((await post(JSON_H, "not json")).status, 400, path)
   }
 })

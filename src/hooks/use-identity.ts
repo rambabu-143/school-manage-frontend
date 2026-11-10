@@ -22,13 +22,11 @@ async function post(url: string, body?: unknown, method = "POST") {
   return data
 }
 
-/** Tell the cache owner identity changed; if nobody is listening, clear it here. */
+/** Announce the change (the cache owner purges), then reload so server layouts re-check the new cookies. */
 function useIdentityChanged() {
   const queryClient = useQueryClient()
   return () => {
-    if (!onIdentityChange()) queryClient.clear()
-    // Always refetch who/where we are, then let the server tree re-render.
-    queryClient.invalidateQueries({ queryKey: ["session"] })
+    onIdentityChange()
     queryClient.invalidateQueries({ queryKey: ["session-scope"] })
     window.location.reload()
   }
