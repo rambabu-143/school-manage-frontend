@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useId, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+import { StudentSelect } from "@/components/student-select"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -73,6 +74,8 @@ export function AllRemarksTab() {
 // -- Section locks + academic-record locks + CSA locks -------------------------------------------
 interface SectionLock { id: string; lock_key: string; term: string; is_locked: boolean; updated_at: string }
 export function SectionLocksTab() {
+  const keyId = useId()
+  const termId = useId()
   const sections = useSectionOptions()
   const qc = useQueryClient()
   const { handle } = useApiError()
@@ -105,8 +108,8 @@ export function SectionLocksTab() {
             ))}
           </ul>
           <form className="flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); if (lockKey) set.mutate({ lock_key: lockKey, term, is_locked: true }) }}>
-            <div className="flex flex-col gap-1"><Label htmlFor="lk">Lock key</Label><Input id="lk" value={lockKey} onChange={(e) => setLockKey(e.target.value)} maxLength={100} /></div>
-            <div className="flex flex-col gap-1"><Label htmlFor="lt">Term (optional)</Label><Input id="lt" value={term} onChange={(e) => setTerm(e.target.value)} maxLength={50} /></div>
+            <div className="flex flex-col gap-1"><Label htmlFor={keyId}>Lock key</Label><Input id={keyId} value={lockKey} onChange={(e) => setLockKey(e.target.value)} maxLength={100} /></div>
+            <div className="flex flex-col gap-1"><Label htmlFor={termId}>Term (optional)</Label><Input id={termId} value={term} onChange={(e) => setTerm(e.target.value)} maxLength={50} /></div>
             <Button type="submit" disabled={!lockKey || set.isPending}>Lock</Button>
           </form>
         </>
@@ -116,21 +119,22 @@ export function SectionLocksTab() {
 }
 
 export function RecordLocksForm() {
+  const termId = useId()
   const { handle } = useApiError()
-  const [studentId, setStudentId] = useState("")
-  const [term, setTerm] = useState("Term 1")
+  const [studentId, setStudentId] = useState<string>()
+  const [term, setTerm] = useState("Term 1") // backend: free text, 1-50 chars
   const m = useMutation({
-    mutationFn: async (unlock: boolean) => apiClient.post(unlock ? "/academic-record-locks/unlock" : "/academic-record-locks", { student_id: studentId.trim(), term }),
+    mutationFn: async (unlock: boolean) => apiClient.post(unlock ? "/academic-record-locks/unlock" : "/academic-record-locks", { student_id: studentId, term: term.trim() }),
     onSuccess: (_d, unlock) => toast.success(unlock ? "Record unlocked" : "Record locked"),
     onError: (e) => handle(e),
   })
-  const ok = studentId.trim().length > 0 && term.length > 0
+  const ok = !!studentId && term.trim().length > 0
   return (
     <fieldset className="space-y-3 rounded-md border p-4">
       <legend className="px-1 text-sm font-medium">Academic record lock (per student and term)</legend>
       <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1"><Label htmlFor="rl-s">Student ID</Label><Input id="rl-s" value={studentId} onChange={(e) => setStudentId(e.target.value)} placeholder="Student UUID" /></div>
-        <div className="flex flex-col gap-1"><Label htmlFor="rl-t">Term</Label><Input id="rl-t" value={term} onChange={(e) => setTerm(e.target.value)} /></div>
+        <div className="flex min-w-64 flex-col gap-1"><Label>Student</Label><StudentSelect value={studentId} onChange={setStudentId} /></div>
+        <div className="flex flex-col gap-1"><Label htmlFor={termId}>Term</Label><Input id={termId} value={term} onChange={(e) => setTerm(e.target.value)} maxLength={50} /></div>
         <Button disabled={!ok || m.isPending} onClick={() => m.mutate(false)}>Lock</Button>
         <Button variant="outline" disabled={!ok || m.isPending} onClick={() => m.mutate(true)}>Unlock</Button>
       </div>

@@ -2,6 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSession } from "@/hooks/use-session"
+import { canImpersonate } from "@/lib/role-guard"
 
 import { DownloadsTab } from "./downloads-tab"
 import { ExamNamesTab, SubjectExamsTab } from "./exams-tab"
@@ -29,7 +30,7 @@ const TABS: { id: string; label: string; el: React.ReactNode; admin?: boolean }[
 
 export default function ExamRecordsPage() {
   const { data: user } = useSession()
-  const isAdmin = user?.role !== "teacher" // UI hint only: the API enforces roles
+  const isAdmin = !!user && canImpersonate(user.role) // UI hint only: the API enforces roles
   const tabs = TABS.filter((t) => !t.admin || isAdmin)
   return (
     <div className="flex flex-col gap-4">

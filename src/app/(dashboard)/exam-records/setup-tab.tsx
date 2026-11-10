@@ -31,7 +31,7 @@ const labeler = (opts?: { value: string; label: string }[]) => (id: string) => o
 // -- Grade bands: list + create only ------------------------------------------------------
 interface GradeBand { id: string; grade_letter: string; min_percentage: number; max_percentage: number; grade_point?: number | null }
 const gradeBandSchema = z.object({
-  grade_letter: req("Required").max(10),
+  grade_letter: req("Required").max(5),
   min_percentage: z.number().int().min(0).max(100),
   max_percentage: z.number().int().min(0).max(100),
 })
