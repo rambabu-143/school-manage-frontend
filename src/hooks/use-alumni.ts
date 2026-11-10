@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+import { api } from "@/lib/typed-api"
 import { apiClient } from "@/lib/api-client"
 import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
@@ -48,6 +49,21 @@ export function useUpdateAlumni() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk("alumni") })
       toast.success("Alumni record updated")
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
+}
+
+export function useDeleteAlumni() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api("delete", "/alumni/{alumni_id}", { path: { alumni_id: id } })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk("alumni") })
+      toast.success("Alumni record deleted")
     },
     onError: (error) => toast.error(errorMessage(error)),
   })

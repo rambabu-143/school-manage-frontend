@@ -15,10 +15,12 @@ interface FileUploadProps<T> {
   field?: string
   extraFields?: Record<string, string>
   onSuccess?: (result: T) => void
+  /** Return null to suppress the default "Upload complete." (e.g. 200 with passed:false). */
+  successMessage?: (result: T) => string | null
 }
 
 /** Drag/drop + click upload with validation, progress, cancel, and a per-row error report (422 bulk imports). */
-export function FileUpload<T = unknown>({ path, rule, field, extraFields, onSuccess }: FileUploadProps<T>) {
+export function FileUpload<T = unknown>({ path, rule, field, extraFields, onSuccess, successMessage }: FileUploadProps<T>) {
   const up = useUpload<T>({ path, rule, field, extraFields })
   const input = useRef<HTMLInputElement>(null)
   const [over, setOver] = useState(false)
@@ -81,7 +83,9 @@ export function FileUpload<T = unknown>({ path, rule, field, extraFields, onSucc
         </div>
       )}
       {up.cancelled && <p role="status" className="text-sm text-muted-foreground">Upload cancelled.</p>}
-      {up.data !== null && !up.error && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">Upload complete.</p>}
+      {up.data !== null && !up.error && (successMessage ? successMessage(up.data) : "Upload complete.") && (
+        <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{successMessage ? successMessage(up.data) : "Upload complete."}</p>
+      )}
     </div>
   )
 }
