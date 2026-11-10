@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/session-cookies"
 
-const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password"]
+const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password", "/event-portal"]
 // Only these bounce an already-authenticated visitor away - a logged-in user
 // might still legitimately need /reset-password (e.g. a stale/expired
 // cookie, or resetting a different account's password from a shared link).
