@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { DownloadButton } from "@/components/shared/download-button"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useSession } from "@/hooks/use-session"
 import { useApiError } from "@/hooks/shared/use-api-error"
 import { apiClient } from "@/lib/api-client"
 import { buildPayload, fillRow, toFormValues } from "@/lib/ops/form"
@@ -26,6 +27,10 @@ type Row = Record<string, unknown>
 export function ResourcePage({ res }: { res: Resource }) {
   const qc = useQueryClient()
   const { handle } = useApiError()
+  const { data: user } = useSession()
+  const has = (roles?: readonly string[]) => !roles || (!!user && roles.includes(user.role))
+  const canRead = has(res.roles?.read)
+  const canWrite = has(res.roles?.write)
   const { scope, setPicked } = useScope(res.scope)
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [editing, setEditing] = useState<Row | "new" | null>(null)
@@ -43,7 +48,7 @@ export function ResourcePage({ res }: { res: Resource }) {
 
   const list = useQuery({
     queryKey: qk("ops", res.key, params),
-    enabled: !needScope,
+    enabled: !needScope && canRead,
     queryFn: async () => {
       try {
         const { data } = await apiClient.get<Row[] | Row | null>(res.list, { params })
@@ -95,9 +100,9 @@ export function ResourcePage({ res }: { res: Resource }) {
     onError: (e) => { handle(e); setActing(null) },
   })
 
-  const canEdit = !!res.item && !res.noUpdate
-  const canDelete = !!res.item && !res.noDelete
-  const canCreate = !!(res.create || res.upsert)
+  const canEdit = canWrite && !!res.item && !res.noUpdate
+  const canDelete = canWrite && !!res.item && !res.noDelete
+  const canCreate = canWrite && !!(res.create || res.upsert)
   const formFields = res.fields.filter((f) => !f.scoped && !(editing !== "new" && f.createOnly) && !(editing === "new" && f.editOnly))
 
   return (
@@ -124,7 +129,9 @@ export function ResourcePage({ res }: { res: Resource }) {
           ))}
         </div>
       )}
-      {needScope ? (
+      {!canRead ? (
+        <p className="text-sm text-muted-foreground">Your role cannot view {res.title.toLowerCase()}.</p>
+      ) : needScope ? (
         <p className="text-sm text-muted-foreground">Choose the filters above to load {res.title.toLowerCase()}.</p>
       ) : (
         <ResultTable
@@ -140,7 +147,7 @@ export function ResourcePage({ res }: { res: Resource }) {
                 <DownloadButton key={d.label} size="sm" path={fillRow(d.path, row, idKey)} fallbackName={d.fallbackName}>{d.label}</DownloadButton>
               ))}
               {res.actions?.map((a, idx) =>
-                !a.when || cellText(row[a.when.key]) === a.when.equals ? (
+                has(a.roles) && (!a.when || cellText(row[a.when.key]) === a.when.equals) ? (
                   <Button key={a.label} size="sm" variant="outline" onClick={() => setActing({ row, idx })}>{a.label}</Button>
                 ) : null
               )}

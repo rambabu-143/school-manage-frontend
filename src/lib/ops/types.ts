@@ -1,3 +1,5 @@
+import type { Role } from "../../types/auth"
+
 // Declarative screen configs for the operations module. Pure data (no React) so
 // tests/ops.test.mjs can check every path, method and field against the OpenAPI snapshot.
 
@@ -34,7 +36,7 @@ export interface Field {
 
 export interface Column { key: string; label: string; kind?: "bool" | "date" | "datetime" | "short" }
 
-export interface RowAction { label: string; method: "post" | "put" | "delete"; path: string; when?: { key: string; equals: string }; confirm?: string }
+export interface RowAction { label: string; method: "post" | "put" | "delete"; path: string; when?: { key: string; equals: string }; confirm?: string; /** Backend allows only these roles; hidden for others. */ roles?: readonly Role[] }
 
 export interface Resource {
   key: string
@@ -54,6 +56,8 @@ export interface Resource {
   upsert?: boolean
   noUpdate?: boolean
   noDelete?: boolean
+  /** read: who may list (page shows a notice otherwise); write: who may create/edit/delete. Omit = any staff. */
+  roles?: { read?: readonly Role[]; write?: readonly Role[] }
   columns: Column[]
   fields: Field[]
   actions?: RowAction[]
@@ -82,4 +86,6 @@ export interface ActionFormCfg {
   submit: string
   /** multipart/form-data instead of JSON (any "file" field). */
   multipart?: boolean
+  /** Backend allows only these roles; form hidden for others. */
+  roles?: readonly Role[]
 }

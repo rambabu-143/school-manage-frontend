@@ -11,7 +11,7 @@ function lookup(method, path) {
   const segs = path.split("/")
   for (const [p, ops] of Object.entries(spec.paths)) {
     const ps = p.replace("/api/v1", "").split("/")
-    if (ps.length === segs.length && ps.every((s, i) => s === segs[i] || (s.startsWith("{") && (segs[i].startsWith("{") || true) && segs[i].startsWith("{")))) {
+    if (ps.length === segs.length && ps.every((s, i) => s === segs[i] || (s.startsWith("{") && segs[i].startsWith("{")))) {
       if (ops[method]) return ops[method]
     }
   }
@@ -29,7 +29,14 @@ test("every resource path+method exists and fields match the request schemas", (
     assert.ok(op("get", r.list), `${r.key} list ${r.list}`)
     const names = queryNames(op("get", r.list))
     for (const f of r.filters ?? []) assert.ok(names.includes(f.name), `${r.key} filter ${f.name}`)
-    if (r.scope) assert.ok(names.includes("branch_id") || r.create, `${r.key} scope`)
+    const listOp = op("get", r.list)
+    const scopeNames = r.scope === "branch+year" ? ["branch_id", "academic_year_id"] : r.scope ? ["branch_id"] : []
+    for (const n of scopeNames) assert.ok(names.includes(n), `${r.key} scope param ${n}`)
+    // every required query param must be supplied by the scope bar or a required filter
+    for (const p of (listOp.parameters ?? []).filter((x) => x.in === "query" && x.required)) {
+      assert.ok(scopeNames.includes(p.name) || r.filters?.some((f) => f.name === p.name && f.required), `${r.key} required query ${p.name}`)
+    }
+    if (r.scopeRequired) assert.ok(scopeNames.length, `${r.key} scopeRequired needs scope`)
     const create = r.create ? props(op("post", r.create)) : null
     if (create) {
       for (const f of r.fields.filter((x) => !x.pathParam && !x.editOnly)) assert.ok(create.props.includes(f.name), `${r.key} create field ${f.name}`)
@@ -45,11 +52,30 @@ test("every resource path+method exists and fields match the request schemas", (
   }
 })
 
+// Backend-restricted surfaces (be-main routers): the config must carry a non-empty roles list.
+const A = (a) => a.length > 0
+test("role-restricted resources and actions declare roles", () => {
+  const write = ["units", "variants", "requisitionRoles", "approvers", "renewalSettings", "blocks", "eventUsers", "eventEmailSettings", "clubGolive", "selfAwarenessGolive", "streamSettings", "nominationSettings"]
+  for (const k of write) assert.ok(A(R.RESOURCES[k].roles?.write ?? []), `${k} write roles`)
+  for (const k of ["variants", "requisitionRoles", "approvers", "eventEmailSettings"]) assert.ok(A(R.RESOURCES[k].roles?.read ?? []), `${k} read roles`)
+  for (const a of R.RESOURCES.transportRequests.actions) assert.ok(A(a.roles ?? []), `transport ${a.label} roles`)
+  for (const c of [R.STOCK_IN, R.RENEWAL_NOTIFY, R.NOMINATION_UPLOAD, R.EVENT_MAIL]) assert.ok(A(c.roles ?? []), `${c.key} roles`)
+  assert.ok(A(R.INVENTORY_REPORT_ROLES))
+  assert.ok(!R.RESOURCES.approvers.roles.write.includes("accountant") && !R.RESOURCES.blocks.roles.write.includes("teacher"))
+})
+
+test("shooting slots are read-only (create API needs fee data)", () => {
+  const s = R.RESOURCES.shootingSlots
+  assert.ok(!s.create && !s.item && s.fields.length === 0)
+})
+
 test("reports and action forms point at real operations with real fields", () => {
   for (const rep of [...R.INVENTORY_REPORTS, ...R.TRANSPORT_REPORTS, ...R.ID_CARD_REPORT, ...R.SHOOTING_CLASSWISE]) {
     const o = op(rep.method, rep.path)
     assert.ok(o, rep.path)
     const allowed = rep.method === "get" ? queryNames(o) : props(o).props
+    // body-vs-query placement: a GET report must not declare a request body, a POST one must
+    assert.equal(!!o.requestBody, rep.method === "post", `${rep.key} body placement`)
     for (const f of rep.fields.filter((x) => !x.pathParam)) assert.ok(allowed.includes(f.name), `${rep.key} ${f.name}`)
   }
   for (const c of [R.STOCK_IN, R.RENEWAL_NOTIFY, R.EVENT_MAIL, R.SYLLABUS_UPLOAD, R.NOMINATION_UPLOAD]) {

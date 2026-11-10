@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 
 import { backendFetch } from "@/lib/backend"
 import { rejectCrossSite } from "@/lib/bff"
+import { stripTokenKeys } from "@/lib/bff-guards"
 
 // Event users have their own backend token (separate from staff sessions). It lives
 // only in this httpOnly cookie, scoped to the BFF routes below; the browser never sees it.
@@ -27,7 +28,7 @@ export async function eventPortalProxy(request: Request, method: "GET" | "PUT" |
       headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}) },
       body,
     })
-    const data = (await res.json().catch(() => null)) as { detail?: unknown } | null
+    const data = (await res.text().then((t) => JSON.parse(stripTokenKeys(t).text), () => null).catch(() => null)) as { detail?: unknown } | null
     if (!res.ok) {
       const status = [400, 401, 403, 404, 409, 422, 429].includes(res.status) ? res.status : 502
       return json({ error: typeof data?.detail === "string" ? data.detail : "Request failed." }, status)

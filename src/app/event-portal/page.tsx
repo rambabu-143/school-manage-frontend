@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -51,7 +52,8 @@ export default function EventPortalPage() {
   const qc = useQueryClient()
   const me = useQuery({ queryKey: KEY, queryFn: () => call<EventUser>("me"), retry: false })
   const set = (u: EventUser) => qc.setQueryData(KEY, u)
-  const submit = useMutation({ mutationFn: (final_submit: boolean) => call<EventUser>("final-submit", "PUT", { final_submit }), onSuccess: set })
+  const [confirming, setConfirming] = useState(false)
+  const submit = useMutation({ mutationFn: () => call<EventUser>("final-submit", "PUT", { final_submit: true }), onSuccess: (u) => { set(u); setConfirming(false) }, onError: () => setConfirming(false) })
   const mail = useMutation({ mutationFn: () => call<EventUser>("final-submit/send-mail", "POST"), onSuccess: set })
   const logout = useMutation({ mutationFn: () => call("logout", "POST"), onSettled: () => qc.removeQueries({ queryKey: KEY }) })
 
@@ -83,11 +85,13 @@ export default function EventPortalPage() {
         <CardContent className="space-y-3">
           {err && <p role="alert" className="text-sm text-destructive">{err.message}</p>}
           <div className="flex flex-wrap gap-2">
-            <Button disabled={submit.isPending} onClick={() => submit.mutate(!u.final_submit)}>{u.final_submit ? "Withdraw submission" : "Submit final"}</Button>
+            {!u.final_submit && <Button disabled={submit.isPending} onClick={() => setConfirming(true)}>Submit final</Button>}
             {u.final_submit && <Button variant="outline" disabled={mail.isPending} onClick={() => mail.mutate()}>{u.confirmation_sent_at ? "Resend confirmation email" : "Send confirmation email"}</Button>}
           </div>
         </CardContent>
       </Card>
+      <ConfirmDialog open={confirming} onOpenChange={setConfirming} isPending={submit.isPending} confirmLabel="Submit final"
+        title="Submit final?" description="Your final submission cannot be withdrawn or changed afterwards." onConfirm={() => submit.mutate()} />
     </main>
   )
 }

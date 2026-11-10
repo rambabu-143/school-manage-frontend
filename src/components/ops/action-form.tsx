@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { useSession } from "@/hooks/use-session"
 import { useApiError } from "@/hooks/shared/use-api-error"
 import { apiClient } from "@/lib/api-client"
 import { buildPayload, toFormValues } from "@/lib/ops/form"
@@ -18,6 +19,7 @@ import { ScopeBar, useScope } from "./scope-bar"
 export function ActionForm({ cfg, invalidate }: { cfg: ActionFormCfg; invalidate?: string }) {
   const qc = useQueryClient()
   const { handle } = useApiError()
+  const { data: user } = useSession()
   const { scope, setPicked } = useScope(cfg.scope)
   const [values, setValues] = useState(() => toFormValues(cfg.fields))
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -49,6 +51,7 @@ export function ActionForm({ cfg, invalidate }: { cfg: ActionFormCfg; invalidate
     },
   })
 
+  if (cfg.roles && !(user && cfg.roles.includes(user.role))) return null
   return (
     <form className="space-y-3 rounded-lg border p-4" noValidate onSubmit={(e) => { e.preventDefault(); send.mutate() }}>
       <h2 className="font-medium">{cfg.title}</h2>

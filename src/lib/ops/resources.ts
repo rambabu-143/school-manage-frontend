@@ -1,4 +1,10 @@
+import { ADMIN_ROLES, ROLES } from "../../types/auth"
 import type { ActionFormCfg, Field, Report, Resource } from "./types"
+
+// Mirrors the backend router role deps (read-only reference: be-main src/*/router.py).
+const ADMIN = ADMIN_ROLES
+const ADMIN_ACCT = [...ADMIN_ROLES, ROLES.ACCOUNTANT] as const
+const ADMIN_TEACHER = [...ADMIN_ROLES, ROLES.TEACHER] as const
 
 const BRANCH: Field = { name: "branch_id", label: "Branch", kind: "branch", required: true, scoped: true, createOnly: true }
 const YEAR: Field = { name: "academic_year_id", label: "Academic year", kind: "year", required: true, scoped: true, createOnly: true }
@@ -17,12 +23,12 @@ const GOLIVE_COLS = [
 export const RESOURCES = {
   // ---- inventory extras ----
   units: {
-    key: "units", title: "Product units", noun: "unit", list: "/product-units", create: "/product-units", item: "/product-units/{id}",
+    key: "units", roles: { write: ADMIN_ACCT }, title: "Product units", noun: "unit", list: "/product-units", create: "/product-units", item: "/product-units/{id}",
     columns: [{ key: "name", label: "Name" }, { key: "sort_order", label: "Order" }],
     fields: [{ name: "name", label: "Name", required: true }, { name: "sort_order", label: "Sort order", kind: "number" }],
   },
   variants: {
-    key: "variants", title: "Product variants", noun: "variant", list: "/product-variants", create: "/product-variants", item: "/product-variants/{id}",
+    key: "variants", roles: { read: ADMIN_ACCT, write: ADMIN_ACCT }, title: "Product variants", noun: "variant", list: "/product-variants", create: "/product-variants", item: "/product-variants/{id}",
     filters: [{ name: "product_id", label: "Product", kind: "product" }],
     columns: [{ key: "variant_name", label: "Variant" }, { key: "brand", label: "Brand" }, { key: "size", label: "Size" }, { key: "color", label: "Colour" }, { key: "current_stock", label: "Stock" }, { key: "is_active", label: "Active", kind: "bool" }],
     fields: [
@@ -35,12 +41,12 @@ export const RESOURCES = {
     ],
   },
   requisitionRoles: {
-    key: "requisition-roles", title: "Requisition roles", noun: "role", scope: "branch", list: "/requisition-roles", create: "/requisition-roles", item: "/requisition-roles/{id}",
+    key: "requisition-roles", roles: { read: ADMIN_ACCT, write: ADMIN_ACCT }, title: "Requisition roles", noun: "role", scope: "branch", list: "/requisition-roles", create: "/requisition-roles", item: "/requisition-roles/{id}",
     columns: [{ key: "name", label: "Name" }, { key: "short_name", label: "Short name" }, { key: "sort_order", label: "Order" }],
     fields: [BRANCH, { name: "name", label: "Name", required: true }, { name: "short_name", label: "Short name", required: true }, { name: "sort_order", label: "Sort order", kind: "number", required: true }],
   },
   approvers: {
-    key: "requisition-approvers", title: "Requisition approvers", noun: "approver", list: "/requisition-approvers", item: "/requisition-approvers/{id}", idKey: "requester_user_id", upsert: true, create: undefined,
+    key: "requisition-approvers", roles: { read: ADMIN, write: ADMIN }, title: "Requisition approvers", noun: "approver", list: "/requisition-approvers", item: "/requisition-approvers/{id}", idKey: "requester_user_id", upsert: true, create: undefined,
     columns: [{ key: "requester_user_id", label: "Requester", kind: "short" }, { key: "approver_user_id", label: "Approver", kind: "short" }],
     fields: [
       { name: "requester_user_id", label: "Requester", kind: "user", required: true, createOnly: true, pathParam: true },
@@ -49,7 +55,7 @@ export const RESOURCES = {
   },
   // ---- transport ----
   renewalSettings: {
-    key: "transport-renewal-settings", title: "Transport renewal settings", noun: "setting", scope: "branch+year", list: "/transport-renewal-settings/all", create: "/transport-renewal-settings", item: "/transport-renewal-settings/{id}",
+    key: "transport-renewal-settings", roles: { write: ADMIN }, title: "Transport renewal settings", noun: "setting", scope: "branch+year", list: "/transport-renewal-settings/all", create: "/transport-renewal-settings", item: "/transport-renewal-settings/{id}",
     columns: [{ key: "deadline_date", label: "Deadline" }, { key: "start_date", label: "Start date" }, { key: "start_time", label: "Start" }, { key: "end_time", label: "End" }, { key: "remark", label: "Remark" }],
     fields: [BRANCH, YEAR, { name: "deadline_date", label: "Deadline", kind: "date", required: true }, { name: "start_date", label: "Start date", kind: "date" }, { name: "start_time", label: "Start time", kind: "time" }, { name: "end_time", label: "End time", kind: "time" }, { name: "remark", label: "Remark", kind: "textarea" }],
   },
@@ -64,13 +70,13 @@ export const RESOURCES = {
       { name: "reason", label: "Reason", kind: "textarea" },
     ],
     actions: [
-      { label: "Approve", method: "post", path: "/transport-requests/{id}/approve", when: { key: "status", equals: "pending" } },
-      { label: "Reject", method: "post", path: "/transport-requests/{id}/reject", when: { key: "status", equals: "pending" } },
+      { label: "Approve", method: "post", path: "/transport-requests/{id}/approve", when: { key: "status", equals: "pending" }, roles: ADMIN_ACCT },
+      { label: "Reject", method: "post", path: "/transport-requests/{id}/reject", when: { key: "status", equals: "pending" }, roles: ADMIN_ACCT },
     ],
   },
   // ---- rooms ----
   blocks: {
-    key: "school-blocks", title: "School blocks", noun: "block", scope: "branch", list: "/school-blocks", create: "/school-blocks", item: "/school-blocks/{id}",
+    key: "school-blocks", roles: { write: ADMIN }, title: "School blocks", noun: "block", scope: "branch", list: "/school-blocks", create: "/school-blocks", item: "/school-blocks/{id}",
     columns: [{ key: "name", label: "Name" }, { key: "no_of_floors", label: "Floors" }],
     fields: [BRANCH, { name: "name", label: "Name", required: true }, { name: "no_of_floors", label: "Number of floors", kind: "number", required: true }],
   },
@@ -84,7 +90,7 @@ export const RESOURCES = {
   },
   // ---- events ----
   eventUsers: {
-    key: "event-users", title: "Event users", noun: "event user", scope: "branch+year", scopeRequired: true, list: "/event-users", create: "/event-users", item: "/event-users/{id}",
+    key: "event-users", roles: { write: ADMIN }, title: "Event users", noun: "event user", scope: "branch+year", scopeRequired: true, list: "/event-users", create: "/event-users", item: "/event-users/{id}",
     columns: [{ key: "name", label: "Name" }, { key: "code", label: "Code" }, { key: "email", label: "Email" }, { key: "type", label: "Type" }, { key: "is_active", label: "Active", kind: "bool" }],
     fields: [
       BRANCH, YEAR,
@@ -96,7 +102,7 @@ export const RESOURCES = {
     ],
   },
   eventEmailSettings: {
-    key: "event-email-settings", title: "Event email settings", noun: "email setting", scope: "branch+year", scopeRequired: true, list: "/event-email-settings", create: "/event-email-settings", item: "/event-email-settings/{id}", noDelete: true,
+    key: "event-email-settings", roles: { read: ADMIN, write: ADMIN }, title: "Event email settings", noun: "email setting", scope: "branch+year", scopeRequired: true, list: "/event-email-settings", create: "/event-email-settings", item: "/event-email-settings/{id}", noDelete: true,
     columns: [{ key: "email", label: "Sender email" }, { key: "from_name", label: "From name" }, { key: "file_name", label: "Attachment" }, { key: "updated_at", label: "Updated", kind: "datetime" }],
     fields: [BRANCH, YEAR, { name: "email", label: "Sender email", kind: "email", required: true }, { name: "app_password", label: "App password", kind: "password", required: true, optionalOnEdit: true }, { name: "from_name", label: "From name" }, { name: "file_name", label: "Attachment file name", editOnly: true }],
   },
@@ -113,11 +119,11 @@ export const RESOURCES = {
   },
   // ---- go-live windows ----
   clubGolive: {
-    key: "club-golive", title: "Club go-live", noun: "window", scope: "branch+year", list: "/club-golive", create: "/club-golive", item: "/club-golive/{id}",
+    key: "club-golive", roles: { write: ADMIN }, title: "Club go-live", noun: "window", scope: "branch+year", list: "/club-golive", create: "/club-golive", item: "/club-golive/{id}",
     columns: GOLIVE_COLS, fields: [BRANCH, YEAR, ...DATE_RANGE()],
   },
   selfAwarenessGolive: {
-    key: "self-awareness-golive", title: "Self-awareness go-live", noun: "window", scope: "branch+year", list: "/self-awareness/golive", create: "/self-awareness/golive", item: "/self-awareness/golive/{id}",
+    key: "self-awareness-golive", roles: { write: ADMIN }, title: "Self-awareness go-live", noun: "window", scope: "branch+year", list: "/self-awareness/golive", create: "/self-awareness/golive", item: "/self-awareness/golive/{id}",
     columns: [{ key: "type", label: "Type" }, ...GOLIVE_COLS],
     fields: [
       BRANCH, YEAR, { name: "type", label: "Type", required: true, help: "Form type this window opens." },
@@ -127,12 +133,12 @@ export const RESOURCES = {
     ],
   },
   streamSettings: {
-    key: "stream-settings", title: "Stream selection windows", noun: "window", scope: "branch+year", list: "/stream-settings", create: "/stream-settings", item: "/stream-settings/{id}",
+    key: "stream-settings", roles: { write: ADMIN }, title: "Stream selection windows", noun: "window", scope: "branch+year", list: "/stream-settings", create: "/stream-settings", item: "/stream-settings/{id}",
     columns: [{ key: "section_id", label: "Section", kind: "short" }, { key: "window_start", label: "Opens", kind: "datetime" }, { key: "window_end", label: "Closes", kind: "datetime" }, { key: "remark", label: "Remark" }],
     fields: [{ name: "section_id", label: "Section", kind: "section", required: true, createOnly: true }, { name: "window_start", label: "Opens", kind: "datetime", required: true }, { name: "window_end", label: "Closes", kind: "datetime", required: true }, { name: "remark", label: "Remark", kind: "textarea" }],
   },
   nominationSettings: {
-    key: "self-nomination-settings", title: "Self-nomination settings", noun: "setting", scope: "branch+year", list: "/self-nomination-settings/all", create: "/self-nomination-settings", item: "/self-nomination-settings/{id}",
+    key: "self-nomination-settings", roles: { write: ADMIN }, title: "Self-nomination settings", noun: "setting", scope: "branch+year", list: "/self-nomination-settings/all", create: "/self-nomination-settings", item: "/self-nomination-settings/{id}",
     columns: [{ key: "form_type", label: "Form" }, { key: "window_start", label: "Opens", kind: "datetime" }, { key: "window_end", label: "Closes", kind: "datetime" }],
     fields: [BRANCH, YEAR, { name: "form_type", label: "Form type", kind: "select", options: ["junior", "senior"], required: true, createOnly: true }, { name: "window_start", label: "Opens", kind: "datetime" }, { name: "window_end", label: "Closes", kind: "datetime" }],
   },
@@ -147,10 +153,11 @@ export const RESOURCES = {
     columns: [{ key: "grade_id", label: "Grade", kind: "short" }, { key: "created_at", label: "Uploaded", kind: "datetime" }], fields: [],
   },
   // ---- shooting ----
+  // Read-only: the create/update API requires annual_fee (fees module is out of scope).
   shootingSlots: {
-    key: "shooting-slots", title: "Shooting slots", noun: "slot", scope: "branch+year", scopeRequired: true, list: "/shooting-slots", create: "/shooting-slots", item: "/shooting-slots/{id}",
+    key: "shooting-slots", title: "Shooting slots", noun: "slot", scope: "branch+year", scopeRequired: true, list: "/shooting-slots",
     columns: [{ key: "slot_name", label: "Slot" }, { key: "start_time", label: "Start" }, { key: "end_time", label: "End" }, { key: "remark", label: "Remark" }],
-    fields: [BRANCH, YEAR, { name: "slot_name", label: "Slot name", required: true }, { name: "start_time", label: "Start time", kind: "time", required: true }, { name: "end_time", label: "End time", kind: "time", required: true }, { name: "annual_fee", label: "Annual fee", kind: "number", required: true, help: "Required by the API; fee collection itself is out of scope." }, { name: "remark", label: "Remark", kind: "textarea", required: true }],
+    fields: [],
   },
   shootingApplications: {
     key: "shooting-applications", title: "Shooting applications", noun: "application", scope: "branch+year", scopeRequired: true, list: "/shooting-applications", create: "/shooting-applications", item: "/shooting-applications/{id}",
@@ -178,6 +185,7 @@ export const RESOURCES = {
 const DATES: Field[] = [{ name: "date_from", label: "From", kind: "date" }, { name: "date_to", label: "To", kind: "date" }]
 const PRODUCT: Field = { name: "product_id", label: "Product", kind: "product" }
 
+export const INVENTORY_REPORT_ROLES = ADMIN_ACCT
 export const INVENTORY_REPORTS: Report[] = [
   { key: "consumption", title: "Consumption", method: "get", path: "/inventory/reports/consumption", fields: [PRODUCT, ...DATES] },
   { key: "category", title: "By category", method: "get", path: "/inventory/reports/category", fields: [PRODUCT, ...DATES] },
@@ -186,7 +194,7 @@ export const INVENTORY_REPORTS: Report[] = [
 ]
 
 export const STOCK_IN: ActionFormCfg = {
-  key: "stock-in", title: "Record stock in", method: "post", path: "/inventory/reports/stock-in", submit: "Add stock",
+  key: "stock-in", roles: ADMIN_ACCT, title: "Record stock in", method: "post", path: "/inventory/reports/stock-in", submit: "Add stock",
   fields: [{ name: "product_id", label: "Product", kind: "product", required: true }, { name: "quantity", label: "Quantity", kind: "number", required: true }, { name: "remarks", label: "Remarks" }],
 }
 
@@ -197,7 +205,7 @@ export const TRANSPORT_REPORTS: Report[] = [
 ]
 
 export const RENEWAL_NOTIFY: ActionFormCfg = {
-  key: "renewal-notify", title: "Notify sections to fill renewal forms", method: "post", path: "/transport-renewal-forms/notify", scope: "branch+year", submit: "Send notifications",
+  key: "renewal-notify", roles: ADMIN_ACCT, title: "Notify sections to fill renewal forms", method: "post", path: "/transport-renewal-forms/notify", scope: "branch+year", submit: "Send notifications",
   fields: [{ name: "academic_year_id", label: "Year", kind: "year", required: true, scoped: true }, { name: "section_ids", label: "Sections", kind: "multi", ref: "section", required: true }],
 }
 
@@ -206,7 +214,7 @@ export const ID_CARD_REPORT: Report[] = [
 ]
 
 export const EVENT_MAIL: ActionFormCfg = {
-  key: "event-mail", title: "Send email to participants", method: "post", path: "/event-email-settings/send", scope: "branch+year", submit: "Send",
+  key: "event-mail", roles: ADMIN_TEACHER, title: "Send email to participants", method: "post", path: "/event-email-settings/send", scope: "branch+year", submit: "Send",
   fields: [
     { name: "branch_id", label: "Branch", kind: "branch", required: true, scoped: true }, { name: "academic_year_id", label: "Year", kind: "year", required: true, scoped: true },
     { name: "emails", label: "Recipients", kind: "lines", required: true, help: "One address per line." },
@@ -223,7 +231,7 @@ export const SYLLABUS_UPLOAD: ActionFormCfg = {
 }
 
 export const NOMINATION_UPLOAD: ActionFormCfg = {
-  key: "nomination-upload", title: "Upload guideline and schedule", method: "post", path: "/self-nomination-files", multipart: true, scope: "branch+year", submit: "Upload",
+  key: "nomination-upload", roles: ADMIN, title: "Upload guideline and schedule", method: "post", path: "/self-nomination-files", multipart: true, scope: "branch+year", submit: "Upload",
   fields: [
     { name: "branch_id", label: "Branch", kind: "branch", required: true, scoped: true }, { name: "academic_year_id", label: "Year", kind: "year", required: true, scoped: true },
     { name: "grade_id", label: "Grade", kind: "grade", required: true },
