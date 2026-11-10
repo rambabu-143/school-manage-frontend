@@ -28,7 +28,9 @@ import type { Role } from "@/types/auth"
 export interface CrudField<T> {
   name: Path<T>
   label: string
-  type?: "text" | "number" | "textarea" | "date" | "switch"
+  type?: "text" | "number" | "textarea" | "date" | "switch" | "select"
+  /** For type "select". */
+  options?: { value: string; label: string }[]
 }
 
 export interface CrudConfig<TRow extends { id: string }, TForm extends FieldValues> {
@@ -49,6 +51,8 @@ export interface CrudConfig<TRow extends { id: string }, TForm extends FieldValu
   /** Roles allowed per action; omit = everyone. UI hint only - the backend enforces. */
   roles?: { create?: Role[]; update?: Role[]; delete?: Role[] }
   sortable?: string[]
+  /** Fixed query params added to the list call (e.g. required filters). */
+  query?: Record<string, unknown>
 }
 
 type Rows<T> = T[] | { items: T[]; total: number }
@@ -64,8 +68,8 @@ export function CrudPage<TRow extends { id: string }, TForm extends FieldValues>
   const allowed = (a: "create" | "update" | "delete") => !cfg.roles?.[a] || (!!user && cfg.roles[a]!.includes(user.role))
 
   const list = useQuery({
-    queryKey: [cfg.queryKey, lp],
-    queryFn: async () => (await apiClient.get<Rows<TRow>>(cfg.path, { params: toApiParams(lp) })).data,
+    queryKey: [cfg.queryKey, lp, cfg.query],
+    queryFn: async () => (await apiClient.get<Rows<TRow>>(cfg.path, { params: { ...toApiParams(lp), ...cfg.query } })).data,
     placeholderData: keepPreviousData,
   })
   const rows = Array.isArray(list.data) ? list.data : list.data?.items
@@ -146,6 +150,12 @@ export function CrudPage<TRow extends { id: string }, TForm extends FieldValues>
                       <FormLabel>{f.label}</FormLabel>
                       <FormControl>
                         {f.type === "textarea" ? <Textarea {...field} value={field.value ?? ""} />
+                          : f.type === "select" ? (
+                            <select {...field} value={field.value ?? ""} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
+                              <option value="">Select...</option>
+                              {f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                          )
                           : f.type === "switch" ? <Switch checked={!!field.value} onCheckedChange={field.onChange} />
                           : f.type === "number" ? <Input type="number" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))} />
                           : <Input type={f.type === "date" ? "date" : "text"} {...field} value={field.value ?? ""} />}

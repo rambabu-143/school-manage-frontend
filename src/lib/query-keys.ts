@@ -102,6 +102,7 @@ export type QueryDomain =
   | "transport-slabs"
   | "transport-stops"
   | "vendors"
+  | "exam-records"
 
 export type QueryScope = {
   userId: string

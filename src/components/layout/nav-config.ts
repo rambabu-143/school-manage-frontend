@@ -143,6 +143,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: SplitSquareVertical,
     roles: ADMIN_AND_TEACHER_ROLES,
   },
+  {
+    label: "Exams & Records",
+    href: "/exam-records",
+    icon: FileText,
+    roles: ADMIN_AND_TEACHER_ROLES,
+  },
   { label: "Syllabus", href: "/syllabus", icon: ListChecks, roles: ADMIN_AND_TEACHER_ROLES },
   { label: "Appraisal", href: "/appraisal", icon: NotebookText, roles: STAFF_ROLES },
   { label: "Houses", href: "/houses", icon: Flag, roles: ADMIN_AND_TEACHER_ROLES },
