@@ -216,12 +216,16 @@ test("429 keeps status and Retry-After", async () => {
 
 test("role guard is default-deny for unknown paths", async () => {
   const guard = await loadTs("src/lib/role-guard.ts", {
-    "@/components/layout/nav-config": { NAV_ITEMS: [{ href: "/users", roles: ["school_admin"] }, { href: "/notices" }] },
+    "@/components/layout/nav-config": { NAV_ITEMS: [{ href: "/users", roles: ["school_admin"] }, { href: "/notices" }, { href: "/settings" }, { href: "/settings/school", roles: ["school_admin", "super_admin"] }] },
   })
   assert.equal(guard.canAccessPath("teacher", "/notices"), true)
   assert.equal(guard.canAccessPath("teacher", "/users"), false)
   assert.equal(guard.canAccessPath("teacher", "/settings/security"), true)
   assert.equal(guard.canAccessPath("teacher", "/mystery"), false)
+  assert.equal(guard.canAccessPath("teacher", "/settings/school"), false)
+  assert.equal(guard.canAccessPath("school_admin", "/settings/school"), true)
+  assert.equal(guard.canAccessPath("branch_admin", "/settings/school"), false)
+  assert.equal(guard.canAccessPath("parent", "/settings/profile"), true)
   assert.equal(guard.canAccessPath("school_admin", "/mystery"), true)
 })
 
