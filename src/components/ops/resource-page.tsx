@@ -163,7 +163,7 @@ export function ResourcePage({ res }: { res: Resource }) {
           <DialogHeader><DialogTitle>{editing === "new" ? "New" : "Edit"} {res.noun}</DialogTitle></DialogHeader>
           <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); save.mutate() }} noValidate>
             {formFields.map((f) => (
-              <FieldInput key={f.name} field={f} all={values} value={values[f.name]} error={errors[f.name]} idPrefix={res.key}
+              <FieldInput key={f.name} field={f} all={{ ...values, ...(scope.branch_id ? { branch_id: scope.branch_id } : {}) }} value={values[f.name]} error={errors[f.name]} idPrefix={res.key}
                 onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))} />
             ))}
             <DialogFooter>

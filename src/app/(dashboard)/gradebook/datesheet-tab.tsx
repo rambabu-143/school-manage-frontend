@@ -8,6 +8,7 @@ import { ExamSelect } from "@/components/exam-select"
 import { SectionSelect } from "@/components/section-select"
 import { SubjectSelect } from "@/components/subject-select"
 import { DataTable } from "@/components/data-table/data-table"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -39,6 +40,7 @@ export function DatesheetTab() {
   const { data: subjects } = useSubjects()
   const deleteEntry = useDeleteDatesheetEntry()
   const [editId, setEditId] = React.useState<string>()
+  const [deleting, setDeleting] = React.useState<DatesheetEntry | null>(null)
 
   const sectionsById = new Map(sections?.map((s) => [s.id, s]))
   const subjectsById = new Map(subjects?.map((s) => [s.id, s]))
@@ -72,7 +74,7 @@ export function DatesheetTab() {
             size="sm"
             aria-label="Delete entry"
             disabled={deleteEntry.isPending}
-            onClick={() => deleteEntry.mutate(row.original.id)}
+            onClick={() => setDeleting(row.original)}
           >
             <Trash2 />
           </Button>
@@ -100,6 +102,16 @@ export function DatesheetTab() {
             emptyMessage="No datesheet entries for this exam yet."
           />
           <EditEntrySheet id={editId} onClose={() => setEditId(undefined)} />
+          <ConfirmDialog
+            open={!!deleting}
+            onOpenChange={(o) => !o && setDeleting(null)}
+            title="Delete datesheet entry?"
+            description={`Remove the ${deleting?.exam_date ?? ""} entry (${subjectsById.get(deleting?.subject_id ?? "")?.name ?? "subject"}) from this datesheet?`}
+            confirmLabel="Delete"
+            destructive
+            isPending={deleteEntry.isPending}
+            onConfirm={() => deleting && deleteEntry.mutate(deleting.id, { onSuccess: () => setDeleting(null) })}
+          />
         </>
       ) : (
         <p className="text-sm text-muted-foreground">Select an exam to view its datesheet.</p>

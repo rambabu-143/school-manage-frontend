@@ -85,7 +85,7 @@ export const RESOURCES = {
     columns: [{ key: "conference_no", label: "Room no." }, { key: "floor_no", label: "Floor" }, { key: "area", label: "Area" }, { key: "max_capacity", label: "Capacity" }, { key: "facing", label: "Facing" }],
     fields: [
       BRANCH, { name: "conference_no", label: "Room number", required: true }, { name: "floor_no", label: "Floor", required: true },
-      { name: "block_id", label: "Block", kind: "block", required: true }, { name: "area", label: "Area", required: true },
+      { name: "block_id", label: "Block", kind: "block", routeField: "branch_id", required: true }, { name: "area", label: "Area", required: true },
       { name: "max_capacity", label: "Max capacity", kind: "number", required: true }, { name: "facing", label: "Facing", required: true },
     ],
   },

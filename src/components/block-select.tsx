@@ -8,10 +8,10 @@ import { qk } from "@/lib/query-keys"
 
 interface Block { id: string; name: string }
 
-export function BlockSelect({ value, onChange, disabled }: { value: string | undefined; onChange: (value: string) => void; disabled?: boolean }) {
+export function BlockSelect({ value, onChange, disabled, branchId }: { value: string | undefined; onChange: (value: string) => void; disabled?: boolean; branchId?: string }) {
   const { data: blocks, isPending } = useQuery({
-    queryKey: qk("rooms", "blocks"),
-    queryFn: async () => (await apiClient.get<Block[]>("/school-blocks")).data,
+    queryKey: qk("rooms", "blocks", branchId),
+    queryFn: async () => (await apiClient.get<Block[]>("/school-blocks", { params: branchId ? { branch_id: branchId } : undefined })).data,
   })
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled || isPending}>

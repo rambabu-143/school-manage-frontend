@@ -60,7 +60,7 @@ const AUDIENCE_LABELS: Record<NoticeAudience, string> = {
 
 const noticeSchema = z
   .object({
-    branch_id: z.string().min(1, "Branch is required"),
+    branch_id: z.string(), // resolved from the session branch on submit
     title: z.string().min(1, "Title is required").max(200),
     body: z.string().min(1, "Body is required").max(2000),
     audience: z.enum(["student", "parent", "staff", "all"], {
@@ -143,10 +143,12 @@ export function NoticesTab() {
       )
       return
     }
-    createNotice.mutate(
-      { ...values, branch_id: resolveBranch(values.branch_id, sessionBranch) ?? values.branch_id },
-      { onSuccess: closeForm }
-    )
+    const branch_id = resolveBranch(values.branch_id, sessionBranch)
+    if (!branch_id) {
+      form.setError("branch_id", { message: "Branch is required" })
+      return
+    }
+    createNotice.mutate({ ...values, branch_id }, { onSuccess: closeForm })
   }
 
   function runSearch() {
@@ -309,7 +311,12 @@ export function NoticesTab() {
                         <FormItem>
                           <FormLabel>Calendar color (optional)</FormLabel>
                           <FormControl>
-                            <Input type="color" className="h-10 w-full p-1" {...field} />
+                            <div className="flex gap-2">
+                              <Input type="color" className="h-10 w-full p-1" {...field} value={field.value || "#000000"} />
+                              {field.value && (
+                                <Button type="button" variant="outline" onClick={() => field.onChange("")}>No colour</Button>
+                              )}
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>

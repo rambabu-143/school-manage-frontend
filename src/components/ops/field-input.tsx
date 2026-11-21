@@ -41,7 +41,7 @@ const PICKERS: Record<RefKind, Pick> = {
   hostel: (p) => <HostelSelect {...p} />,
   house: (p) => <HouseSelect {...p} />,
   staff: (p) => <StaffSelect {...p} />,
-  block: (p) => <BlockSelect {...p} />,
+  block: (p) => <BlockSelect value={p.value} onChange={p.onChange} branchId={p.routeId} />,
 }
 
 export function RefPicker({ kind, ...p }: { kind: RefKind; value: string | undefined; onChange: (v: string) => void; routeId?: string }) {
