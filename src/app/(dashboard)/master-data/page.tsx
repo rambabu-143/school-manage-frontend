@@ -62,6 +62,11 @@ const CATEGORY_LABELS: Record<MasterDataCategory, string> = {
   category: "Category",
   employee_type: "Employee Type",
   concession_type: "Concession Type",
+  role: "Role",
+  occupation_child: "Occupation (child)",
+  admission_area: "Admission Area",
+  remark_bank: "Remark Bank",
+  product_unit: "Product Unit",
 }
 
 const itemSchema = z.object({

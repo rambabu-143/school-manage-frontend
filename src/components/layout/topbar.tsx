@@ -32,7 +32,7 @@ function initialsFor(email: string) {
 }
 
 function MobileNav({ role }: { role: Role }) {
-  const items = NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(role))
+  const items = NAV_ITEMS.filter((item) => !item.hidden && (!item.roles || item.roles.includes(role)))
 
   return (
     <Sheet>
