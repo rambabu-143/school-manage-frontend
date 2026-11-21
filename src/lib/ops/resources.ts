@@ -276,8 +276,8 @@ const LOCK_FIELDS: Field[] = [
   { name: "student_id", label: "Student", kind: "student", help: "Give a student or a whole section." },
   { name: "section_id", label: "Section", kind: "section" },
 ]
-export const LOCK_FORM: ActionFormCfg = { key: "lock", roles: LOCK_ROLES, title: "Lock records", method: "post", path: "/academic-record-locks", submit: "Lock", fields: LOCK_FIELDS }
-export const UNLOCK_FORM: ActionFormCfg = { key: "unlock", roles: LOCK_ROLES, title: "Unlock records", method: "post", path: "/academic-record-locks/unlock", submit: "Unlock", fields: LOCK_FIELDS }
+export const LOCK_FORM: ActionFormCfg = { key: "lock", roles: LOCK_ROLES, confirm: "This locks the selected student (or every student of the selected section) for the term and module. Continue?", title: "Lock records", method: "post", path: "/academic-record-locks", submit: "Lock", fields: LOCK_FIELDS }
+export const UNLOCK_FORM: ActionFormCfg = { key: "unlock", roles: LOCK_ROLES, confirm: "This unlocks the selected student (or every student of the selected section) for the term and module. Continue?", title: "Unlock records", method: "post", path: "/academic-record-locks/unlock", submit: "Unlock", fields: LOCK_FIELDS }
 
 export const RECORD_LOOKUP: Report[] = [
   { key: "admission", title: "Admission record", method: "get", path: "/student-records/admission/{admission_number}", fields: [{ name: "admission_number", label: "Admission number", required: true, pathParam: true }] },
@@ -291,6 +291,6 @@ export const ASSESSMENT_SETTING: ActionFormCfg = {
   ],
 }
 export const CONSENT_FORM: ActionFormCfg = {
-  key: "social-media-consent", title: "Social media consent", method: "post", path: "/student-records/social-media-consent", submit: "Record consent",
-  fields: [{ name: "student_id", label: "Student", kind: "student", required: true }, { name: "parent_name", label: "Parent name", required: true }, { name: "is_agree", label: "Parent agrees", kind: "bool" }, { name: "reason", label: "Reason", kind: "textarea" }],
+  key: "social-media-consent", confirm: "Consent can be recorded only once per student. Save it exactly as ticked (unticked records a refusal)?", title: "Social media consent", method: "post", path: "/student-records/social-media-consent", submit: "Record consent",
+  fields: [{ name: "student_id", label: "Student", kind: "student", required: true }, { name: "parent_name", label: "Parent name", required: true }, { name: "is_agree", label: "Parent agrees (unticked records a refusal)", kind: "bool" }, { name: "reason", label: "Reason", kind: "textarea" }],
 }

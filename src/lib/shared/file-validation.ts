@@ -52,7 +52,9 @@ export function validateCsvRows(text: string, rule: FileRule): string | null {
 export function uploadTypeFor(file: { name: string; type: string }): string {
   const name = file.name.toLowerCase()
   if (name.endsWith(".xlsx")) return XLSX_MIME
-  if (name.endsWith(".csv") && (file.type === "" || file.type === "application/octet-stream")) return "text/csv"
+  // a .csv is always sent as CSV, even if the browser guessed the OOXML or octet-stream type
+  if (name.endsWith(".csv") && !CSV_RULE.types.includes(file.type)) return "text/csv"
+  if (name.endsWith(".csv") && file.type === "") return "text/csv"
   return file.type
 }
 

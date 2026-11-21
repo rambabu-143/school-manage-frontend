@@ -149,6 +149,7 @@ test("import rule accepts csv and xlsx, fills the content type the backend requi
   assert.equal(uploadTypeFor({ name: "A.XLSX", type: "" }), X)
   assert.equal(uploadTypeFor({ name: "a.csv", type: "" }), "text/csv")
   assert.equal(uploadTypeFor({ name: "a.csv", type: "text/plain" }), "text/plain")
+  assert.equal(uploadTypeFor({ name: "a.csv", type: X }), "text/csv")
   assert.equal(canCountRows("a.csv"), true)
   assert.equal(canCountRows("a.xlsx"), false)
 })
