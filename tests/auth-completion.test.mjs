@@ -302,6 +302,20 @@ test("family switch: fsw token can go back, plain token cannot", async () => {
   assert.equal(plain.jar.get("access_token"), "plain")
 })
 
+test("switch-student: guardian gets the student token and keeps the refresh token; switched sessions are refused", async () => {
+  const fsw = `h.${Buffer.from(JSON.stringify({ fsw: UUID })).toString("base64url")}.s`
+  const c = await cookieLib()
+  const jar = fakeCookies({ access_token: "plain", refresh_token: "R" })
+  assert.equal(c.startFamilyCookies(jar, "STUDENT", 900), true)
+  assert.equal(jar.jar.get("access_token"), "STUDENT")
+  assert.equal(jar.jar.get("refresh_token"), "R")
+  const again = fakeCookies({ access_token: fsw, refresh_token: "R" })
+  assert.equal(c.startFamilyCookies(again, "X", 900), false)
+  assert.equal(again.jar.get("access_token"), fsw)
+  const imp = fakeCookies({ access_token: impToken })
+  assert.equal(c.startFamilyCookies(imp, "X", 900), false)
+})
+
 test("401 redirect loop guard: never redirects while already on /login", async () => {
   const r = await loadTs("src/lib/session-redirect.ts", {})
   assert.equal(r.loginRedirectFor("/login"), null)

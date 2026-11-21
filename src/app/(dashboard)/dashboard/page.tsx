@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { format } from "date-fns"
+import Link from "next/link"
 import {
   CalendarClock,
   CalendarDays,
@@ -189,7 +190,11 @@ export default function DashboardPage() {
         {!isAdmin && (
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              You&apos;re signed in. Modules will appear in the sidebar as they&apos;re added.
+              {user.role === "parent" ? (
+                <>You&apos;re signed in. <Link className="underline" href="/portal">Open My Children</Link> to see attendance, fees and report cards, or view as a child.</>
+              ) : (
+                <>You&apos;re signed in. Your school notices and holidays are in the sidebar.</>
+              )}
             </p>
           </CardContent>
         )}

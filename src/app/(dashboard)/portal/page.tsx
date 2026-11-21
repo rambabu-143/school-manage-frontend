@@ -11,6 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { useSwitchStudent } from "@/hooks/use-identity"
 import { useMyChildren } from "@/hooks/use-portal"
 
 import { AttendanceTab } from "./attendance-tab"
@@ -23,6 +25,7 @@ import { ReportCardTab } from "./report-card-tab"
 
 export default function PortalPage() {
   const { data: children, isPending, isError } = useMyChildren()
+  const switchStudent = useSwitchStudent()
   const [selectedId, setSelectedId] = React.useState<string>()
 
   const studentId = selectedId ?? children?.[0]?.id
@@ -64,6 +67,12 @@ export default function PortalPage() {
             </SelectContent>
           </Select>
         </div>
+      )}
+
+      {student && (
+        <Button variant="outline" className="w-fit" disabled={switchStudent.isPending} onClick={() => switchStudent.mutate(student.id)}>
+          View as {student.first_name} (student login)
+        </Button>
       )}
 
       {student && (

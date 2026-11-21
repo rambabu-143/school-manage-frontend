@@ -66,6 +66,13 @@ export function backToFamilyCookies(cookieStore: CookieStore, accessToken: strin
   return true
 }
 
+/** Install the switch-student token (no refresh token: the guardian's own pair stays). Refuses (false) from any switched session. */
+export function startFamilyCookies(cookieStore: CookieStore, accessToken: string, expiresInSeconds: number): boolean {
+  if (isFamilySwitchNow(cookieStore) || isImpersonatingNow(cookieStore)) return false
+  cookieStore.set(ACCESS_TOKEN_COOKIE, accessToken, { ...baseCookieOptions, maxAge: expiresInSeconds })
+  return true
+}
+
 export function hasAdminStash(cookieStore: CookieStore): boolean {
   return Boolean(
     cookieStore.get(ADMIN_ACCESS_TOKEN_COOKIE)?.value ||

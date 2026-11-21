@@ -175,6 +175,8 @@ test("every token-returning operation in the OpenAPI snapshot is denied by the p
 test("auth/* is default-deny with a tiny allow-list", () => {
   for (const ok of [["auth", "me"], ["auth", "session"], ["auth", "users"], ["auth", "users", "abc"]])
     assert.ok(validateProxyPath(ok), ok.join("/"))
+  for (const ok of [["auth", "favourite-menus"], ["auth", "mark-favourite"]]) assert.ok(validateProxyPath(ok), ok.join("/"))
+  for (const bad of [["auth", "switch-student"], ["auth", "switch-parent"]]) assert.equal(validateProxyPath(bad), null, bad.join("/"))
   for (const bad of [["auth", "switch-branch"], ["auth", "switch-year"], ["auth", "switch-user"], ["auth", "otp", "verify"], ["auth", "google"], ["auth", "unknown"], ["AUTH", "Google"], ["event-portal", "login"]])
     assert.equal(validateProxyPath(bad), null, bad.join("/"))
 })
