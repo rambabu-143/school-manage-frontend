@@ -38,7 +38,7 @@ test("siblings: link is symmetric and immutable, body only has changed students"
   assert.equal(P.buildSiblingBody(orig, orig), null)
   const un = P.unlinkSibling(orig, "b", "c")
   assert.deepEqual([un.b, un.c], [[], []])
-  assert.equal(P.buildSiblingBody(orig, P.unlinkSibling(un, "x", "y") && { ...orig }), null)
+  assert.deepEqual(P.buildSiblingBody(orig, un), { students: [{ student_id: "b", sibling_student_ids: [] }, { student_id: "c", sibling_student_ids: [] }] })
 })
 
 test("summarizeResult: array lengths, numbers, skipped reasons", () => {

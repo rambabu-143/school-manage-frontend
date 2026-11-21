@@ -161,13 +161,13 @@ export const useRunReport = () => useMutation({ mutationFn: (fn: () => Promise<u
 // ---- promotion tools
 type Promo = ApiBody<"/hr/promotion/leave-roles", "post">
 export const PROMOTIONS = {
-  "leave-roles": { label: "Leave roles", run: (b: Promo) => api("post", "/hr/promotion/leave-roles", { body: b }) },
-  "role-assignments": { label: "Role assignments", run: (b: Promo) => api("post", "/hr/promotion/role-assignments", { body: b }) },
-  "staff-leaves": { label: "Staff leave balances", run: (b: Promo) => api("post", "/hr/promotion/staff-leaves", { body: b }) },
-  "grade-masters": { label: "Grade masters", run: (b: Promo) => api("post", "/hr/promotion/grade-masters", { body: b }) },
-  "leave-masters": { label: "Leave masters", run: (b: Promo) => api("post", "/hr/promotion/leave-masters", { body: b }) },
-  "shift-masters": { label: "Shift masters", run: (b: Promo) => api("post", "/hr/promotion/shift-masters", { body: b }) },
-  "staff-shifts": { label: "Staff shifts", run: (b: Promo) => api("post", "/hr/promotion/staff-shifts", { body: b }) },
+  "leave-roles": { scope: "branch" as "tenant" | "branch", label: "Leave roles", run: (b: Promo) => api("post", "/hr/promotion/leave-roles", { body: b }) },
+  "role-assignments": { scope: "branch" as "tenant" | "branch", label: "Role assignments", run: (b: Promo) => api("post", "/hr/promotion/role-assignments", { body: b }) },
+  "staff-leaves": { scope: "branch" as "tenant" | "branch", label: "Staff leave balances", run: (b: Promo) => api("post", "/hr/promotion/staff-leaves", { body: b }) },
+  "leave-masters": { scope: "tenant" as "tenant" | "branch", label: "Leave masters", run: (b: Promo) => api("post", "/hr/promotion/leave-masters", { body: b }) },
+  "grade-masters": { scope: "tenant" as "tenant" | "branch", label: "Grade masters", run: (b: Promo) => api("post", "/hr/promotion/grade-masters", { body: b }) },
+  "shift-masters": { scope: "branch" as "tenant" | "branch", label: "Shift masters", run: (b: Promo) => api("post", "/hr/promotion/shift-masters", { body: b }) },
+  "staff-shifts": { scope: "branch" as "tenant" | "branch", label: "Staff shifts", run: (b: Promo) => api("post", "/hr/promotion/staff-shifts", { body: b }) },
 } as const
 export const useStaffGradePreview = (academic_year_id?: string) =>
   useQuery({
@@ -176,4 +176,4 @@ export const useStaffGradePreview = (academic_year_id?: string) =>
     enabled: !!academic_year_id,
   })
 export const useRunPromotion = () =>
-  useAct((fn: () => Promise<unknown>) => fn(), ["leave-roles", "leave-role-assignments", "leave-balances"], "Promotion complete")
+  useAct((fn: () => Promise<unknown>) => fn(), ["leave-roles", "leave-role-assignments", "leave-balances", "leave-types", "staff-grades", "shifts", "flexi-shift-masters", "flexi-shifts"], "Promotion complete")

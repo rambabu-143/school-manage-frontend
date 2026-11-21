@@ -21,7 +21,8 @@ import { Checklist, OpCard } from "./op-card"
 export function RolloverTab() {
   const { data: grades } = useGrades()
   const { data: subjects } = useSubjects()
-  const { data: sections } = useSections()
+  const [srcYear, setSrcYear] = React.useState<string>()
+  const { data: sections } = useSections({ academicYearId: srcYear })
   const [gradeIds, setGradeIds] = React.useState<string[]>([])
   const [subjectIds, setSubjectIds] = React.useState<string[]>([])
   const [comboSecs, setComboSecs] = React.useState<string[]>([])
@@ -39,7 +40,7 @@ export function RolloverTab() {
 
   const gradeItems = grades?.map((g) => ({ id: g.id, label: g.name }))
   const subjectItems = subjects?.map((s) => ({ id: s.id, label: `${s.name} (${s.code})` }))
-  const sectionItems = sections?.map((s) => ({ id: s.id, label: `${grades?.find((g) => g.id === s.grade_id)?.name ?? "?"} - ${s.name}` }))
+  const sectionItems = srcYear ? sections?.map((s) => ({ id: s.id, label: `${grades?.find((g) => g.id === s.grade_id)?.name ?? "?"} - ${s.name}` })) : []
 
   const standardBody = buildStandardBody(gradeIds)
   const subjectsBody = buildSubjectsBody(subjectIds)
@@ -49,6 +50,10 @@ export function RolloverTab() {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="max-w-sm space-y-1">
+        <Label>Source academic year (for the section lists below)</Label>
+        <AcademicYearSelect value={srcYear} onChange={(v) => { setSrcYear(v); setComboSecs([]); setStaffSecs([]) }} />
+      </div>
       <OpCard title="Promote standards" description="Carry the selected grades into the next session." countLabel={`${standardBody?.grade_ids.length ?? 0} grade(s)`}
         ready={!!standardBody} isPending={standard.isPending} error={standard.error} result={standard.data}
         onRun={() => standardBody && standard.mutate(standardBody)}>
@@ -66,14 +71,14 @@ export function RolloverTab() {
         onRun={() => comboBody && combo.mutate(comboBody)}>
         <div className="max-w-sm space-y-1"><Label>Target academic year</Label><AcademicYearSelect value={comboYear} onChange={setComboYear} /></div>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={nextClass} onChange={(e) => setNextClass(e.target.checked)} /> Promote into the next class</label>
-        <Checklist items={sectionItems} picked={comboSecs} onToggle={(id) => setComboSecs((p) => toggleId(p, id))} empty="No sections." />
+        <Checklist items={sectionItems} picked={comboSecs} onToggle={(id) => setComboSecs((p) => toggleId(p, id))} empty="Select a source academic year with sections." />
       </OpCard>
 
       <OpCard title="Promote class teachers" description="Copy each section's class teacher to the target-year section. Existing teachers are not overwritten." countLabel={`${staffBody?.section_ids.length ?? 0} section(s) into the chosen target year`}
         ready={!!staffBody} isPending={staff.isPending} error={staff.error} result={staff.data}
         onRun={() => staffBody && staff.mutate(staffBody)}>
         <div className="max-w-sm space-y-1"><Label>Target academic year</Label><AcademicYearSelect value={staffYear} onChange={setStaffYear} /></div>
-        <Checklist items={sectionItems} picked={staffSecs} onToggle={(id) => setStaffSecs((p) => toggleId(p, id))} empty="No sections." />
+        <Checklist items={sectionItems} picked={staffSecs} onToggle={(id) => setStaffSecs((p) => toggleId(p, id))} empty="Select a source academic year with sections." />
       </OpCard>
 
       <OpCard title="Promote houses" description="Re-map house memberships of one (already promoted) section to same-named houses in each student's branch." countLabel="1 section"
