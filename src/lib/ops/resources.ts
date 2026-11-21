@@ -80,6 +80,20 @@ export const RESOURCES = {
     columns: [{ key: "name", label: "Name" }, { key: "no_of_floors", label: "Floors" }],
     fields: [BRANCH, { name: "name", label: "Name", required: true }, { name: "no_of_floors", label: "Number of floors", kind: "number", required: true }],
   },
+  conference: {
+    key: "conference", roles: { write: ADMIN }, title: "Conference rooms", noun: "conference room", scope: "branch", list: "/conference", create: "/conference", item: "/conference/{id}",
+    columns: [{ key: "conference_no", label: "Room no." }, { key: "floor_no", label: "Floor" }, { key: "area", label: "Area" }, { key: "max_capacity", label: "Capacity" }, { key: "facing", label: "Facing" }],
+    fields: [
+      BRANCH, { name: "conference_no", label: "Room number", required: true }, { name: "floor_no", label: "Floor", required: true },
+      { name: "block_id", label: "Block", kind: "block", required: true }, { name: "area", label: "Area", required: true },
+      { name: "max_capacity", label: "Max capacity", kind: "number", required: true }, { name: "facing", label: "Facing", required: true },
+    ],
+  },
+  posts: {
+    key: "posts", title: "Posts", noun: "post", list: "/posts/", create: "/posts/", item: "/posts/{id}",
+    columns: [{ key: "title", label: "Title" }, { key: "content", label: "Content" }, { key: "updated_at", label: "Updated", kind: "datetime" }],
+    fields: [{ name: "title", label: "Title", required: true }, { name: "content", label: "Content", kind: "textarea", required: true }],
+  },
   // ---- id cards ----
   idCardRequests: {
     key: "id-card-requests", title: "ID card update requests", noun: "request", list: "/id-card-requests", noUpdate: true, noDelete: true,

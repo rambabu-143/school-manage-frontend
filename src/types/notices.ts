@@ -26,6 +26,54 @@ export interface NoticeCreateInput {
   location?: string | null
 }
 
+export interface NoticeUpdateInput {
+  title?: string
+  body?: string
+  audience?: NoticeAudience
+  start_date?: string
+  end_date?: string
+  color_code?: string | null
+  location?: string | null
+}
+
+export interface NoticeSearchInput {
+  branch_id?: string
+  audience?: NoticeAudience
+  start_date?: string
+  end_date?: string
+}
+
+export interface NoticeGroup {
+  id: string
+  tenant_id: string
+  name: string
+  branch_id: string | null
+  created_by_user_id: string
+  created_at: string
+  student_ids: string[]
+  staff_ids: string[]
+}
+
+export interface NoticeGroupCreateInput {
+  name: string
+  branch_id?: string | null
+  student_ids?: string[]
+  staff_ids?: string[]
+}
+
+export interface NoticeGroupUpdateInput {
+  name?: string
+  student_ids?: string[]
+  staff_ids?: string[]
+}
+
+export interface NoticeGroupDetail {
+  id: string
+  name: string
+  students: { id: string; admission_number: string; name: string }[]
+  staff: { id: string; employee_number: string; name: string; phone: string | null }[]
+}
+
 export interface BoardOfDirector {
   id: string
   tenant_id: string

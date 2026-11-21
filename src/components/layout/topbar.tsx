@@ -9,6 +9,7 @@ import { useTheme } from "next-themes"
 import { NAV_ITEMS } from "@/components/layout/nav-config"
 import { ScopeSwitcher } from "@/components/auth/scope-switcher"
 import { SwitchUserDialog } from "@/components/auth/switch-user-dialog"
+import { SmsUnreadBell } from "@/components/layout/sms-unread-bell"
 import { NotificationsBell } from "@/components/layout/notifications-bell"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -88,6 +89,7 @@ export function Topbar({ user }: { user: User }) {
       </div>
 
       <div className="flex items-center gap-2">
+        {staffLike && <SmsUnreadBell user={user} />}
         <NotificationsBell />
 
         <Button

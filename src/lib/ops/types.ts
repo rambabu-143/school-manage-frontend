@@ -5,7 +5,7 @@ import type { Role } from "../../types/auth"
 
 export type RefKind =
   | "branch" | "year" | "grade" | "section" | "student" | "route" | "stop"
-  | "product" | "user" | "department" | "club" | "stream" | "hostel" | "house" | "staff"
+  | "product" | "user" | "department" | "club" | "stream" | "hostel" | "house" | "staff" | "block"
 
 export type FieldKind =
   | "text" | "number" | "date" | "time" | "datetime" | "bool" | "textarea" | "password" | "email"

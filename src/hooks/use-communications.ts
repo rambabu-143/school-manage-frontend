@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
+import { smsReadPath } from "@/lib/comms"
 import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
 import type {
@@ -13,6 +14,8 @@ import type {
   EmailMessageCreateInput,
   SmsConfig,
   SmsConfigUpdateInput,
+  SmsInboxMessage,
+  SmsPersonKind,
   SmsMessage,
   SmsMessageCreateInput,
 } from "@/types/communications"
@@ -142,6 +145,41 @@ export function useSendSms() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk("sms-messages") })
       toast.success("SMS sent")
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
+}
+
+/** A person's SMS inbox with per-message read state (staff senders only; 404 for other-branch people). */
+export function useSmsInbox(kind: SmsPersonKind, personId: string | undefined) {
+  return useQuery({
+    queryKey: qk("sms-inbox", kind, personId),
+    enabled: !!personId,
+    queryFn: async () => (await apiClient.get<SmsInboxMessage[]>(`/sms/${kind}/${personId}`)).data,
+  })
+}
+
+export function useSmsUnreadCount(kind: SmsPersonKind, personId: string | undefined) {
+  return useQuery({
+    queryKey: qk("sms-unread", kind, personId),
+    enabled: !!personId,
+    refetchInterval: 60_000,
+    retry: false,
+    queryFn: async () =>
+      (await apiClient.get<{ sms_count: number }>(`/sms/unread-count/${kind}/${personId}`)).data.sms_count,
+  })
+}
+
+export function useMarkSmsRead(kind: SmsPersonKind, personId: string | undefined) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ messageId, read }: { messageId: string; read: boolean }) => {
+      await apiClient.put(smsReadPath(kind, messageId, personId!), { read_flag: read })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk("sms-inbox", kind, personId) })
+      queryClient.invalidateQueries({ queryKey: qk("sms-unread", kind, personId) })
     },
     onError: (error) => toast.error(errorMessage(error)),
   })

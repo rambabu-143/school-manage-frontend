@@ -5,7 +5,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
   await requireSectionRole("/rooms")
   return (
     <>
-      <SectionLinks items={[{ href: "/rooms", label: "Rooms" }, { href: "/rooms/blocks", label: "Blocks" }]} />
+      <SectionLinks items={[{ href: "/rooms", label: "Rooms" }, { href: "/rooms/blocks", label: "Blocks" }, { href: "/rooms/conference", label: "Conference" }]} />
       {children}
     </>
   )

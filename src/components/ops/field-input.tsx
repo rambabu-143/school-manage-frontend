@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { AcademicYearSelect } from "@/components/academic-year-select"
+import { BlockSelect } from "@/components/block-select"
 import { BranchSelect } from "@/components/branch-select"
 import { ClubSelect } from "@/components/club-select"
 import { DepartmentSelect } from "@/components/department-select"
@@ -40,6 +41,7 @@ const PICKERS: Record<RefKind, Pick> = {
   hostel: (p) => <HostelSelect {...p} />,
   house: (p) => <HouseSelect {...p} />,
   staff: (p) => <StaffSelect {...p} />,
+  block: (p) => <BlockSelect {...p} />,
 }
 
 export function RefPicker({ kind, ...p }: { kind: RefKind; value: string | undefined; onChange: (v: string) => void; routeId?: string }) {

@@ -17,3 +17,10 @@ export interface DatesheetEntryCreateInput {
   start_time: string
   end_time: string
 }
+
+export interface DatesheetEntryUpdateInput {
+  subject_id?: string
+  exam_date?: string
+  start_time?: string
+  end_time?: string
+}
