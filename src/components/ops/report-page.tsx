@@ -40,7 +40,8 @@ function ReportView({ rep }: { rep: Report }) {
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
-    const { body, errors: errs } = buildPayload(rep.fields, values, { scope })
+    // path params must stay in the payload so the url template can fill them
+    const { body, errors: errs } = buildPayload(rep.fields.map((f) => ({ ...f, pathParam: false })), values, { scope })
     setErrors(errs)
     if (Object.keys(errs).length === 0) setSubmitted(body)
   }

@@ -125,6 +125,8 @@ export function parseApiError(error: unknown): ParsedApiError {
   }
   // never surface raw 5xx/auth bodies as the headline
   if (kind === "server" || kind === "auth" || kind === "network") message = FALLBACK[kind]
+  if (status === 413) message ??= "The file is too large."
+  if (status === 415) message ??= "That file type is not accepted."
   message ??= FALLBACK[kind] ?? "Something went wrong"
   return { status, kind, message, fieldErrors, rowErrors, retryAfter }
 }
