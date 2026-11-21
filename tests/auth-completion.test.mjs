@@ -316,6 +316,17 @@ test("switch-student: guardian gets the student token and keeps the refresh toke
   assert.equal(c.startFamilyCookies(imp, "X", 900), false)
 })
 
+test("switch-student maxAge falls back when expires_in is missing or invalid", async () => {
+  const c = await cookieLib()
+  const ages = []
+  for (const v of [undefined, 0, -5, NaN, 900]) {
+    const jar = fakeCookies({ access_token: "plain" })
+    jar.set = (n, val, o) => ages.push(o.maxAge)
+    c.startFamilyCookies(jar, "S", v)
+  }
+  assert.deepEqual(ages, [1200, 1200, 1200, 1200, 900])
+})
+
 test("401 redirect loop guard: never redirects while already on /login", async () => {
   const r = await loadTs("src/lib/session-redirect.ts", {})
   assert.equal(r.loginRedirectFor("/login"), null)

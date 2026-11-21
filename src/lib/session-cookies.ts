@@ -69,7 +69,8 @@ export function backToFamilyCookies(cookieStore: CookieStore, accessToken: strin
 /** Install the switch-student token (no refresh token: the guardian's own pair stays). Refuses (false) from any switched session. */
 export function startFamilyCookies(cookieStore: CookieStore, accessToken: string, expiresInSeconds: number): boolean {
   if (isFamilySwitchNow(cookieStore) || isImpersonatingNow(cookieStore)) return false
-  cookieStore.set(ACCESS_TOKEN_COOKIE, accessToken, { ...baseCookieOptions, maxAge: expiresInSeconds })
+  const maxAge = Number.isFinite(expiresInSeconds) && expiresInSeconds > 0 ? expiresInSeconds : ACCESS_TOKEN_MAX_AGE
+  cookieStore.set(ACCESS_TOKEN_COOKIE, accessToken, { ...baseCookieOptions, maxAge })
   return true
 }
 
