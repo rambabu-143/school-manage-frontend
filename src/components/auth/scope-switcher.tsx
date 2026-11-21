@@ -12,7 +12,7 @@ export function ScopeSwitcher() {
   const branch = useSwitchBranch()
   const year = useSwitchYear()
   // The backend refuses switching while impersonating.
-  const locked = !scope || Boolean(scope.impersonation) || branch.isPending || year.isPending
+  const locked = !scope || Boolean(scope.impersonation) || Boolean(scope.family_switch) || branch.isPending || year.isPending
 
   return (
     <div className="hidden items-center gap-2 lg:flex">

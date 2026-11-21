@@ -16,6 +16,7 @@ export async function GET() {
     return NextResponse.json({
       ...scope,
       impersonation: claims.imp ? { expires_at: (claims.exp ?? 0) * 1000 } : null,
+      family_switch: claims.fsw ? { expires_at: (claims.exp ?? 0) * 1000 } : null,
     })
   } catch (error) {
     if (error instanceof SessionExpiredError) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })

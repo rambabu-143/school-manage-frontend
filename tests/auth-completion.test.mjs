@@ -37,8 +37,8 @@ test("clearSessionCookies also drops parked admin tokens", async () => {
   assert.equal(jar.jar.size, 0)
 })
 
-async function impersonateRoute(backend) {
-  const jar = fakeCookies({ access_token: "A", refresh_token: "R" })
+async function impersonateRoute(backend, access = "A") {
+  const jar = fakeCookies({ access_token: access, refresh_token: "R" })
   const cookies = await cookieLib()
   const bff = await loadTs("src/lib/bff.ts", {
     "@/lib/bff-guards": guards,
@@ -286,4 +286,34 @@ test("login and password-reset routes reject cross-site and text/plain, and bad 
     assert.equal((await post({ "content-type": "text/plain", ...SAME }, "{}")).status, 415, path)
     assert.equal((await post(JSON_H, "not json")).status, 400, path)
   }
+})
+
+test("family switch: fsw token can go back, plain token cannot", async () => {
+  const fsw = `h.${Buffer.from(JSON.stringify({ fsw: UUID })).toString("base64url")}.s`
+  const c = await cookieLib()
+  assert.equal(c.isFamilySwitchNow(fakeCookies({ access_token: fsw })), true)
+  assert.equal(c.isFamilySwitchNow(fakeCookies({ access_token: impToken })), false)
+  const jar = fakeCookies({ access_token: fsw, refresh_token: "R" })
+  assert.equal(c.backToFamilyCookies(jar, "PARENT"), true)
+  assert.equal(jar.jar.get("access_token"), "PARENT")
+  assert.equal(jar.jar.get("refresh_token"), "R")
+  const plain = fakeCookies({ access_token: "plain" })
+  assert.equal(c.backToFamilyCookies(plain, "X"), false)
+  assert.equal(plain.jar.get("access_token"), "plain")
+})
+
+test("401 redirect loop guard: never redirects while already on /login", async () => {
+  const r = await loadTs("src/lib/session-redirect.ts", {})
+  assert.equal(r.loginRedirectFor("/login"), null)
+  assert.equal(r.loginRedirectFor("/students"), "/login?reason=inactive")
+})
+
+test("impersonate POST from an fsw session is refused with 409 and no backend call", async () => {
+  const fsw = `h.${Buffer.from(JSON.stringify({ fsw: UUID })).toString("base64url")}.s`
+  let calls = 0
+  const { route, jar } = await impersonateRoute(() => { calls++; return Response.json({}) }, fsw)
+  const res = await route.POST(new Request("http://t", { method: "POST", headers: JSON_H, body: JSON.stringify({ user_id: UUID }) }))
+  assert.equal(res.status, 409)
+  assert.equal(calls, 0)
+  assert.equal(jar.jar.get("access_token"), fsw)
 })

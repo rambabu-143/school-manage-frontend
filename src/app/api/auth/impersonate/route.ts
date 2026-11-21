@@ -2,12 +2,14 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 import { isUuid, postAuthed, readJson, rejectCrossSite } from "@/lib/bff"
-import { restoreAdminCookies, startImpersonationCookies } from "@/lib/session-cookies"
+import { isFamilySwitchNow, restoreAdminCookies, startImpersonationCookies } from "@/lib/session-cookies"
 
 // Start: POST { user_id }. The admin pair is parked in httpOnly cookies.
 export async function POST(request: Request) {
   const blocked = rejectCrossSite(request, { json: true })
   if (blocked) return blocked
+  // A family sub-session may not start another switch (backend refuses too).
+  if (isFamilySwitchNow(await cookies())) return NextResponse.json({ error: "Go back to family first." }, { status: 409 })
   const { user_id } = await readJson(request)
   if (!isUuid(user_id)) return NextResponse.json({ error: "Pick a person to view as." }, { status: 400 })
   return postAuthed("/auth/switch-user", { user_id }, "Could not switch to that person.", (data, cookieStore) => {

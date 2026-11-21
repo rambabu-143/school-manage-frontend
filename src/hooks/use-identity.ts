@@ -9,6 +9,7 @@ export interface SessionScope {
   branch_id: string | null
   academic_year_id: string | null
   impersonation: { expires_at: number } | null
+  family_switch: { expires_at: number } | null
 }
 
 async function post(url: string, body?: unknown, method = "POST") {
@@ -76,6 +77,15 @@ export function useExitImpersonation() {
   const changed = useIdentityChanged()
   return useMutation({
     mutationFn: () => post("/api/auth/impersonate", undefined, "DELETE"),
+    onSuccess: changed,
+    onError: (e: Error) => toast.error(e.message),
+  })
+}
+
+export function useBackToFamily() {
+  const changed = useIdentityChanged()
+  return useMutation({
+    mutationFn: () => post("/api/auth/switch-parent"),
     onSuccess: changed,
     onError: (e: Error) => toast.error(e.message),
   })
