@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   useDemoteStudents,
   usePromoteStudentsSession,
@@ -17,16 +18,21 @@ import {
 import { useSections } from "@/hooks/use-sections"
 import { errorMessage } from "@/lib/error-message"
 
+import { ChangeSectionTab } from "./change-section-tab"
+import { RolloverTab } from "./rollover-tab"
+import { SiblingsTab } from "./siblings-tab"
+
 function csvCell(v: string) {
   return `"${v.replace(/"/g, '""')}"`
 }
 
-export default function PromotionPage() {
+function StudentsTab() {
   const [sectionId, setSectionId] = React.useState<string>()
   const [targetSectionId, setTargetSectionId] = React.useState<string>()
   const [demoteYearId, setDemoteYearId] = React.useState<string>()
   const [picked, setPicked] = React.useState<Set<string>>(new Set())
   const [confirmDemote, setConfirmDemote] = React.useState(false)
+  const [confirmPromote, setConfirmPromote] = React.useState(false)
 
   const { data: sections } = useSections()
   const students = usePromotionStudents(sectionId)
@@ -63,10 +69,6 @@ export default function PromotionPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold">Session promotion</h1>
-        <p className="text-sm text-muted-foreground">Promote selected students into a section of the next session, or reverse a promotion.</p>
-      </div>
       <div className="grid gap-3 md:grid-cols-3">
         <div className="space-y-1"><Label>From section</Label><SectionSelect value={sectionId} onChange={changeSection} /></div>
         <div className="space-y-1"><Label>Promote into section</Label><SectionSelect value={targetSectionId} onChange={setTargetSectionId} /></div>
@@ -116,12 +118,7 @@ export default function PromotionPage() {
       <div className="flex flex-wrap gap-2">
         <Button
           disabled={!sourceYearId || !targetSectionId || ids.length === 0 || promote.isPending}
-          onClick={() =>
-            promote.mutate(
-              { source_academic_year_id: sourceYearId!, target_section_id: targetSectionId!, student_ids: ids },
-              { onSuccess: () => setPicked(new Set()) }
-            )
-          }
+          onClick={() => setConfirmPromote(true)}
         >
           Promote {ids.length || ""} selected
         </Button>
@@ -132,6 +129,20 @@ export default function PromotionPage() {
       </div>
       {slip.isError && <p role="alert" className="text-sm text-destructive">{errorMessage(slip.error)}</p>}
 
+      <ConfirmDialog
+        open={confirmPromote}
+        onOpenChange={setConfirmPromote}
+        title="Promote students?"
+        description={`This promotes ${ids.length} selected student(s) into the chosen section of the next session.`}
+        confirmLabel="Promote"
+        isPending={promote.isPending}
+        onConfirm={() =>
+          promote.mutate(
+            { source_academic_year_id: sourceYearId!, target_section_id: targetSectionId!, student_ids: ids },
+            { onSuccess: () => setPicked(new Set()), onSettled: () => setConfirmPromote(false) }
+          )
+        }
+      />
       <ConfirmDialog
         open={confirmDemote}
         onOpenChange={setConfirmDemote}
@@ -147,6 +158,28 @@ export default function PromotionPage() {
           )
         }
       />
+    </div>
+  )
+}
+
+const TABS = [
+  ["students", "Students", StudentsTab],
+  ["rollovers", "Rollovers", RolloverTab],
+  ["siblings", "Siblings", SiblingsTab],
+  ["change-section", "Change section", ChangeSectionTab],
+] as const
+
+export default function PromotionPage() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="text-2xl font-semibold">Session promotion</h1>
+        <p className="text-sm text-muted-foreground">Promote students, carry masters into the next session, manage siblings and change sections. These are bulk writes and ask for confirmation.</p>
+      </div>
+      <Tabs defaultValue="students">
+        <div className="overflow-x-auto"><TabsList>{TABS.map(([v, l]) => <TabsTrigger key={v} value={v}>{l}</TabsTrigger>)}</TabsList></div>
+        {TABS.map(([v, , C]) => <TabsContent key={v} value={v}><C /></TabsContent>)}
+      </Tabs>
     </div>
   )
 }

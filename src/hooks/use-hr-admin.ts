@@ -164,6 +164,10 @@ export const PROMOTIONS = {
   "leave-roles": { label: "Leave roles", run: (b: Promo) => api("post", "/hr/promotion/leave-roles", { body: b }) },
   "role-assignments": { label: "Role assignments", run: (b: Promo) => api("post", "/hr/promotion/role-assignments", { body: b }) },
   "staff-leaves": { label: "Staff leave balances", run: (b: Promo) => api("post", "/hr/promotion/staff-leaves", { body: b }) },
+  "grade-masters": { label: "Grade masters", run: (b: Promo) => api("post", "/hr/promotion/grade-masters", { body: b }) },
+  "leave-masters": { label: "Leave masters", run: (b: Promo) => api("post", "/hr/promotion/leave-masters", { body: b }) },
+  "shift-masters": { label: "Shift masters", run: (b: Promo) => api("post", "/hr/promotion/shift-masters", { body: b }) },
+  "staff-shifts": { label: "Staff shifts", run: (b: Promo) => api("post", "/hr/promotion/staff-shifts", { body: b }) },
 } as const
 export const useStaffGradePreview = (academic_year_id?: string) =>
   useQuery({

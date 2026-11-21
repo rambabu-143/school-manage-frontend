@@ -7,6 +7,7 @@ import { Field } from "@/components/hr/pickers"
 import { RowsTable } from "@/components/hr/rows-table"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
+import { buildYearRolloverBody } from "@/lib/promotion-payloads"
 import { PROMOTIONS, usePromoteGrades, useRunPromotion, useStaffGradePreview } from "@/hooks/use-hr-admin"
 
 export function PromotionTab() {
@@ -17,13 +18,13 @@ export function PromotionTab() {
   const preview = useStaffGradePreview(src)
   const grades = usePromoteGrades()
   const promo = useRunPromotion()
-  const ok = !!src && !!dst && src !== dst
+  const body = buildYearRolloverBody(src, dst)
+  const ok = !!body
   const busy = grades.isPending || promo.isPending
   const label = pending === "grades" ? "Staff grades" : pending ? PROMOTIONS[pending as keyof typeof PROMOTIONS].label : ""
 
   function confirm() {
-    if (!ok || !pending) return
-    const body = { source_academic_year_id: src!, target_academic_year_id: dst! }
+    if (!body || !pending) return
     const done = (r: unknown) => { setResult(r); setPending(null) }
     if (pending === "grades") grades.mutate(body, { onSuccess: done, onError: () => setPending(null) })
     else promo.mutate(() => PROMOTIONS[pending as keyof typeof PROMOTIONS].run(body), { onSuccess: done, onError: () => setPending(null) })
