@@ -121,7 +121,15 @@ export type QueryDomain =
   | "calendar-settings"
   | "module-access"
   | "transport-renewal"
-  | "birthday-wishes"
+  | "admission-registrations"
+  | "admission-reports"
+  | "admission-setting"
+  | "admission-siblings"
+  | "admission-tally"
+  | "mcop-login-report"
+  | "promotion-slip"
+  | "session-promotion"
+  | "student-medical-history"
   | "exam-records"
 
 export type QueryScope = {

@@ -24,7 +24,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { useUpdateAlumni } from "@/hooks/use-alumni"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import { useDeleteAlumni, useUpdateAlumni } from "@/hooks/use-alumni"
 import type { Alumni } from "@/types/alumni"
 import type { Student } from "@/types/people"
 
@@ -47,6 +48,8 @@ interface AlumniEditSheetProps {
 
 export function AlumniEditSheet({ alumni, student, onOpenChange }: AlumniEditSheetProps) {
   const updateAlumni = useUpdateAlumni()
+  const deleteAlumni = useDeleteAlumni()
+  const [confirmDelete, setConfirmDelete] = React.useState(false)
 
   const form = useForm<EditValues>({
     resolver: zodResolver(editSchema),
@@ -171,10 +174,31 @@ export function AlumniEditSheet({ alumni, student, onOpenChange }: AlumniEditShe
                 {updateAlumni.isPending && <Loader2 className="animate-spin" />}
                 Save changes
               </Button>
+              <Button type="button" variant="destructive" onClick={() => setConfirmDelete(true)}>
+                Delete
+              </Button>
             </SheetFooter>
           </form>
         </Form>
       </SheetContent>
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Delete alumni record?"
+        description={`Removes the alumni record${student ? ` of ${student.first_name} ${student.last_name}` : ""}. The student record is not deleted. This is written to the audit log.`}
+        confirmLabel="Delete"
+        destructive
+        isPending={deleteAlumni.isPending}
+        onConfirm={() =>
+          alumni &&
+          deleteAlumni.mutate(alumni.id, {
+            onSuccess: () => {
+              setConfirmDelete(false)
+              onOpenChange(false)
+            },
+          })
+        }
+      />
     </Sheet>
   )
 }
