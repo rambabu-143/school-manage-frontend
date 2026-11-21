@@ -13,6 +13,9 @@ export const DEPENDENTS: Partial<Record<QueryDomain, QueryDomain[]>> = {
   branches: ["dashboard-summary"],
   "academic-years": ["enrollments", "sections", "dashboard-summary"],
   notices: ["notifications"],
+  "leave-types": ["staff-grades", "leave-balances"],
+  "staff-grades": ["employee-master", "leave-balances"],
+  "teacher-assignment": ["sections", "house-teachers", "standard-teachers"],
 }
 
 export function domainsToInvalidate(domain: QueryDomain): QueryDomain[] {
