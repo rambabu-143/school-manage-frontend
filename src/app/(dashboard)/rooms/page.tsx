@@ -145,7 +145,7 @@ export default function RoomsPage() {
                     <FormItem>
                       <FormLabel>Branch</FormLabel>
                       <FormControl>
-                        <BranchSelect value={field.value} onChange={field.onChange} />
+                        <BranchSelect value={field.value} onChange={(v) => { field.onChange(v); form.setValue("block_id", "") }} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

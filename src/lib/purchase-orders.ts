@@ -14,7 +14,9 @@ export function itemsTotal(items: PoItemDraft[]): number {
 export function validatePo(amount: number | undefined, items: PoItemDraft[]): string | null {
   if (items.length > MAX_PO_ITEMS) return `At most ${MAX_PO_ITEMS} items`
   if (items.some((i) => !i.product_id)) return "Every item needs a product"
-  if (items.some((i) => !(i.quantity > 0))) return "Item quantity must be greater than 0"
+  if (items.some((i) => !Number.isInteger(i.quantity) || i.quantity <= 0)) return "Item quantity must be a whole number greater than 0"
+  if (items.some((i) => !(i.rate >= 0))) return "Item rate cannot be negative"
+  if (items.some((i) => Math.round(i.rate * 100) / 100 !== i.rate)) return "Item rate allows at most 2 decimals"
   if (!(amount && amount > 0) && itemsTotal(items) <= 0) return "Enter an amount or items with a rate"
   return null
 }

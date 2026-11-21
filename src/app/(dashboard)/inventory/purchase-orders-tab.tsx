@@ -128,7 +128,7 @@ export function PurchaseOrdersTab() {
         <Select
           value={row.original.status}
           onValueChange={(value) => {
-            if (value === "cancelled" && !window.confirm("Cancel this order? Stock received from it is reversed.")) return
+            if (value === "cancelled" && !window.confirm("Cancel this order? Stock it added is reversed, unless already consumed.")) return
             updateStatus.mutate({ id: row.original.id, status: value as PurchaseOrderStatus })
           }}
         >

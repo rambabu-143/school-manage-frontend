@@ -34,6 +34,17 @@ test("PO amount optional only with priced items", () => {
   assert.ok(validatePo(10, Array(MAX_PO_ITEMS + 1).fill(it)))
 })
 
+test("PO item bounds: cap is exactly 200, qty int > 0, rate >= 0 with 2 decimals", () => {
+  const it = { product_id: "p", quantity: 1, rate: 1 }
+  assert.equal(validatePo(undefined, Array(MAX_PO_ITEMS).fill(it)), null)
+  assert.ok(validatePo(10, [{ ...it, quantity: 0 }]))
+  assert.ok(validatePo(10, [{ ...it, quantity: 1.5 }]))
+  assert.ok(validatePo(10, [{ ...it, rate: -1 }]))
+  assert.ok(validatePo(10, [{ ...it, rate: 1.234 }]))
+  assert.equal(validatePo(10, [{ ...it, rate: 1.25 }]), null)
+  assert.equal(validatePo(10, [{ ...it, rate: 0 }]), null)
+})
+
 test("PO payload omits amount/items when blank", () => {
   const it = { product_id: "p", quantity: 1, rate: 2 }
   assert.deepEqual(buildPoPayload({ d: 1, amount: undefined }, [it]), { d: 1, items: [it] })
