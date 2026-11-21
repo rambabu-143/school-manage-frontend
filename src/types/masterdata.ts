@@ -13,6 +13,11 @@ export const MASTER_DATA_CATEGORIES = [
   "category",
   "employee_type",
   "concession_type",
+  "role",
+  "occupation_child",
+  "admission_area",
+  "remark_bank",
+  "product_unit",
 ] as const
 
 export type MasterDataCategory = (typeof MASTER_DATA_CATEGORIES)[number]

@@ -7,14 +7,15 @@ interface AcademicYearSelectProps {
   value: string | undefined
   onChange: (value: string) => void
   disabled?: boolean
+  id?: string
 }
 
-export function AcademicYearSelect({ value, onChange, disabled }: AcademicYearSelectProps) {
+export function AcademicYearSelect({ value, onChange, disabled, id }: AcademicYearSelectProps) {
   const { data: years, isPending } = useAcademicYears()
 
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled || isPending}>
-      <SelectTrigger className="w-full">
+      <SelectTrigger id={id} className="w-full">
         <SelectValue placeholder={isPending ? "Loading years..." : "Select an academic year"} />
       </SelectTrigger>
       <SelectContent>
