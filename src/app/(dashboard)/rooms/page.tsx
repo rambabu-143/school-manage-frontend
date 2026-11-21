@@ -36,7 +36,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { useCreateRoom, useRooms } from "@/hooks/use-rooms"
+import { useCreateRoom, useRooms, useSchoolBlocks } from "@/hooks/use-rooms"
+import { buildRoomPayload, missingRoomFields } from "@/lib/rooms"
 import type { Room, RoomType } from "@/types/rooms"
 
 const ROOM_TYPE_LABELS: Record<RoomType, string> = {
@@ -58,7 +59,15 @@ const roomSchema = z.object({
   ),
   floor: z.string().max(20).optional(),
   block: z.string().max(50).optional(),
+  block_id: z.string().optional(),
+  area: z.string().max(50).optional(),
+  facing: z.string().max(20).optional(),
   capacity: z.coerce.number().int().gt(0).optional(),
+}).superRefine((v, ctx) => {
+  // reception/staff_room/lab/office/classroom/conference need the full description (backend 422s otherwise)
+  for (const name of missingRoomFields(v.room_type, v)) {
+    ctx.addIssue({ code: "custom", path: [name === "block" ? "block_id" : name], message: `${name === "block" ? "Block" : name[0].toUpperCase() + name.slice(1)} is required for this room type` })
+  }
 })
 
 type RoomInput = z.input<typeof roomSchema>
@@ -83,12 +92,14 @@ export default function RoomsPage() {
 
   const form = useForm<RoomInput, unknown, RoomValues>({
     resolver: zodResolver(roomSchema),
-    defaultValues: { branch_id: "", room_number: "", floor: "", block: "" },
+    defaultValues: { branch_id: "", room_number: "", floor: "", block: "", block_id: "", area: "", facing: "" },
   })
+  const branchId = form.watch("branch_id")
+  const { data: blocks } = useSchoolBlocks(branchId || undefined)
 
   function onSubmit(values: RoomValues) {
     createRoom.mutate(
-      { ...values, floor: values.floor || undefined, block: values.block || undefined },
+      buildRoomPayload(values),
       {
         onSuccess: () => {
           setOpen(false)
@@ -177,15 +188,65 @@ export default function RoomsPage() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="block_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>School block</FormLabel>
+                      <FormControl>
+                        <Select value={field.value || undefined} onValueChange={field.onChange} disabled={!branchId}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={branchId ? "Select a block (manage under Blocks)" : "Pick a branch first"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {blocks?.map((b) => (
+                              <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="area"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Area</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. 400 sq ft" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="facing"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Facing</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. North" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="block"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Block</FormLabel>
+                        <FormLabel>Block (text)</FormLabel>
                         <FormControl>
-                          <Input placeholder="Optional" {...field} />
+                          <Input placeholder="Required unless type is Other" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -198,7 +259,7 @@ export default function RoomsPage() {
                       <FormItem>
                         <FormLabel>Floor</FormLabel>
                         <FormControl>
-                          <Input placeholder="Optional" {...field} />
+                          <Input placeholder="Required unless type is Other" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -215,7 +276,7 @@ export default function RoomsPage() {
                         <Input
                           type="number"
                           min={1}
-                          placeholder="Optional"
+                          placeholder="Required unless type is Other"
                           {...field}
                           value={field.value as number | undefined ?? ""}
                         />

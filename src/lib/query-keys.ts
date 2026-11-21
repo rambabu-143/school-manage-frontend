@@ -59,6 +59,8 @@ export type QueryDomain =
   | "module-settings"
   | "newsletters"
   | "ops"
+  | "requisition-chain"
+  | "school-blocks"
   | "nomination-reviews"
   | "notices"
   | "notifications"

@@ -35,3 +35,20 @@ export function useCreateRoom() {
     onError: (error) => toast.error(errorMessage(error)),
   })
 }
+
+export interface SchoolBlock {
+  id: string
+  branch_id: string
+  name: string
+}
+
+export function useSchoolBlocks(branchId?: string) {
+  return useQuery({
+    queryKey: qk("school-blocks", { branchId }),
+    enabled: !!branchId,
+    queryFn: async () => {
+      const { data } = await apiClient.get<SchoolBlock[]>("/school-blocks", { params: { branch_id: branchId } })
+      return data
+    },
+  })
+}
