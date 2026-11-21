@@ -68,7 +68,7 @@ export function Topbar({ user }: { user: User }) {
   const logout = useLogout()
   const [switchOpen, setSwitchOpen] = React.useState(false)
   const { data: scope } = useSessionScope()
-  const canSwitch = canImpersonate(user.role) && !scope?.impersonation
+  const canSwitch = canImpersonate(user.role) && !scope?.impersonation && !scope?.family_switch
   const staffLike = user.role !== "parent" && user.role !== "student"
 
   function handleLogout() {

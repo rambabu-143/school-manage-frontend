@@ -54,6 +54,18 @@ export function isImpersonatingNow(cookieStore: CookieStore): boolean {
   return Boolean(decodeClaims(cookieStore.get(ACCESS_TOKEN_COOKIE)?.value).imp)
 }
 
+/** True while the live access token carries "fsw" (a switch-student sub-session). */
+export function isFamilySwitchNow(cookieStore: CookieStore): boolean {
+  return Boolean(decodeClaims(cookieStore.get(ACCESS_TOKEN_COOKIE)?.value).fsw)
+}
+
+/** Install the guardian token returned by switch-parent. Refuses (false) unless the live token carries "fsw". */
+export function backToFamilyCookies(cookieStore: CookieStore, accessToken: string): boolean {
+  if (!isFamilySwitchNow(cookieStore)) return false
+  cookieStore.set(ACCESS_TOKEN_COOKIE, accessToken, { ...baseCookieOptions, maxAge: ACCESS_TOKEN_MAX_AGE })
+  return true
+}
+
 export function hasAdminStash(cookieStore: CookieStore): boolean {
   return Boolean(
     cookieStore.get(ADMIN_ACCESS_TOKEN_COOKIE)?.value ||

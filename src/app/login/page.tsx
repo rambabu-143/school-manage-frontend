@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { safeNext } from "@/lib/safe-redirect"
+import { INACTIVE_MESSAGE, INACTIVE_REASON } from "@/lib/session-redirect"
 import { AltLogin } from "@/components/auth/alt-login"
 import { useLogin } from "@/hooks/use-session"
 import { Button } from "@/components/ui/button"
@@ -87,6 +88,9 @@ function LoginForm() {
             <CardDescription>School management system</CardDescription>
           </CardHeader>
           <CardContent>
+            {searchParams.get("reason") === INACTIVE_REASON && (
+              <p role="status" className="mb-4 text-sm text-muted-foreground">{INACTIVE_MESSAGE}</p>
+            )}
             {challenge ? (
               <form className="space-y-4" onSubmit={(event) => {
                 event.preventDefault()

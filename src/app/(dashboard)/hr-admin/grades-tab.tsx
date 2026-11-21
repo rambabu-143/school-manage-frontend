@@ -26,7 +26,7 @@ export function GradesTab() {
   const types = useLeaveTypes()
   const save = useSaveStaffGrade()
   const del = useDeleteStaffGrade()
-  const [edit, setEdit] = React.useState<{ id?: string } | null>(null)
+  const [edit, setEdit] = React.useState<{ id?: string; employee_of?: "school" | "others"; co_applicable?: boolean } | null>(null)
   const [f, setF] = React.useState(EMPTY)
   const [quota, setQuota] = React.useState<Record<string, string>>({})
   const [rm, setRm] = React.useState<G | null>(null)
@@ -38,7 +38,7 @@ export function GradesTab() {
       short_leave_deduct: g.short_leave_deduct ?? "0",
     } : EMPTY)
     setQuota(Object.fromEntries((g?.leave_settings ?? []).map((s) => [s.leave_type_master_id, s.leave_quota])))
-    setEdit({ id: g?.id })
+    setEdit({ id: g?.id, employee_of: g?.employee_of === "others" ? "others" : "school", co_applicable: g?.co_applicable })
   }
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,6 +48,7 @@ export function GradesTab() {
       name: f.name, academic_year_id: year, can_file_short_leave: f.can_file_short_leave,
       max_short_leaves_per_month: Number(f.max_short_leaves_per_month), short_leave_deduction_allowed: f.short_leave_deduction_allowed,
       short_leave_deduct_for_every: Number(f.short_leave_deduct_for_every), short_leave_deduct: f.short_leave_deduct, leave_settings,
+      employee_of: edit?.employee_of ?? "school", co_applicable: edit?.co_applicable ?? true, // required by the contract; preserved on edit
     }
     save.mutate({ id: edit?.id, body }, { onSuccess: () => setEdit(null) })
   }

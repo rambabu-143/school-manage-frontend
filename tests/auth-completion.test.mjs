@@ -287,3 +287,23 @@ test("login and password-reset routes reject cross-site and text/plain, and bad 
     assert.equal((await post(JSON_H, "not json")).status, 400, path)
   }
 })
+
+test("family switch: fsw token can go back, plain token cannot, impersonate start is refused", async () => {
+  const fsw = `h.${Buffer.from(JSON.stringify({ fsw: UUID })).toString("base64url")}.s`
+  const c = await cookieLib()
+  assert.equal(c.isFamilySwitchNow(fakeCookies({ access_token: fsw })), true)
+  assert.equal(c.isFamilySwitchNow(fakeCookies({ access_token: impToken })), false)
+  const jar = fakeCookies({ access_token: fsw, refresh_token: "R" })
+  assert.equal(c.backToFamilyCookies(jar, "PARENT"), true)
+  assert.equal(jar.jar.get("access_token"), "PARENT")
+  assert.equal(jar.jar.get("refresh_token"), "R")
+  const plain = fakeCookies({ access_token: "plain" })
+  assert.equal(c.backToFamilyCookies(plain, "X"), false)
+  assert.equal(plain.jar.get("access_token"), "plain")
+})
+
+test("401 redirect loop guard: never redirects while already on /login", async () => {
+  const r = await loadTs("src/lib/session-redirect.ts", {})
+  assert.equal(r.loginRedirectFor("/login"), null)
+  assert.equal(r.loginRedirectFor("/students"), "/login?reason=inactive")
+})

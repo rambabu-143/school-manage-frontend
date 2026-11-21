@@ -1,6 +1,7 @@
 // Display-only decode of a JWT payload. NOT verification: the backend is the
 // only verifier. Used to show the impersonation banner and countdown.
-export type TokenClaims = { imp?: string; exp?: number; nonce?: string }
+// `fsw` = origin guardian id of a family (parent<->student) switch sub-session.
+export type TokenClaims = { imp?: string; fsw?: string; exp?: number; nonce?: string }
 
 export function decodeClaims(token: string | undefined): TokenClaims {
   try {

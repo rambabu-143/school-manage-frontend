@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     if (error instanceof BackendError) {
       return NextResponse.json(
         { error: error.status === 429 ? "Too many attempts. Please try again later." :
-          isVerification ? "Invalid or expired verification code. Try again or restart sign in." : "Invalid email or password" },
+          isVerification ? "Invalid or expired verification code. Try again or restart sign in." : "Invalid email or password, or your school account is no longer active" },
         { status: [400, 401, 422, 429].includes(error.status) ? error.status : 502 }
       )
     }
