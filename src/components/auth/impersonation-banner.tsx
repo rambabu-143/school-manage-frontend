@@ -29,7 +29,7 @@ export function ImpersonationBanner({ user }: { user: User }) {
 
   const remaining = expiresAt ? expiresAt - now : 0
   React.useEffect(() => {
-    // A family token has no admin to restore; once expired the 401 handling takes over.
+    // A family token has no refresh token: on expiry authedBackendFetch quietly refreshes with the guardian's own refresh token, so no exit call is needed.
     if (expiresAt && remaining <= 0 && !family) mutate()
   }, [expiresAt, remaining, mutate, family])
 
