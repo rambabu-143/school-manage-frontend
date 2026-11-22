@@ -20,6 +20,7 @@ import { qk } from "@/lib/query-keys"
 import { parseApiError } from "@/lib/shared/api-error"
 
 type Row = Record<string, unknown>
+const RECON_COLS = [{ key: "registration_no", label: "Registration" }, { key: "name", label: "Name" }, { key: "txn_id", label: "Txn id" }, { key: "total_amount", label: "Amount" }, { key: "txn_status", label: "Txn status" }, { key: "status", label: "Match" }]
 
 /** Runs one admission operation picked from a group (reads show a table, writes confirm first). */
 export function AdmOpsPanel({ group }: { group: AdmGroup }) {
@@ -96,7 +97,14 @@ export function AdmOpsPanel({ group }: { group: AdmGroup }) {
       {showOp && run.isError && (run.error as Error).message !== "validation" && (
         <p role="alert" className="text-sm text-destructive">{parseApiError(run.error).message}</p>
       )}
-      {showOp && run.isSuccess && rows && !op.confirm && <ResultTable rows={rows} />}
+      {showOp && run.isSuccess && rows && !op.multipart && (!op.confirm || op.method === "get") && <ResultTable rows={rows} />}
+      {showOp && run.isSuccess && rows && op.multipart && (
+        <ResultTable rows={rows} columns={RECON_COLS} empty="Nothing was reconciled from this file."
+          rowActions={(r) => {
+            const ok = r.status === "Matched"
+            return <span className={ok ? "rounded bg-green-100 px-2 py-0.5 text-xs text-green-800" : "rounded bg-red-100 px-2 py-0.5 text-xs text-red-800"}>{String(r.status ?? "")}{r.insert_button ? " (needs insert)" : ""}</span>
+          }} />
+      )}
       {showOp && run.isSuccess && data !== null && data !== undefined && !rows && typeof data === "object" && (
         <pre className="max-h-96 overflow-auto rounded-lg border p-3 text-xs">{JSON.stringify(data, null, 2)}</pre>
       )}

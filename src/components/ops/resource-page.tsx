@@ -37,6 +37,7 @@ export function ResourcePage({ res }: { res: Resource }) {
   const [values, setValues] = useState<Row>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [deleting, setDeleting] = useState<Row | null>(null)
+  const [savePrompt, setSavePrompt] = useState(false)
   const [acting, setActing] = useState<{ row: Row; idx: number } | null>(null)
   const idKey = res.idKey ?? "id"
 
@@ -79,8 +80,9 @@ export function ResourcePage({ res }: { res: Resource }) {
       }
       return isNew ? apiClient.post(res.create!, body) : apiClient.put(fillRow(res.item!, editing as Row, idKey), body)
     },
-    onSuccess: () => { toast.success(`${res.noun} saved`); setEditing(null); refresh() },
+    onSuccess: () => { toast.success(`${res.noun} saved`); setSavePrompt(false); setEditing(null); refresh() },
     onError: (e) => {
+      setSavePrompt(false)
       if ((e as Error).message === "validation") return
       const p = handle(e)
       setErrors(p.fieldErrors ?? {})
@@ -161,7 +163,13 @@ export function ResourcePage({ res }: { res: Resource }) {
       <Dialog open={editing !== null} onOpenChange={(o) => !o && !save.isPending && setEditing(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing === "new" ? "New" : "Edit"} {res.noun}</DialogTitle></DialogHeader>
-          <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); save.mutate() }} noValidate>
+          <form className="space-y-3" onSubmit={(e) => {
+            e.preventDefault()
+            if (!res.confirmSave) return save.mutate()
+            const { errors: errs } = buildPayload(res.fields, values, { editing: editing !== "new", scope })
+            setErrors(errs)
+            if (Object.keys(errs).length === 0) setSavePrompt(true)
+          }} noValidate>
             {formFields.map((f) => (
               <FieldInput key={f.name} field={f} all={{ ...values, ...(scope.branch_id ? { branch_id: scope.branch_id } : {}) }} value={values[f.name]} error={errors[f.name]} idPrefix={res.key}
                 onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))} />
@@ -174,6 +182,8 @@ export function ResourcePage({ res }: { res: Resource }) {
         </DialogContent>
       </Dialog>
 
+      <ConfirmDialog open={savePrompt} onOpenChange={setSavePrompt} isPending={save.isPending} confirmLabel="Save"
+        title={`Save ${res.noun}?`} description={res.confirmSave ?? ""} onConfirm={() => save.mutate()} />
       <ConfirmDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)} destructive confirmLabel="Delete" isPending={remove.isPending}
         title={`Delete ${res.noun}?`} description={`This removes the ${res.noun} permanently and is recorded in the audit log.`}
         onConfirm={() => deleting && remove.mutate(deleting)} />

@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import fs from "node:fs"
 import test from "node:test"
 
-import { ADMISSION_OPS, buildAdmRequest, buildSendPayload } from "../src/lib/admission.ts"
+import { ADMISSION_OPS, MAX_CSV_BYTES, buildAdmRequest, buildSendPayload } from "../src/lib/admission.ts"
 
 const spec = JSON.parse(fs.readFileSync("contracts/openapi.json", "utf8"))
 function find(method, path) {
@@ -83,4 +83,12 @@ test("buildSendPayload sends ids only and validates", () => {
   assert.equal("subject" in buildSendPayload("SMS", "hi", "s", rows).body, false)
   assert.equal(buildSendPayload("SMS", "  ", "", rows).error, "Message is required")
   assert.equal(buildSendPayload("SMS", "hi", "", []).error, "No recipients")
+})
+
+test("CSV import pre-checks size and extension", () => {
+  const csv = op("tally-csv")
+  assert.ok(buildAdmRequest(csv, { file: { name: "a.csv", size: MAX_CSV_BYTES } }, scope).req)
+  assert.match(buildAdmRequest(csv, { file: { name: "a.csv", size: MAX_CSV_BYTES + 1 } }, scope).errors.file, /10 MB/)
+  assert.match(buildAdmRequest(csv, { file: { name: "a.xlsx", size: 5 } }, scope).errors.file, /\.csv/)
+  assert.ok(!/marked paid/.test(csv.confirm) && /reconciliation/.test(op("tally-razorpay-csv").confirm))
 })

@@ -66,6 +66,10 @@ test("role-restricted resources and actions declare roles", () => {
   assert.ok(!R.RESOURCES.approvers.roles.write.includes("accountant") && !R.RESOURCES.blocks.roles.write.includes("teacher"))
 })
 
+test("admission go-live and valid dates confirm before saving", () => {
+  assert.ok(R.RESOURCES.admissionGolive.confirmSave && R.RESOURCES.admissionValidDates.confirmSave)
+})
+
 test("shooting slots are read-only (create API needs fee data)", () => {
   const s = R.RESOURCES.shootingSlots
   assert.ok(!s.create && !s.item && s.fields.length === 0)

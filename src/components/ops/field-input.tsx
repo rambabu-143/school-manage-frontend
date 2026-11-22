@@ -74,7 +74,7 @@ export function FieldInput({ field, value, onChange, error, all, idPrefix = "f" 
       </Select>
     )
   } else if (kind === "file") {
-    control = <Input id={id} type="file" onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
+    control = <Input id={id} type="file" accept={field.accept} onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
   } else if (kind === "multi") {
     const list = (Array.isArray(value) ? value : []) as string[]
     control = (

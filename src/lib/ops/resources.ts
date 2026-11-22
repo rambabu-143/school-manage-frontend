@@ -139,7 +139,7 @@ export const RESOURCES = {
     fields: [BRANCH, YEAR, { name: "grade_id", label: "Class", kind: "grade", required: true }, { name: "name", label: "Name", required: true }, { name: "short_name", label: "Short name", required: true }, { name: "extra_subject", label: "Extra subject", kind: "bool" }, { name: "max_marks", label: "Max marks", kind: "number", required: true }],
   },
   admissionValidDates: {
-    key: "admission-valid-dates", roles: { write: ADMIN }, title: "Valid dates", noun: "valid date", scope: "branch+year", scopeRequired: true, list: "/admission/setting/valid-date", create: "/admission/setting/valid-date", item: "/admission/setting/valid-date/{id}",
+    key: "admission-valid-dates", confirmSave: "Valid dates decide which candidates can register for this class. Save this change?", roles: { write: ADMIN }, title: "Valid dates", noun: "valid date", scope: "branch+year", scopeRequired: true, list: "/admission/setting/valid-date", create: "/admission/setting/valid-date", item: "/admission/setting/valid-date/{id}",
     filters: [{ name: "grade_id", label: "Class", kind: "grade" }],
     columns: [{ key: "grade_id", label: "Class", kind: "short" }, { key: "opening_age", label: "Opening age" }, { key: "closing_age", label: "Closing age" }],
     fields: [
@@ -152,7 +152,7 @@ export const RESOURCES = {
     ],
   },
   admissionGolive: {
-    key: "admission-golive", roles: { write: ADMIN }, title: "Admission go-live", noun: "go-live window", scope: "branch+year", scopeRequired: true, list: "/admission/setting/golive", create: "/admission/setting/golive", item: "/admission/setting/golive/{id}",
+    key: "admission-golive", confirmSave: "Go-live windows control when registration is open for this class. Save this change?", roles: { write: ADMIN }, title: "Admission go-live", noun: "go-live window", scope: "branch+year", scopeRequired: true, list: "/admission/setting/golive", create: "/admission/setting/golive", item: "/admission/setting/golive/{id}",
     filters: [{ name: "grade_id", label: "Class", kind: "grade" }],
     columns: [{ key: "grade_id", label: "Class", kind: "short" }, { key: "phase", label: "Phase" }, { key: "form_type", label: "Form" }, { key: "start_date", label: "Start" }, { key: "end_date", label: "End" }, { key: "deadline", label: "Deadline", kind: "bool" }],
     fields: [

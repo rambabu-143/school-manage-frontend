@@ -86,10 +86,13 @@ export const ADMISSION_OPS: AdmOp[] = [
   { key: "tally-received", group: "tally", title: "Payment received", domain: "admission-tally", method: "post", path: "/admission/tally-report/payment-received", ...T,
     fields: [{ name: "standards", label: "Classes", kind: "lines", required: true, help: "One class per line." }, { name: "start_date", label: "From", kind: "date", required: true }, { name: "end_date", label: "To", kind: "date", required: true }] },
   { key: "tally-csv", group: "tally", title: "Import TPSL CSV", domain: "admission-tally", method: "post", path: "/admission/tally-report/csv", ...T, multipart: true,
-    confirm: "Import this payment CSV? Matching registrations are marked paid.", fields: [{ name: "file", label: "CSV file", kind: "file", required: true }] },
+    confirm: "Record these payments for reconciliation? Each row is stored with a match status; registrations are not changed.", fields: [{ name: "file", label: "CSV file", kind: "file", required: true, accept: ".csv", help: "Up to 10 MB." }] },
   { key: "tally-razorpay-csv", group: "tally", title: "Import Razorpay CSV", domain: "admission-tally", method: "post", path: "/admission/tally-report/razorpay-csv", ...T, multipart: true,
-    confirm: "Import this Razorpay CSV? Matching registrations are marked paid.", fields: [{ name: "file", label: "CSV file", kind: "file", required: true }] },
+    confirm: "Record these payments for reconciliation? Each row is stored with a match status; registrations are not changed.", fields: [{ name: "file", label: "CSV file", kind: "file", required: true, accept: ".csv", help: "Up to 10 MB." }] },
 ]
+
+/** Backend rejects uploads above this with 413. */
+export const MAX_CSV_BYTES = 10 * 1024 * 1024
 
 export interface AdmRequest { method: AdmOp["method"]; url: string; params?: Record<string, unknown>; data?: unknown }
 
@@ -114,6 +117,11 @@ export function buildAdmRequest(op: AdmOp, values: Record<string, unknown>, scop
   }
   const { body, errors: fe } = buildPayload(op.fields.filter((x) => !x.pathParam), values)
   Object.assign(errors, fe)
+  const file = values.file as { size?: number; name?: string } | undefined
+  if (op.multipart && file && !errors.file) {
+    if (typeof file.size === "number" && file.size > MAX_CSV_BYTES) errors.file = "File is larger than 10 MB. Split the CSV and import it in parts."
+    else if (file.name && !/\.csv$/i.test(file.name)) errors.file = "Choose a .csv file"
+  }
   if (Object.keys(errors).length) return { errors }
   if (op.method === "get" || op.method === "delete") return { req: { method: op.method, url, params: { ...query, ...body } } }
   return { req: { method: op.method, url, params: query, data: op.bodyList ? body[op.bodyList] : body } }
