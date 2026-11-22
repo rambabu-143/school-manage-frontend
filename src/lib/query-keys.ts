@@ -162,6 +162,7 @@ export type QueryDomain =
   | "student-medical-history"
   | "exam-records"
   | "exam-reports"
+  | "exam-settings"
 
 export type QueryScope = {
   userId: string
