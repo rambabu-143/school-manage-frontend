@@ -102,6 +102,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Newsletters", href: "/newsletters", icon: Newspaper },
   { label: "Holidays", href: "/holidays", icon: CalendarDays },
   { label: "Admissions", href: "/admissions", icon: ClipboardList, roles: ADMIN_ONLY_ROLES },
+  { label: "Admission evaluation", href: "/admission-evaluation", icon: ClipboardList, roles: STAFF_ROLES },
   { label: "Branches", href: "/branches", icon: Building2, roles: STAFF_ROLES },
   { label: "Users", href: "/users", icon: UserCog, roles: ADMIN_ONLY_ROLES },
   { label: "Students", href: "/students", icon: Users, roles: STAFF_ROLES },
