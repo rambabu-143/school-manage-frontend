@@ -32,10 +32,13 @@ export function entryFor(entries: MarkEntry[] | null | undefined, subjectId: str
   return (entries ?? []).find((e) => String(e.subject_id) === subjectId)
 }
 
-/** Replace this subject's entry, keep every other subject's entry untouched. */
-export function mergeEntries(existing: MarkEntry[] | null | undefined, subjectId: string, value: number): MarkEntry[] {
-  const others = (existing ?? []).filter((e) => String(e.subject_id) !== subjectId)
-  return [...others, { ...entryFor(existing, subjectId), subject_id: subjectId, marks: value }]
+/** Replace this subject's entry in place (keeps order), or append it. Other subjects are untouched. */
+export function mergeEntries(existing: MarkEntry[] | null | undefined, subjectId: string, value: number, extra: Partial<MarkEntry> = {}): MarkEntry[] {
+  const list = existing ?? []
+  const next = { ...entryFor(list, subjectId), ...extra, subject_id: subjectId, marks: value }
+  return list.some((e) => String(e.subject_id) === subjectId)
+    ? list.map((e) => (String(e.subject_id) === subjectId ? next : e))
+    : [...list, next]
 }
 
 export function totalMarks(entries: MarkEntry[]): number {
@@ -53,8 +56,11 @@ export function buildMarksPayload(opts: {
   subjectId: string
   maxMarks: number
   reappear: boolean
+  phase?: number
 }) {
-  const { rows, drafts, subjectId, maxMarks, reappear } = opts
+  const { rows, drafts, subjectId, maxMarks, reappear, phase } = opts
+  // Legacy entries also carried phase and max_marks.
+  const extra: Partial<MarkEntry> = { max_marks: maxMarks, ...(phase ? { phase } : {}) }
   const payload: MarksPayloadRow[] = []
   const errors: Record<string, string> = {}
   let overwrites = 0
@@ -71,13 +77,30 @@ export function buildMarksPayload(opts: {
     if (current && Number(current.marks) === parsed.value) continue
     if (current) overwrites += 1
     if (reappear) {
-      payload.push({ id: row.id, reappear_marks_details: mergeEntries(row.reappear_marks_details, subjectId, parsed.value) })
+      payload.push({ id: row.id, reappear_marks_details: mergeEntries(row.reappear_marks_details, subjectId, parsed.value, extra) })
     } else {
-      const merged = mergeEntries(row.marks_details, subjectId, parsed.value)
+      const merged = mergeEntries(row.marks_details, subjectId, parsed.value, extra)
       payload.push({ id: row.id, marks: totalMarks(merged), marks_details: merged })
     }
   }
   return { payload, errors, overwrites }
+}
+
+/** After a partial save: keep the drafts of sent rows whose saved marks (fresh data) differ from the draft, flagged as failed. */
+export function failedDrafts(opts: { rows: RegRow[]; drafts: Record<string, string>; sentIds: readonly string[]; subjectId: string; reappear: boolean }) {
+  const keep: Record<string, string> = {}
+  const errors: Record<string, string> = {}
+  for (const id of opts.sentIds) {
+    const row = opts.rows.find((r) => r.id === id)
+    const draft = opts.drafts[id]
+    if (draft === undefined) continue
+    const saved = entryFor(opts.reappear ? row?.reappear_marks_details : row?.marks_details, opts.subjectId)
+    if (!saved || Number(saved.marks) !== Number(draft)) {
+      keep[id] = draft
+      errors[id] = "Not saved by the server. Check and save again."
+    }
+  }
+  return { drafts: keep, errors }
 }
 
 export function buildAttendanceBody(o: { phase: number; attendance: string; className: string; roomId: string }) {
