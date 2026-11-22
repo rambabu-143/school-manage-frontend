@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { apiClient } from "@/lib/api-client"
 import { qk } from "@/lib/query-keys"
 import { errorMessage } from "@/lib/error-message"
-import type { DatesheetEntry, DatesheetEntryCreateInput } from "@/types/datesheet"
+import type { DatesheetEntry, DatesheetEntryCreateInput, DatesheetEntryUpdateInput } from "@/types/datesheet"
 
 export function useDatesheetEntries(params?: { examId?: string; sectionId?: string }) {
   return useQuery({
@@ -47,6 +47,31 @@ export function useDeleteDatesheetEntry() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk("datesheet-entries") })
       toast.success("Datesheet entry removed")
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
+}
+
+export function useDatesheetEntry(id: string | undefined) {
+  return useQuery({
+    queryKey: qk("datesheet-entry", id),
+    enabled: !!id,
+    queryFn: async () => (await apiClient.get<DatesheetEntry>(`/datesheet/${id}`)).data,
+  })
+}
+
+export function useUpdateDatesheetEntry() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: DatesheetEntryUpdateInput }) => {
+      const { data } = await apiClient.put<DatesheetEntry>(`/datesheet/${id}`, input)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk("datesheet-entries") })
+      queryClient.invalidateQueries({ queryKey: qk("datesheet-entry") })
+      toast.success("Datesheet entry updated")
     },
     onError: (error) => toast.error(errorMessage(error)),
   })

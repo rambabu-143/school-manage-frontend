@@ -84,6 +84,12 @@ export interface SmsMessageCreateInput {
   extra_phones?: string[]
 }
 
+export type SmsPersonKind = "student" | "staff"
+
+export interface SmsInboxMessage extends SmsMessage {
+  read_flag: boolean | null
+}
+
 export interface MessageTemplate {
   id: string
   tenant_id: string

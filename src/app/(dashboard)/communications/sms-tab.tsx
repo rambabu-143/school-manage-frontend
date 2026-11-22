@@ -33,6 +33,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { useSendSms, useSetSmsConfig, useSmsConfig, useSmsMessages } from "@/hooks/use-communications"
 import type { SmsMessage } from "@/types/communications"
 
+import { SmsInbox } from "./sms-inbox"
+
 const configSchema = z.object({
   api_key: z.string().min(1, "Required"),
   sender_id: z.string().min(1, "Required").max(20),
@@ -272,6 +274,7 @@ export function SmsTab() {
         isLoading={isPending}
         emptyMessage="No SMS sent yet."
       />
+      <SmsInbox />
     </div>
   )
 }

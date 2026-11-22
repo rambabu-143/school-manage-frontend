@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2, Plus } from "lucide-react"
+import { Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -10,6 +10,8 @@ import { BranchSelect } from "@/components/branch-select"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   Form,
   FormControl,
@@ -35,10 +37,19 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { useCreateNotice, useNotices } from "@/hooks/use-notices"
+import {
+  useCreateNotice,
+  useDeleteNotice,
+  useNotice,
+  useNoticeSearch,
+  useNotices,
+  useUpdateNotice,
+} from "@/hooks/use-notices"
+import { useSessionScope } from "@/hooks/use-identity"
 import { useSession } from "@/hooks/use-session"
+import { noticeSearchBody, noticeUpdateBody, resolveBranch } from "@/lib/comms"
 import { ADMIN_ROLES } from "@/types/auth"
-import type { NoticeAudience } from "@/types/notices"
+import type { Notice, NoticeAudience } from "@/types/notices"
 
 const AUDIENCE_LABELS: Record<NoticeAudience, string> = {
   student: "Students",
@@ -49,7 +60,7 @@ const AUDIENCE_LABELS: Record<NoticeAudience, string> = {
 
 const noticeSchema = z
   .object({
-    branch_id: z.string().min(1, "Branch is required"),
+    branch_id: z.string(), // resolved from the session branch on submit
     title: z.string().min(1, "Title is required").max(200),
     body: z.string().min(1, "Body is required").max(2000),
     audience: z.enum(["student", "parent", "staff", "all"], {
@@ -71,9 +82,22 @@ export function NoticesTab() {
   const { data: user } = useSession()
   const isAdmin = !!user && ADMIN_ROLES.includes(user.role)
 
-  const { data: notices, isPending } = useNotices()
+  const { data: scope } = useSessionScope()
+  const sessionBranch = scope?.branch_id ?? undefined
+  const all = useNotices()
   const [open, setOpen] = React.useState(false)
+  const [editing, setEditing] = React.useState<Notice | null>(null)
+  const [detailId, setDetailId] = React.useState<string>()
+  const [deleting, setDeleting] = React.useState<Notice | null>(null)
+  const [filters, setFilters] = React.useState({ audience: "", start_date: "", end_date: "" })
+  const [applied, setApplied] = React.useState<Record<string, string> | null>(null)
+  const [filterError, setFilterError] = React.useState<string>()
+  const search = useNoticeSearch(applied)
+  const { data: notices, isPending } = applied ? search : all
   const createNotice = useCreateNotice()
+  const updateNotice = useUpdateNotice()
+  const deleteNotice = useDeleteNotice()
+  const detail = useNotice(detailId)
 
   const form = useForm<NoticeValues>({
     resolver: zodResolver(noticeSchema),
@@ -89,24 +113,86 @@ export function NoticesTab() {
     },
   })
 
-  function onSubmit(values: NoticeValues) {
-    createNotice.mutate(values, {
-      onSuccess: () => {
-        setOpen(false)
-        form.reset()
-      },
-    })
+  function closeForm() {
+    setOpen(false)
+    setEditing(null)
+    form.reset()
   }
+
+  function openEdit(notice: Notice) {
+    setEditing(notice)
+    form.reset({
+      branch_id: notice.branch_id,
+      title: notice.title,
+      body: notice.body,
+      audience: notice.audience,
+      start_date: notice.start_date,
+      end_date: notice.end_date,
+      color_code: notice.color_code ?? "",
+      location: notice.location ?? "",
+    })
+    setOpen(true)
+  }
+
+  function onSubmit(values: NoticeValues) {
+    if (editing) {
+      const { branch_id: _branch, ...rest } = values
+      updateNotice.mutate(
+        { id: editing.id, input: noticeUpdateBody(rest) },
+        { onSuccess: closeForm }
+      )
+      return
+    }
+    const branch_id = resolveBranch(values.branch_id, sessionBranch)
+    if (!branch_id) {
+      form.setError("branch_id", { message: "Branch is required" })
+      return
+    }
+    createNotice.mutate({ ...values, branch_id }, { onSuccess: closeForm })
+  }
+
+  function runSearch() {
+    const { body, error } = noticeSearchBody(filters)
+    setFilterError(error)
+    if (!error) setApplied(Object.keys(body).length ? body : null)
+  }
+  const saving = createNotice.isPending || updateNotice.isPending
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-end gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end gap-2">
+          <Select
+            value={filters.audience || "all-audiences"}
+            onValueChange={(v) => setFilters((f) => ({ ...f, audience: v === "all-audiences" ? "" : v }))}
+          >
+            <SelectTrigger className="w-40" aria-label="Audience filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all-audiences">All audiences</SelectItem>
+              {(Object.keys(AUDIENCE_LABELS) as NoticeAudience[]).map((key) => (
+                <SelectItem key={key} value={key}>{AUDIENCE_LABELS[key]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input type="date" className="w-40" aria-label="From date" value={filters.start_date}
+            onChange={(e) => setFilters((f) => ({ ...f, start_date: e.target.value }))} />
+          <Input type="date" className="w-40" aria-label="To date" value={filters.end_date}
+            onChange={(e) => setFilters((f) => ({ ...f, end_date: e.target.value }))} />
+          <Button variant="outline" onClick={runSearch}><Search />Search</Button>
+          {applied && (
+            <Button variant="ghost" onClick={() => { setApplied(null); setFilterError(undefined); setFilters({ audience: "", start_date: "", end_date: "" }) }}>
+              Clear
+            </Button>
+          )}
+        </div>
         {isAdmin && (
           <Sheet
             open={open}
             onOpenChange={(next) => {
-              setOpen(next)
-              if (!next) form.reset()
+              if (next) setOpen(true)
+              else closeForm()
             }}
           >
             <SheetTrigger asChild>
@@ -117,24 +203,28 @@ export function NoticesTab() {
             </SheetTrigger>
             <SheetContent className="overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>New Notice</SheetTitle>
-                <SheetDescription>Post a circular for a branch.</SheetDescription>
+                <SheetTitle>{editing ? "Edit Notice" : "New Notice"}</SheetTitle>
+                <SheetDescription>
+                  {editing ? "Update this circular." : "Post a circular for a branch."}
+                </SheetDescription>
               </SheetHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4">
-                  <FormField
-                    control={form.control}
-                    name="branch_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Branch</FormLabel>
-                        <FormControl>
-                          <BranchSelect value={field.value} onChange={field.onChange} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {!editing && (
+                    <FormField
+                      control={form.control}
+                      name="branch_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Branch</FormLabel>
+                          <FormControl>
+                            <BranchSelect value={field.value || sessionBranch} onChange={field.onChange} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   <FormField
                     control={form.control}
                     name="title"
@@ -221,7 +311,12 @@ export function NoticesTab() {
                         <FormItem>
                           <FormLabel>Calendar color (optional)</FormLabel>
                           <FormControl>
-                            <Input type="color" className="h-10 w-full p-1" {...field} />
+                            <div className="flex gap-2">
+                              <Input type="color" className="h-10 w-full p-1" {...field} value={field.value || "#000000"} />
+                              {field.value && (
+                                <Button type="button" variant="outline" onClick={() => field.onChange("")}>No colour</Button>
+                              )}
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -242,9 +337,9 @@ export function NoticesTab() {
                     />
                   </div>
                   <SheetFooter className="px-0">
-                    <Button type="submit" disabled={createNotice.isPending}>
-                      {createNotice.isPending && <Loader2 className="animate-spin" />}
-                      Post notice
+                    <Button type="submit" disabled={saving}>
+                      {saving && <Loader2 className="animate-spin" />}
+                      {editing ? "Save changes" : "Post notice"}
                     </Button>
                   </SheetFooter>
                 </form>
@@ -254,6 +349,7 @@ export function NoticesTab() {
         )}
       </div>
 
+      {filterError && <p role="alert" className="text-sm text-destructive">{filterError}</p>}
       {isPending && <p className="text-sm text-muted-foreground">Loading...</p>}
       {!isPending && (notices?.length ?? 0) === 0 && (
         <p className="text-sm text-muted-foreground">No notices right now.</p>
@@ -277,6 +373,13 @@ export function NoticesTab() {
                 <span className="text-xs text-muted-foreground">
                   {notice.start_date} - {notice.end_date}
                 </span>
+                <Button variant="ghost" size="sm" onClick={() => setDetailId(notice.id)}>Details</Button>
+                {isAdmin && (
+                  <>
+                    <Button variant="ghost" size="icon" aria-label="Edit notice" onClick={() => openEdit(notice)}><Pencil /></Button>
+                    <Button variant="ghost" size="icon" aria-label="Delete notice" onClick={() => setDeleting(notice)}><Trash2 /></Button>
+                  </>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -288,6 +391,34 @@ export function NoticesTab() {
           </Card>
         ))}
       </div>
+      <Dialog open={!!detailId} onOpenChange={(o) => !o && setDetailId(undefined)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{detail.data?.title ?? "Notice"}</DialogTitle>
+          </DialogHeader>
+          {detail.isPending && <p className="text-sm text-muted-foreground">Loading...</p>}
+          {detail.isError && <p className="text-sm text-destructive">Notice not found.</p>}
+          {detail.data && (
+            <div className="flex flex-col gap-2 text-sm">
+              <p>{detail.data.body}</p>
+              <p className="text-muted-foreground">
+                {AUDIENCE_LABELS[detail.data.audience]} | {detail.data.start_date} - {detail.data.end_date}
+              </p>
+              {detail.data.location && <p className="text-muted-foreground">Location: {detail.data.location}</p>}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      <ConfirmDialog
+        open={!!deleting}
+        onOpenChange={(o) => !o && setDeleting(null)}
+        title="Delete notice?"
+        description={`Delete "${deleting?.title ?? ""}" for all recipients? This cannot be undone.`}
+        confirmLabel="Delete"
+        destructive
+        isPending={deleteNotice.isPending}
+        onConfirm={() => deleting && deleteNotice.mutate(deleting.id, { onSuccess: () => setDeleting(null) })}
+      />
     </div>
   )
 }
