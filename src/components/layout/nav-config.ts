@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react"
 import {
   BookOpen,
+  ChartColumn,
   Building2,
   Bus,
   CircleDot,
@@ -95,6 +96,7 @@ const ADMIN_AND_TEACHER_ROLES: readonly Role[] = [
 // pages that don't exist yet.
 export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Insights", href: "/dashboard/insights", icon: ChartColumn, roles: ADMIN_AND_TEACHER_ROLES },
   { label: "Notices", href: "/notices", icon: Megaphone },
   { label: "Communications", href: "/communications", icon: Mail, roles: STAFF_ROLES },
   { label: "Newsletters", href: "/newsletters", icon: Newspaper },
