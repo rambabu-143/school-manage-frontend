@@ -1,6 +1,6 @@
 "use client"
 
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { apiClient } from "@/lib/api-client"
@@ -18,9 +18,13 @@ export function useExamReport(req: ReportRequest | null) {
 }
 
 export function useApproveBluesheet() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (a: { path: string; body: unknown }) => (await apiClient.post(a.path, a.body)).data,
-    onSuccess: () => toast.success("Bluesheet approved"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk("exam-reports") })
+      toast.success("Bluesheet approved")
+    },
     onError: (e) => toast.error(errorMessage(e)),
   })
 }

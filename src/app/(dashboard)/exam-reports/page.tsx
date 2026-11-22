@@ -3,12 +3,13 @@
 import { useState } from "react"
 
 import { Pick, useSectionOptions, useSubjectOptions, useYearOptions } from "@/app/(dashboard)/exam-records/pickers"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useApproveBluesheet, useExamReport } from "@/hooks/use-exam-reports"
-import { buildApprove, buildReportRequest, cell, toTable, type ReportKind } from "@/lib/exam-reports"
+import { buildApprove, buildReportRequest, cell, termsFor, toTable, type ReportKind } from "@/lib/exam-reports"
 import { parseApiError } from "@/lib/shared/api-error"
 
 const KINDS: { value: ReportKind; label: string }[] = [
@@ -19,7 +20,7 @@ const KINDS: { value: ReportKind; label: string }[] = [
   { value: "ar", label: "Assessment record" },
   { value: "ar-sections", label: "Junior AR sections" },
 ]
-const TERMS = ["1", "2", "3"].map((t) => ({ value: t, label: `Term ${t}` }))
+const termOption = (t: string) => ({ value: t, label: t === "csa" ? "CSA" : `Term ${t}` })
 const WINGS = [{ value: "junior", label: "Junior" }, { value: "senior", label: "Senior" }]
 
 export default function ExamReportsPage() {
@@ -36,6 +37,7 @@ export default function ExamReportsPage() {
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [tillCurrent, setTillCurrent] = useState(false)
+  const [confirming, setConfirming] = useState(false)
 
   const input = { wing, sectionId, subjectId, yearId, examId: examId.trim(), term, startDate, endDate, tillCurrent }
   const req = buildReportRequest(kind, input)
@@ -52,7 +54,7 @@ export default function ExamReportsPage() {
         <p className="text-sm text-muted-foreground">Bluesheets and assessment records. Downloads and QR data live under Exams &amp; Records.</p>
       </div>
       <div className="flex flex-wrap items-end gap-3">
-        <Pick label="Report" value={kind} onChange={(v) => v && setKind(v as ReportKind)} options={KINDS} />
+        <Pick label="Report" value={kind} onChange={(v) => { if (v) { setKind(v as ReportKind); setTerm("") } }} options={KINDS} />
         {needs(["junior-subject-bluesheet", "ar"]) && <Pick label="Wing" value={wing} onChange={(v) => setWing(v || "junior")} options={WINGS} />}
         {needs(["ar-sections"]) ? (
           <Pick label="Academic year" value={yearId} onChange={setYearId} options={years.options} loading={years.isPending} />
@@ -60,7 +62,7 @@ export default function ExamReportsPage() {
           <Pick label="Section" value={sectionId} onChange={setSectionId} options={sections.options} loading={sections.isPending} />
         )}
         {needs(["junior-subject-bluesheet"]) && <Pick label="Subject" value={subjectId} onChange={setSubjectId} options={subjects.options} loading={subjects.isPending} />}
-        {needs(["junior-bluesheet", "junior-subject-bluesheet", "ar", "ar-sections"]) && <Pick label="Term" value={term} onChange={setTerm} options={TERMS} />}
+        {needs(["junior-bluesheet", "junior-subject-bluesheet", "ar", "ar-sections"]) && <Pick label="Term" value={term} onChange={setTerm} options={termsFor(kind).map(termOption)} />}
         {needs(["senior-exam-bluesheet"]) && (
           <div className="flex flex-col gap-1"><Label htmlFor="er-exam">Exam ID</Label><Input id="er-exam" value={examId} onChange={(e) => setExamId(e.target.value)} /></div>
         )}
@@ -72,10 +74,19 @@ export default function ExamReportsPage() {
           </>
         )}
         {approveReq && (
-          <Button variant="outline" disabled={approve.isPending} onClick={() => approve.mutate(approveReq)}>Approve</Button>
+          <Button variant="outline" disabled={approve.isPending} onClick={() => setConfirming(true)}>Approve</Button>
         )}
       </div>
 
+      <ConfirmDialog
+        open={confirming && !!approveReq}
+        onOpenChange={setConfirming}
+        title="Approve bluesheet?"
+        description={`This approves the ${kind === "junior-bluesheet" ? "final" : "subject"} bluesheet for the selected section, term ${term}. The approval is recorded in the audit log.`}
+        confirmLabel="Approve"
+        isPending={approve.isPending}
+        onConfirm={() => approveReq && approve.mutate(approveReq, { onSettled: () => setConfirming(false) })}
+      />
       {!req && <p className="text-sm text-muted-foreground">Fill in the filters to load the report.</p>}
       {req && q.isFetching && <p role="status" className="text-sm text-muted-foreground">Loading...</p>}
       {q.isError && <p role="alert" className="text-sm text-destructive">{parseApiError(q.error).message}</p>}

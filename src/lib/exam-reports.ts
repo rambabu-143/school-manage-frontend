@@ -19,10 +19,19 @@ export interface ReportInput {
 export interface ReportRequest { path: string; params: Record<string, string | boolean> }
 
 const TERMS = ["1", "2", "3"]
+const AR_TERMS = ["1", "2", "csa"]
+
+/** Valid term values per report (backend Literals); [] means the report takes no term. */
+export function termsFor(kind: ReportKind): string[] {
+  if (kind === "ar" || kind === "ar-sections") return AR_TERMS
+  if (kind === "junior-bluesheet") return TERMS
+  if (kind === "junior-subject-bluesheet") return ["1", "2"]
+  return []
+}
 const WINGS = ["junior", "senior"]
 
 export function buildReportRequest(kind: ReportKind, i: ReportInput): ReportRequest | null {
-  const term = i.term && TERMS.includes(i.term) ? i.term : undefined
+  const term = i.term && termsFor(kind).includes(i.term) ? i.term : undefined
   switch (kind) {
     case "junior-bluesheet":
       return i.sectionId && term ? { path: "/exam/junior/reports/bluesheet", params: { section_id: i.sectionId, term } } : null
@@ -32,10 +41,11 @@ export function buildReportRequest(kind: ReportKind, i: ReportInput): ReportRequ
       if (!i.sectionId) return null
       if (kind === "senior-bluesheet") return { path: "/exam/senior/reports/bluesheet", params: { section_id: i.sectionId } }
       if (kind === "senior-exam-bluesheet") return i.examId ? { path: "/exam/senior/reports/exam-bluesheet", params: { section_id: i.sectionId, exam_id: i.examId } } : null
-      // subject bluesheet: term is optional and only 1 or 2 are valid
+      // subject bluesheet: term is 1 or 2; required for junior (backend 400), optional for senior
       if (!i.subjectId || !i.wing || !WINGS.includes(i.wing)) return null
+      if (i.wing === "junior" && !term) return null
       const params: Record<string, string> = { section_id: i.sectionId, subject_id: i.subjectId }
-      if (i.term === "1" || i.term === "2") params.term = i.term
+      if (term) params.term = term
       return { path: `/exam/${i.wing}/reports/subject-bluesheet`, params }
     }
     case "ar":
