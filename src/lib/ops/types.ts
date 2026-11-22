@@ -32,6 +32,8 @@ export interface Field {
   /** Path parameter of an upsert PUT, not a body property. */
   pathParam?: boolean
   help?: string
+  /** file: accepted extensions for the picker (e.g. ".csv"). */
+  accept?: string
 }
 
 export interface Column { key: string; label: string; kind?: "bool" | "date" | "datetime" | "short" }
@@ -56,6 +58,8 @@ export interface Resource {
   upsert?: boolean
   noUpdate?: boolean
   noDelete?: boolean
+  /** Ask for confirmation (this text) before create/edit is saved. */
+  confirmSave?: string
   /** read: who may list (page shows a notice otherwise); write: who may create/edit/delete. Omit = any staff. */
   roles?: { read?: readonly Role[]; write?: readonly Role[] }
   columns: Column[]
