@@ -86,6 +86,8 @@ export interface ActionFormCfg {
   submit: string
   /** multipart/form-data instead of JSON (any "file" field). */
   multipart?: boolean
+  /** Ask for confirmation (this text) before submitting. */
+  confirm?: string
   /** Backend allows only these roles; form hidden for others. */
   roles?: readonly Role[]
 }

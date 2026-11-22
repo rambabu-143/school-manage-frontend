@@ -4,6 +4,10 @@ import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { useSession } from "@/hooks/use-session"
 import { useApiError } from "@/hooks/shared/use-api-error"
@@ -23,6 +27,7 @@ export function ActionForm({ cfg, invalidate }: { cfg: ActionFormCfg; invalidate
   const { scope, setPicked } = useScope(cfg.scope)
   const [values, setValues] = useState(() => toFormValues(cfg.fields))
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [asking, setAsking] = useState(false)
 
   const send = useMutation({
     mutationFn: async () => {
@@ -53,7 +58,13 @@ export function ActionForm({ cfg, invalidate }: { cfg: ActionFormCfg; invalidate
 
   if (cfg.roles && !(user && cfg.roles.includes(user.role))) return null
   return (
-    <form className="space-y-3 rounded-lg border p-4" noValidate onSubmit={(e) => { e.preventDefault(); send.mutate() }}>
+    <form className="space-y-3 rounded-lg border p-4" noValidate onSubmit={(e) => {
+      e.preventDefault()
+      if (!cfg.confirm) return send.mutate()
+      const { errors: errs } = buildPayload(cfg.fields, values, { scope })
+      setErrors(errs)
+      if (Object.keys(errs).length === 0) setAsking(true)
+    }}>
       <h2 className="font-medium">{cfg.title}</h2>
       <ScopeBar mode={cfg.scope} scope={scope} onChange={setPicked} />
       <div className="grid gap-3 sm:grid-cols-2">
@@ -63,6 +74,20 @@ export function ActionForm({ cfg, invalidate }: { cfg: ActionFormCfg; invalidate
         ))}
       </div>
       <Button type="submit" disabled={send.isPending}>{send.isPending ? "Working..." : cfg.submit}</Button>
+      {cfg.confirm && (
+        <AlertDialog open={asking} onOpenChange={setAsking}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{cfg.title}</AlertDialogTitle>
+              <AlertDialogDescription>{cfg.confirm}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => send.mutate()}>{cfg.submit}</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </form>
   )
 }

@@ -5,7 +5,7 @@ import axios from "axios"
 
 import { apiClient } from "@/lib/api-client"
 import { parseApiError, type ParsedApiError } from "@/lib/shared/api-error"
-import { validateCsvRows, validateFile, type FileRule } from "@/lib/shared/file-validation"
+import { canCountRows, uploadTypeFor, validateCsvRows, validateFile, type FileRule } from "@/lib/shared/file-validation"
 
 /**
  * Multipart upload through the BFF (/api/backend/*). Progress is browser->BFF bytes.
@@ -50,7 +50,7 @@ export function useUpload<T = unknown>({
         setError({ status: null, kind: "validation", message: invalid, fieldErrors: {}, rowErrors: [], retryAfter: null })
         return null
       }
-      if (rule.maxRows !== undefined) {
+      if (rule.maxRows !== undefined && canCountRows(file.name)) {
         const tooMany = validateCsvRows(await file.slice(0, rule.maxBytes).text(), rule)
         if (tooMany) {
           setError({ status: null, kind: "validation", message: tooMany, fieldErrors: {}, rowErrors: [], retryAfter: null })
@@ -58,7 +58,8 @@ export function useUpload<T = unknown>({
         }
       }
       const form = new FormData()
-      form.append(field, file)
+      const type = uploadTypeFor(file)
+      form.append(field, type === file.type ? file : new File([file], file.name, { type }))
       for (const [k, v] of Object.entries(extraFields ?? {})) form.append(k, v)
       ctrl.current = new AbortController()
       setUploading(true)

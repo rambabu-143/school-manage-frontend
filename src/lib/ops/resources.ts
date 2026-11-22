@@ -249,3 +249,48 @@ export const SECTION_CERTIFICATES = [
   { label: "Co-scholastic certificates", path: "/section-certificates/{section_id}/co-scholastic" },
   { label: "Registration certificates", path: "/section-certificates/{section_id}/registration" },
 ] as const
+
+// ---- student records / discipline / observations (admin + teacher read; locks written by admin) ----
+const CARD_DATES: Field[] = [{ name: "from_date", label: "From", kind: "date" }, { name: "to_date", label: "To", kind: "date" }]
+
+export const DISCIPLINARY_CARDS: Report[] = [
+  { key: "student-card", title: "Student card", method: "get", path: "/disciplinary-records/student-card/{admission_number}", fields: [{ name: "admission_number", label: "Admission number", required: true, pathParam: true }, ...CARD_DATES], flatten: "records" },
+  // the staff card is filtered by academic year (or explicit dates)
+  { key: "staff-card", title: "Staff card", method: "get", path: "/disciplinary-records/staff-card/{staff_id}", fields: [{ name: "staff_id", label: "Staff", kind: "staff", required: true, pathParam: true }, { name: "academic_year_id", label: "Academic year", kind: "year" }, ...CARD_DATES], flatten: "records" },
+]
+
+export const PPR_REPORT: Report[] = [
+  { key: "ppr", title: "PPR report", method: "get", path: "/observation-remarks/ppr-report/{section_id}", fields: [{ name: "section_id", label: "Section", kind: "section", required: true, pathParam: true }, { name: "term", label: "Term", required: true }] },
+]
+
+export const READMISSION_REPORT: Report[] = [
+  { key: "readmission", title: "Re-admission attendance", method: "get", path: "/attendance/students/{student_id}/readmission", fields: [{ name: "student_id", label: "Student", kind: "student", required: true, pathParam: true }, { name: "on_date", label: "On date", kind: "date" }] },
+]
+
+export const LOCK_ROLES = ADMIN
+export const LOCK_REPORT: Report[] = [
+  { key: "locks", title: "Locked records", method: "get", path: "/academic-record-locks", fields: [{ name: "section_id", label: "Section", kind: "section", required: true }, { name: "term", label: "Term" }, { name: "module", label: "Module" }] },
+]
+const LOCK_FIELDS: Field[] = [
+  { name: "term", label: "Term", required: true }, { name: "module", label: "Module" },
+  { name: "student_id", label: "Student", kind: "student", help: "Give a student or a whole section." },
+  { name: "section_id", label: "Section", kind: "section" },
+]
+export const LOCK_FORM: ActionFormCfg = { key: "lock", roles: LOCK_ROLES, confirm: "This locks the selected student (or every student of the selected section) for the term and module. Continue?", title: "Lock records", method: "post", path: "/academic-record-locks", submit: "Lock", fields: LOCK_FIELDS }
+export const UNLOCK_FORM: ActionFormCfg = { key: "unlock", roles: LOCK_ROLES, confirm: "This unlocks the selected student (or every student of the selected section) for the term and module. Continue?", title: "Unlock records", method: "post", path: "/academic-record-locks/unlock", submit: "Unlock", fields: LOCK_FIELDS }
+
+export const RECORD_LOOKUP: Report[] = [
+  { key: "admission", title: "Admission record", method: "get", path: "/student-records/admission/{admission_number}", fields: [{ name: "admission_number", label: "Admission number", required: true, pathParam: true }] },
+  { key: "withdrawal", title: "With withdrawal", method: "get", path: "/student-records/admission-with-withdrawal/{admission_number}", fields: [{ name: "admission_number", label: "Admission number", required: true, pathParam: true }] },
+]
+export const ASSESSMENT_SETTING: ActionFormCfg = {
+  key: "assessment-setting", roles: ADMIN, title: "Assessment record setting", method: "post", path: "/student-records/assessment-settings", scope: "branch+year", submit: "Save setting",
+  fields: [
+    { name: "branch_id", label: "Branch", kind: "branch", required: true, scoped: true }, { name: "academic_year_id", label: "Year", kind: "year", required: true, scoped: true },
+    { name: "grade_ids", label: "Grades", kind: "multi", ref: "grade", required: true }, { name: "start_date", label: "Start date", kind: "date", required: true }, { name: "is_live", label: "Live", kind: "bool" },
+  ],
+}
+export const CONSENT_FORM: ActionFormCfg = {
+  key: "social-media-consent", confirm: "Consent can be recorded only once per student. Save it exactly as ticked (unticked records a refusal)?", title: "Social media consent", method: "post", path: "/student-records/social-media-consent", submit: "Record consent",
+  fields: [{ name: "student_id", label: "Student", kind: "student", required: true }, { name: "parent_name", label: "Parent name", required: true }, { name: "is_agree", label: "Parent agrees (unticked records a refusal)", kind: "bool" }, { name: "reason", label: "Reason", kind: "textarea" }],
+}
