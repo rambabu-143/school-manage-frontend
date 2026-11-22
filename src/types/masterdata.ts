@@ -30,6 +30,7 @@ export interface MasterDataItem {
   code: string | null
   sort_order: number | null
   note: string | null
+  parent_id?: string | null
 }
 
 export interface MasterDataItemCreateInput {
@@ -38,6 +39,7 @@ export interface MasterDataItemCreateInput {
   code?: string | null
   sort_order?: number | null
   note?: string | null
+  parent_id?: string | null
 }
 
 export interface MasterDataItemUpdateInput {
@@ -45,4 +47,5 @@ export interface MasterDataItemUpdateInput {
   code?: string | null
   sort_order?: number | null
   note?: string | null
+  parent_id?: string | null
 }
