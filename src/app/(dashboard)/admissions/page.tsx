@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ApplicationsTab } from "./applications-tab"
 import { AdmissionAdminTabs } from "./admission-admin-tabs"
 import { EnquiriesTab } from "./enquiries-tab"
+import { AdmissionBackOffice } from "./registrations-tab"
 
 export default function AdmissionsPage() {
   return (
@@ -18,6 +19,7 @@ export default function AdmissionsPage() {
         <TabsList>
           <TabsTrigger value="enquiries">Enquiries</TabsTrigger>
           <TabsTrigger value="applications">Applications</TabsTrigger>
+          <TabsTrigger value="backoffice">Back office</TabsTrigger>
           <TabsTrigger value="admin">Registration, settings and reports</TabsTrigger>
         </TabsList>
         <TabsContent value="enquiries">
@@ -25,6 +27,9 @@ export default function AdmissionsPage() {
         </TabsContent>
         <TabsContent value="applications">
           <ApplicationsTab />
+        </TabsContent>
+        <TabsContent value="backoffice" className="pt-4">
+          <AdmissionBackOffice />
         </TabsContent>
         <TabsContent value="admin">
           <AdmissionAdminTabs />
