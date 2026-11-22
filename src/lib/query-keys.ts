@@ -161,6 +161,7 @@ export type QueryDomain =
   | "session-promotion"
   | "student-medical-history"
   | "exam-records"
+  | "exam-reports"
 
 export type QueryScope = {
   userId: string
