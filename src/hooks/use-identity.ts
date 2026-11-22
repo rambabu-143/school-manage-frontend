@@ -82,6 +82,15 @@ export function useExitImpersonation() {
   })
 }
 
+export function useSwitchStudent() {
+  const changed = useIdentityChanged()
+  return useMutation({
+    mutationFn: (student_id: string) => post("/api/auth/switch-student", { student_id }),
+    onSuccess: changed,
+    onError: (e: Error) => toast.error(e.message),
+  })
+}
+
 export function useBackToFamily() {
   const changed = useIdentityChanged()
   return useMutation({
