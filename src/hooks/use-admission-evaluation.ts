@@ -77,7 +77,7 @@ export function useSaveMarks(reappear: boolean) {
   const invalidate = useInvalidate()
   return useMutation({
     mutationFn: async (rows: MarksPayloadRow[]) =>
-      (await apiClient.post<{ updated: number }>(`/admission/evaluation/${reappear ? "reappear-marks-entry" : "marks-entry"}`, rows)).data,
+      (await apiClient.post<{ updated: number; conflicts?: string[] }>(`/admission/evaluation/${reappear ? "reappear-marks-entry" : "marks-entry"}`, rows)).data,
     onSettled: invalidate,
   })
 }

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { NativeSelect } from "./native-select"
 import { useAdmissionRooms, useAdmissionSubjects, useRoomRows, useSaveMarks } from "@/hooks/use-admission-evaluation"
-import { buildMarksPayload, decideSave, entryFor, failedDrafts } from "@/lib/admission-evaluation"
+import { buildMarksPayload, decideSave, draftsAfterSave, entryFor } from "@/lib/admission-evaluation"
 import { errorMessage } from "@/lib/error-message"
 
 import { ConfirmDialog, QueryState, regName, roomLabel, type EvalCtx } from "./shared"
@@ -65,17 +65,22 @@ export function MarksTab({ ctx }: { ctx: EvalCtx }) {
     const sentIds = built.payload.map((p) => p.id)
     save.mutate(built.payload, {
       onSuccess: async (res) => {
-        if (res.updated >= sent) { setDrafts({}); setNote(null); return toast.success(`Saved marks for ${res.updated} applicants`) }
-        // The backend skips rows it rejects and only reports a count: keep those drafts, flagged.
+        const conflicts = res.conflicts ?? []
+        if (res.updated >= sent && !conflicts.length) { setDrafts({}); setNote(null); return toast.success(`Saved marks for ${res.updated} applicants`) }
+        // The backend skips rows it rejects (version conflicts are listed): refetch so new versions load, keep those drafts, flagged.
         const again = await rows.refetch()
         if (again.isError || !again.data) {
           setNote(`Only ${res.updated} of ${sent} rows were saved. Could not reload; reload and check before saving again.`)
           return
         }
-        const failed = failedDrafts({ rows: again.data, drafts, sentIds, subjectId, reappear })
+        const failed = draftsAfterSave({ rows: again.data, drafts, sentIds, conflicts, subjectId, reappear })
         setDrafts(failed.drafts)
         setErrors(failed.errors)
-        setNote(`Only ${res.updated} of ${sent} rows were saved. The unsaved rows are highlighted.`)
+        setNote(
+          failed.conflictCount
+            ? `${failed.conflictCount} row(s) were changed by someone else and not saved; their latest marks are reloaded and your entries kept. ${res.updated} of ${sent} rows were saved.`
+            : `Only ${res.updated} of ${sent} rows were saved. The unsaved rows are highlighted.`,
+        )
       },
       onError: (e) => toast.error(errorMessage(e)),
     })

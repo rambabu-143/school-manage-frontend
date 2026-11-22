@@ -89,3 +89,43 @@ test("decideSave: block on error/empty, reconfirm on change, else save", () => {
   assert.equal(E.decideSave({ isError: false, data: [1] }, [1], [2]), "reconfirm")
   assert.equal(E.decideSave({ isError: false, data: [1] }, [1], [1]), "save")
 })
+
+test("buildMarksPayload sends the loaded version; legacy rows omit it", () => {
+  const rows = [
+    { id: "a", version: 3, marks_details: [] },
+    { id: "b", version: 0, marks_details: [] },
+    { id: "c", marks_details: [] },
+    { id: "d", version: null, reappear_marks_details: [] },
+  ]
+  const drafts = { a: "5", b: "6", c: "7", d: "8" }
+  const m = E.buildMarksPayload({ rows, drafts, subjectId: "s", maxMarks: 10, reappear: false }).payload
+  assert.deepEqual(m.map((p) => p.version), [3, 0, undefined, undefined])
+  assert.ok(!("version" in m[2]))
+  const r = E.buildMarksPayload({ rows: [rows[0]], drafts, subjectId: "s", maxMarks: 10, reappear: true }).payload
+  assert.equal(r[0].version, 3)
+})
+
+test("decideSave reconfirms when only a row version changed", () => {
+  const a = [{ id: "a", version: 1 }], b = [{ id: "a", version: 2 }]
+  assert.equal(E.decideSave({ isError: false, data: [1] }, a, b), "reconfirm")
+})
+
+test("draftsAfterSave keeps conflicted drafts with a reload message, clears saved rows", () => {
+  const rows = [
+    { id: "a", marks_details: [{ subject_id: "s", marks: 5 }] },
+    { id: "b", marks_details: [{ subject_id: "s", marks: 9 }] },
+    { id: "c", marks_details: [] },
+  ]
+  const r = E.draftsAfterSave({ rows, drafts: { a: "5", b: "4", c: "3" }, sentIds: ["a", "b", "c"], conflicts: ["b"], subjectId: "s", reappear: false })
+  assert.deepEqual(Object.keys(r.drafts).sort(), ["b", "c"])
+  assert.equal(r.errors.b, E.CONFLICT_MSG)
+  assert.notEqual(r.errors.c, E.CONFLICT_MSG)
+  assert.equal(r.conflictCount, 1)
+})
+
+test("draftsAfterSave without conflicts (legacy response) behaves like failedDrafts", () => {
+  const rows = [{ id: "a", marks_details: [{ subject_id: "s", marks: 5 }] }]
+  const r = E.draftsAfterSave({ rows, drafts: { a: "5" }, sentIds: ["a"], subjectId: "s", reappear: false })
+  assert.deepEqual(r.drafts, {})
+  assert.equal(r.conflictCount, 0)
+})

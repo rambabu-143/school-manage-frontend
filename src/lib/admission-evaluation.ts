@@ -11,6 +11,8 @@ export type RegRow = {
   reappear_marks_details?: MarkEntry[] | null
   room_details?: { phase?: number | string; room_id?: string }[] | null
   attendance_details?: { phase?: number | string; attendance?: string }[] | null
+  /** Optimistic-lock counter (admission_application.marks_version); absent on legacy rows. */
+  version?: number | null
   gender?: string | null
   category?: string | null
   [k: string]: unknown
@@ -47,8 +49,8 @@ export function totalMarks(entries: MarkEntry[]): number {
 }
 
 export type MarksPayloadRow =
-  | { id: string; marks: number; marks_details: MarkEntry[] }
-  | { id: string; reappear_marks_details: MarkEntry[] }
+  | { id: string; marks: number; marks_details: MarkEntry[]; version?: number }
+  | { id: string; reappear_marks_details: MarkEntry[]; version?: number }
 
 export function buildMarksPayload(opts: {
   rows: RegRow[]
@@ -76,11 +78,13 @@ export function buildMarksPayload(opts: {
     const current = entryFor(reappear ? row.reappear_marks_details : row.marks_details, subjectId)
     if (current && Number(current.marks) === parsed.value) continue
     if (current) overwrites += 1
+    // Send the loaded version so the server rejects the row if someone else saved since; omitted for legacy rows.
+    const v = typeof row.version === "number" ? { version: row.version } : {}
     if (reappear) {
-      payload.push({ id: row.id, reappear_marks_details: mergeEntries(row.reappear_marks_details, subjectId, parsed.value, extra) })
+      payload.push({ id: row.id, reappear_marks_details: mergeEntries(row.reappear_marks_details, subjectId, parsed.value, extra), ...v })
     } else {
       const merged = mergeEntries(row.marks_details, subjectId, parsed.value, extra)
-      payload.push({ id: row.id, marks: totalMarks(merged), marks_details: merged })
+      payload.push({ id: row.id, marks: totalMarks(merged), marks_details: merged, ...v })
     }
   }
   return { payload, errors, overwrites }
@@ -101,6 +105,20 @@ export function failedDrafts(opts: { rows: RegRow[]; drafts: Record<string, stri
     }
   }
   return { drafts: keep, errors }
+}
+
+export const CONFLICT_MSG = "Changed by someone else. The latest marks are loaded; review and save again."
+
+/** After a save with version conflicts (fresh data loaded): conflicted rows keep their draft with a reload message; other unsaved rows are handled by failedDrafts. */
+export function draftsAfterSave(opts: { rows: RegRow[]; drafts: Record<string, string>; sentIds: readonly string[]; conflicts?: readonly string[]; subjectId: string; reappear: boolean }) {
+  const conflicts = new Set(opts.conflicts ?? [])
+  const rest = failedDrafts({ ...opts, sentIds: opts.sentIds.filter((id) => !conflicts.has(id)) })
+  for (const id of conflicts) {
+    if (opts.drafts[id] === undefined) continue
+    rest.drafts[id] = opts.drafts[id]
+    rest.errors[id] = CONFLICT_MSG
+  }
+  return { ...rest, conflictCount: conflicts.size }
 }
 
 /** Decision after the pre-save refetch: block on a failed/empty reload (a failed refetch resolves with stale cache), reconfirm if the payload changed, else save. */
