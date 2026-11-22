@@ -131,6 +131,73 @@ export const RESOURCES = {
     columns: [{ key: "event_id", label: "Event", kind: "short" }, { key: "student_id", label: "Student", kind: "short" }, { key: "registered_at", label: "Registered", kind: "datetime" }],
     fields: [],
   },
+  // ---- admission settings (branch + year scoped; payment-setting / fee-hod are fees, out of scope) ----
+  admissionSubjects: {
+    key: "admission-subjects", roles: { write: ADMIN }, title: "Entrance subjects", noun: "subject", scope: "branch+year", scopeRequired: true, list: "/admission/setting/subject-list", create: "/admission/setting/subject-list", item: "/admission/setting/subject-list/{id}",
+    filters: [{ name: "grade_id", label: "Class", kind: "grade" }],
+    columns: [{ key: "name", label: "Subject" }, { key: "short_name", label: "Short name" }, { key: "max_marks", label: "Max marks" }, { key: "extra_subject", label: "Extra", kind: "bool" }],
+    fields: [BRANCH, YEAR, { name: "grade_id", label: "Class", kind: "grade", required: true }, { name: "name", label: "Name", required: true }, { name: "short_name", label: "Short name", required: true }, { name: "extra_subject", label: "Extra subject", kind: "bool" }, { name: "max_marks", label: "Max marks", kind: "number", required: true }],
+  },
+  admissionValidDates: {
+    key: "admission-valid-dates", roles: { write: ADMIN }, title: "Valid dates", noun: "valid date", scope: "branch+year", scopeRequired: true, list: "/admission/setting/valid-date", create: "/admission/setting/valid-date", item: "/admission/setting/valid-date/{id}",
+    filters: [{ name: "grade_id", label: "Class", kind: "grade" }],
+    columns: [{ key: "grade_id", label: "Class", kind: "short" }, { key: "opening_age", label: "Opening age" }, { key: "closing_age", label: "Closing age" }],
+    fields: [
+      BRANCH, YEAR, { name: "grade_id", label: "Class", kind: "grade", required: true },
+      { name: "opening_age", label: "Opening age date", kind: "date", required: true }, { name: "closing_age", label: "Closing age date", kind: "date", required: true },
+      ...(["doe", "valid_candidate", "valid_doe", "valid_october", "valid_december", "valid_march"] as const).flatMap((k): Field[] => [
+        { name: `${k}_from`, label: `${k.replace(/_/g, " ")} from`, kind: "date", help: k === "doe" ? "Extra windows apply to Nursery/Prep only; the server clears them for other classes." : undefined },
+        { name: `${k}_to`, label: `${k.replace(/_/g, " ")} to`, kind: "date" },
+      ]),
+    ],
+  },
+  admissionGolive: {
+    key: "admission-golive", roles: { write: ADMIN }, title: "Admission go-live", noun: "go-live window", scope: "branch+year", scopeRequired: true, list: "/admission/setting/golive", create: "/admission/setting/golive", item: "/admission/setting/golive/{id}",
+    filters: [{ name: "grade_id", label: "Class", kind: "grade" }],
+    columns: [{ key: "grade_id", label: "Class", kind: "short" }, { key: "phase", label: "Phase" }, { key: "form_type", label: "Form" }, { key: "start_date", label: "Start" }, { key: "end_date", label: "End" }, { key: "deadline", label: "Deadline", kind: "bool" }],
+    fields: [
+      BRANCH, YEAR, { name: "grade_id", label: "Class", kind: "grade", required: true },
+      { name: "branch_code", label: "Sub-branch code", kind: "number", help: "Only 22/23 (Dwarka) distinguish windows." },
+      { name: "phase", label: "Phase", kind: "number", required: true }, { name: "form_type", label: "Form type", required: true },
+      { name: "start_date", label: "Start date", kind: "date", required: true }, { name: "start_time", label: "Start time", kind: "time", required: true },
+      { name: "end_date", label: "End date", kind: "date", required: true }, { name: "end_time", label: "End time", kind: "time", required: true },
+      { name: "venue", label: "Venue" }, { name: "board_result_status", label: "Board result status" }, { name: "reporting_time", label: "Reporting time" },
+      { name: "evaluation_date", label: "Evaluation date", kind: "date" }, { name: "evaluation_date_xi", label: "Evaluation date (XI)" },
+      { name: "evaluation_start_time", label: "Evaluation start" }, { name: "evaluation_end_time", label: "Evaluation end" },
+      { name: "evaluation_declared_date", label: "Result declared on", kind: "date" }, { name: "draw", label: "Draw date", kind: "date" },
+      { name: "interview_line", label: "Interview line" }, { name: "orientation_line", label: "Orientation line" },
+      { name: "deadline", label: "Deadline passed", kind: "bool" }, { name: "remark", label: "Remark", kind: "textarea" },
+      { name: "other_grade_ids", label: "Also apply to classes", kind: "multi", ref: "grade", createOnly: true },
+    ],
+  },
+  admissionAreas: {
+    key: "admission-areas", roles: { write: ADMIN }, title: "Areas", noun: "area", scope: "branch+year", scopeRequired: true, list: "/admission/setting/area-list", create: "/admission/setting/area-list", item: "/admission/setting/area-list/{id}",
+    columns: [{ key: "name", label: "Area" }, { key: "distance", label: "Distance" }, { key: "range", label: "Range" }, { key: "point", label: "Point" }, { key: "range2", label: "Range 2" }, { key: "point2", label: "Point 2" }],
+    fields: [BRANCH, YEAR, { name: "name", label: "Name", required: true }, { name: "distance", label: "Distance", required: true }, { name: "range", label: "Range" }, { name: "point", label: "Point", kind: "number" }, { name: "range2", label: "Range 2" }, { name: "point2", label: "Point 2", kind: "number" }],
+  },
+  admissionRooms: {
+    key: "admission-rooms", roles: { write: ADMIN }, title: "Evaluation rooms", noun: "room", scope: "branch+year", scopeRequired: true, list: "/admission/setting/room-list", create: "/admission/setting/room-list", item: "/admission/setting/room-list/{id}",
+    filters: [{ name: "grade_id", label: "Class", kind: "grade" }],
+    columns: [{ key: "room_no", label: "Room" }, { key: "grade_id", label: "Class", kind: "short" }, { key: "phase", label: "Phase" }, { key: "shift", label: "Shift" }, { key: "no_of_student", label: "Students" }, { key: "location", label: "Location" }],
+    fields: [
+      BRANCH, YEAR, { name: "grade_id", label: "Class", kind: "grade", required: true }, { name: "room_no", label: "Room no.", required: true },
+      { name: "shift", label: "Shift", required: true }, { name: "phase", label: "Phase", kind: "number", required: true },
+      { name: "incharge_id", label: "In-charge", kind: "staff" }, { name: "assistant_teacher_id", label: "Assistant teacher", kind: "staff" }, { name: "tabulator_id", label: "Tabulator", kind: "staff" },
+      { name: "no_of_student", label: "No. of students", kind: "number", required: true }, { name: "location", label: "Location", required: true },
+    ],
+  },
+  admissionFiles: {
+    key: "admission-files", roles: { write: ADMIN }, title: "Admission documents", noun: "document", scope: "branch+year", scopeRequired: true, list: "/admission/setting/admission-file", create: "/admission/setting/admission-file", item: "/admission/setting/admission-file/{id}",
+    filters: [{ name: "grade_id", label: "Class", kind: "grade" }],
+    columns: [{ key: "file_type", label: "Type" }, { key: "file_name", label: "Name" }, { key: "file_path", label: "Path" }, { key: "grade_id", label: "Class", kind: "short" }],
+    fields: [BRANCH, YEAR, { name: "grade_id", label: "Class", kind: "grade", required: true }, { name: "file_type", label: "File type", required: true }, { name: "file_name", label: "File name", required: true }, { name: "file_path", label: "File URL or path", required: true }],
+  },
+  admissionMobiles: {
+    key: "admission-mobiles", roles: { write: ADMIN }, title: "Pre-registered mobiles", noun: "mobile", scope: "branch+year", scopeRequired: true, list: "/admission/setting/register-mobile", create: "/admission/setting/register-mobile", item: "/admission/setting/register-mobile/{id}",
+    filters: [{ name: "grade_id", label: "Class", kind: "grade" }],
+    columns: [{ key: "mobileno", label: "Mobile" }, { key: "grade_id", label: "Class", kind: "short" }, { key: "phase", label: "Phase" }, { key: "is_hostel", label: "Hostel" }, { key: "valid_till", label: "Valid till" }, { key: "reference", label: "Reference" }],
+    fields: [BRANCH, YEAR, { name: "mobileno", label: "Mobile number", required: true }, { name: "grade_id", label: "Class", kind: "grade", required: true }, { name: "branch_code", label: "Sub-branch code", kind: "number" }, { name: "phase", label: "Phase", kind: "number", required: true }, { name: "is_hostel", label: "Hostel (yes/no)", required: true }, { name: "valid_till", label: "Valid till", kind: "date", required: true }, { name: "reference", label: "Reference" }],
+  },
   // ---- go-live windows ----
   clubGolive: {
     key: "club-golive", roles: { write: ADMIN }, title: "Club go-live", noun: "window", scope: "branch+year", list: "/club-golive", create: "/club-golive", item: "/club-golive/{id}",
@@ -307,4 +374,13 @@ export const ASSESSMENT_SETTING: ActionFormCfg = {
 export const CONSENT_FORM: ActionFormCfg = {
   key: "social-media-consent", confirm: "Consent can be recorded only once per student. Save it exactly as ticked (unticked records a refusal)?", title: "Social media consent", method: "post", path: "/student-records/social-media-consent", submit: "Record consent",
   fields: [{ name: "student_id", label: "Student", kind: "student", required: true }, { name: "parent_name", label: "Parent name", required: true }, { name: "is_agree", label: "Parent agrees (unticked records a refusal)", kind: "bool" }, { name: "reason", label: "Reason", kind: "textarea" }],
+}
+
+export const ADMISSION_AGE: ActionFormCfg = {
+  key: "admission-age", roles: ADMIN, title: "Admission age cut-off date", method: "post", path: "/admission/setting/admission-age", scope: "branch+year", submit: "Save cut-off",
+  confirm: "This replaces the age cut-off date for the selected branch and academic year. Continue?",
+  fields: [
+    { name: "branch_id", label: "Branch", kind: "branch", required: true, scoped: true }, { name: "academic_year_id", label: "Year", kind: "year", required: true, scoped: true },
+    { name: "date", label: "Cut-off date", kind: "date", required: true },
+  ],
 }

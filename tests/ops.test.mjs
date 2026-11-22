@@ -28,10 +28,12 @@ test("every resource path+method exists and fields match the request schemas", (
   for (const r of Object.values(R.RESOURCES)) {
     assert.ok(op("get", r.list), `${r.key} list ${r.list}`)
     const names = queryNames(op("get", r.list))
-    for (const f of r.filters ?? []) assert.ok(names.includes(f.name), `${r.key} filter ${f.name}`)
     const listOp = op("get", r.list)
+    // admission settings read scope/filters from request.query_params, so the snapshot declares none
+    const undeclared = r.key.startsWith("admission-") && names.length === 0
+    if (!undeclared) for (const f of r.filters ?? []) assert.ok(names.includes(f.name), `${r.key} filter ${f.name}`)
     const scopeNames = r.scope === "branch+year" ? ["branch_id", "academic_year_id"] : r.scope ? ["branch_id"] : []
-    for (const n of scopeNames) assert.ok(names.includes(n), `${r.key} scope param ${n}`)
+    if (!undeclared) for (const n of scopeNames) assert.ok(names.includes(n), `${r.key} scope param ${n}`)
     // every required query param must be supplied by the scope bar or a required filter
     for (const p of (listOp.parameters ?? []).filter((x) => x.in === "query" && x.required)) {
       assert.ok(scopeNames.includes(p.name) || r.filters?.some((f) => f.name === p.name && f.required), `${r.key} required query ${p.name}`)
@@ -55,7 +57,7 @@ test("every resource path+method exists and fields match the request schemas", (
 // Backend-restricted surfaces (be-main routers): the config must carry a non-empty roles list.
 const A = (a) => a.length > 0
 test("role-restricted resources and actions declare roles", () => {
-  const write = ["units", "variants", "requisitionRoles", "approvers", "renewalSettings", "blocks", "eventUsers", "eventEmailSettings", "clubGolive", "selfAwarenessGolive", "streamSettings", "nominationSettings"]
+  const write = ["admissionSubjects", "admissionValidDates", "admissionGolive", "admissionAreas", "admissionRooms", "admissionFiles", "admissionMobiles", "units", "variants", "requisitionRoles", "approvers", "renewalSettings", "blocks", "eventUsers", "eventEmailSettings", "clubGolive", "selfAwarenessGolive", "streamSettings", "nominationSettings"]
   for (const k of write) assert.ok(A(R.RESOURCES[k].roles?.write ?? []), `${k} write roles`)
   for (const k of ["variants", "requisitionRoles", "approvers", "eventEmailSettings"]) assert.ok(A(R.RESOURCES[k].roles?.read ?? []), `${k} read roles`)
   for (const a of R.RESOURCES.transportRequests.actions) assert.ok(A(a.roles ?? []), `transport ${a.label} roles`)
@@ -78,7 +80,7 @@ test("reports and action forms point at real operations with real fields", () =>
     assert.equal(!!o.requestBody, rep.method === "post", `${rep.key} body placement`)
     for (const f of rep.fields.filter((x) => !x.pathParam)) assert.ok(allowed.includes(f.name), `${rep.key} ${f.name}`)
   }
-  for (const c of [R.STOCK_IN, R.RENEWAL_NOTIFY, R.EVENT_MAIL, R.SYLLABUS_UPLOAD, R.NOMINATION_UPLOAD, R.LOCK_FORM, R.UNLOCK_FORM, R.ASSESSMENT_SETTING, R.CONSENT_FORM]) {
+  for (const c of [R.STOCK_IN, R.RENEWAL_NOTIFY, R.EVENT_MAIL, R.SYLLABUS_UPLOAD, R.NOMINATION_UPLOAD, R.LOCK_FORM, R.UNLOCK_FORM, R.ASSESSMENT_SETTING, R.CONSENT_FORM, R.ADMISSION_AGE]) {
     const o = op(c.method, c.path)
     assert.ok(o, c.path)
     const p = props(o)
