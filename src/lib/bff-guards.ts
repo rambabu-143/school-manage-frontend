@@ -37,7 +37,7 @@ const DENIED_PREFIXES = ["docs", "redoc", "openapi.json", "metrics", "health", "
 // TokenPair (login, refresh, 2fa/verify, switch-branch/year/user, otp/verify, google),
 // which any XSS could read. Token flows live in dedicated /api/auth/* handlers.
 // Only routes whose responses carry no tokens are allowed (checked against the OpenAPI snapshot).
-const AUTH_ALLOWED = [/^auth\/me$/, /^auth\/session$/, /^auth\/users(\/[^/]+)?$/, /^auth\/2fa\/(setup|enable|disable)$/, /^auth\/otp\/request$/]
+const AUTH_ALLOWED = [/^auth\/me$/, /^auth\/session$/, /^auth\/users(\/[^/]+)?$/, /^auth\/2fa\/(setup|enable|disable)$/, /^auth\/otp\/request$/, /^auth\/(favourite-menus|mark-favourite)$/]
 const SEGMENT_OK = /^[A-Za-z0-9._~:@!$&'()*+,;=-]+$/
 
 /** Returns the safe upstream path ("/a/b") or null. Segments arrive already URL-decoded by Next. */

@@ -12,7 +12,7 @@ const REFERENCE: QueryDomain[] = [
   "email-config", "sms-config", "payment-gateway-config", "cca-indicators", "clubs",
 ]
 const DASHBOARDS: QueryDomain[] = [
-  "dashboard-summary", "house-leaderboard", "section-attendance-summary", "section-syllabus-coverage",
+  "dashboard-summary", "dashboard-super-admin", "dashboard-staff-analytics", "dashboard-ar-section", "house-leaderboard", "section-attendance-summary", "section-syllabus-coverage",
   "cumulative-report", "portal",
 ]
 const LIVE: QueryDomain[] = [
