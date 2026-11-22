@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useChangeSectionMarks, usePromotion, useSavePromotion, useStudentMarks, useTransferMarks } from "@/hooks/use-exam-promotions"
-import { buildPromotionSave, buildSectionChange, buildTransfer, promotionChanges, toMarkRows, toPromotionRows, type MarkRow, type PromotionRow } from "@/lib/exam-promotions"
+import { buildPromotionSave, buildSectionChange, buildTransfer, listChanged, matchToCurrent, mergePromotion, promotionChanges, toMarkRows, toPromotionRows, type MarkRow, type PromotionRow } from "@/lib/exam-promotions"
 import { parseApiError } from "@/lib/shared/api-error"
 
 const Err = ({ e }: { e: unknown }) => (e ? <p role="alert" className="text-sm text-destructive">{parseApiError(e).message}</p> : null)
@@ -20,7 +20,9 @@ function PromotionTab() {
   const [sectionId, setSectionId] = useState("")
   const [dateEdit, setDateEdit] = useState<string | null>(null)
   const [edits, setEdits] = useState<PromotionRow[] | null>(null)
-  const [confirming, setConfirming] = useState(false)
+  const [review, setReview] = useState<{ rows: PromotionRow[]; listChanged: boolean } | null>(null)
+  const [refreshError, setRefreshError] = useState("")
+  const [checking, setChecking] = useState(false)
   const q = usePromotion(sectionId)
   const save = useSavePromotion(sectionId)
   const saved = toPromotionRows(q.data)
@@ -30,12 +32,23 @@ function PromotionTab() {
   const date = dateEdit ?? savedDate
   const set = (i: number, p: Partial<PromotionRow>) => setEdits((r) => (r ?? saved).map((x, j) => (j === i ? { ...x, ...p } : x)))
   const built = buildPromotionSave(date, rows)
-  const changed = promotionChanges(saved, rows)
+  const final = review?.rows ?? rows
+  const finalBuilt = buildPromotionSave(date, final)
+  const changed = promotionChanges(saved, final)
+  // PUT replaces the whole list: refetch first, merge the user's edits onto the fresh list, block if the refetch fails.
+  const onReview = async () => {
+    setRefreshError(""); setChecking(true)
+    const res = await q.refetch()
+    setChecking(false)
+    if (res.isError || !res.data) { setRefreshError("Could not refresh the student list, so saving is blocked. Try again."); return }
+    const fresh = toPromotionRows(res.data)
+    setReview({ rows: mergePromotion(fresh, edits), listChanged: listChanged(saved, fresh) })
+  }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-3">
-        <Pick label="Section" value={sectionId} onChange={(v) => { setSectionId(v); setEdits(null); setDateEdit(null) }} options={sections.options} loading={sections.isPending} />
+        <Pick label="Section" value={sectionId} onChange={(v) => { setSectionId(v); setEdits(null); setDateEdit(null); setReview(null); setRefreshError("") }} options={sections.options} loading={sections.isPending} />
         <div className="flex flex-col gap-1"><Label htmlFor="ep-date">Session begins</Label><Input id="ep-date" type="date" value={date} onChange={(e) => setDateEdit(e.target.value)} /></div>
       </div>
       {q.isError && <Err e={q.error} />}
@@ -60,15 +73,15 @@ function PromotionTab() {
             </TableBody>
           </Table>
           {built.error && <p className="text-sm text-muted-foreground">{built.error}</p>}
-          <div><Button disabled={built.error !== undefined || save.isPending} onClick={() => setConfirming(true)}>Review and save</Button></div>
+          <div><Button disabled={built.error !== undefined || save.isPending || checking} onClick={onReview}>{checking ? "Checking..." : "Review and save"}</Button></div>
+          {refreshError && <p role="alert" className="text-sm text-destructive">{refreshError}</p>}
         </>
       )}
       <ConfirmDialog
-        open={confirming} onOpenChange={setConfirming} title="Overwrite promotion decisions?" confirmLabel="Save decisions" isPending={save.isPending}
-        description={`This replaces the saved decisions for all ${rows.length} students in this section (${changed.length} changed${changed.length ? `: ${changed.slice(0, 5).map((c) => c.name).join(", ")}${changed.length > 5 ? ", ..." : ""}` : ""}). Session begins ${date}.`}
-        onConfirm={() => { if (built.value) save.mutate(built.value, { onSuccess: () => { setEdits(null); setDateEdit(null) }, onSettled: () => setConfirming(false) }) }}
+        open={review !== null} onOpenChange={(o) => { if (!o) setReview(null) }} destructive title="Overwrite promotion decisions?" confirmLabel="Save decisions" isPending={save.isPending}
+        description={`${review?.listChanged ? "The student list changed while you were editing; it has been refreshed. " : ""}This replaces the saved decisions for all ${final.length} students in this section (${changed.length} changed${changed.length ? `: ${changed.slice(0, 5).map((c) => c.name).join(", ")}${changed.length > 5 ? ", ..." : ""}` : ""}). Session begins ${date}.`}
+        onConfirm={() => { if (finalBuilt.value) save.mutate(finalBuilt.value, { onSuccess: () => { setEdits(null); setDateEdit(null) }, onSettled: () => setReview(null) }) }}
       />
-      <Err e={save.error} />
     </div>
   )
 }
@@ -87,8 +100,10 @@ function MarksTab({ mode }: { mode: "transfer" | "change" }) {
   const run = mode === "transfer" ? transfer : change
   const student = q.data?.student
   const prev = q.data ? toMarkRows(q.data.previous_subjects) : []
+  const curr = q.data ? toMarkRows(q.data.subjects) : []
+  const rowsT = matchToCurrent(prev.filter((r) => r.marks !== ""), curr)
 
-  const marks: MarkRow[] = prev.map((r) => ({ ...r, marks: edits[r.subExamId] ?? r.marks }))
+  const marks: MarkRow[] = rowsT.map((r) => ({ ...r, marks: edits[r.subExamId] ?? r.marks }))
 
   const built = mode === "transfer" ? buildTransfer(student?.student_id ?? "", toId, marks) : buildSectionChange(student?.student_id ?? "", fromId, toId)
   const count = mode === "transfer" ? marks.filter((m) => m.marks.trim()).length : prev.filter((m) => m.marks).length
@@ -106,9 +121,9 @@ function MarksTab({ mode }: { mode: "transfer" | "change" }) {
           : "Copies the student's marks from every sub-exam of the old section into the same-named sub-exam of the new section. Existing marks there are overwritten. Needs a combo assigned to the student."}
       </p>
       <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1"><Label htmlFor={`adm-${mode}`}>Admission no</Label><Input id={`adm-${mode}`} value={adm} onChange={(e) => setAdm(e.target.value)} /></div>
-        <Pick label={mode === "transfer" ? "Current section" : "New section"} value={toId} onChange={setToId} options={sections.options} loading={sections.isPending} />
-        <Pick label={mode === "transfer" ? "Previous section" : "Old section"} value={fromId} onChange={setFromId} options={sections.options} loading={sections.isPending} />
+        <div className="flex flex-col gap-1"><Label htmlFor={`adm-${mode}`}>Admission no</Label><Input id={`adm-${mode}`} value={adm} onChange={(e) => { setAdm(e.target.value); setLookup(""); setEdits({}) }} /></div>
+        <Pick label={mode === "transfer" ? "Current section" : "New section"} value={toId} onChange={(v) => { setToId(v); setLookup(""); setEdits({}) }} options={sections.options} loading={sections.isPending} />
+        <Pick label={mode === "transfer" ? "Previous section" : "Old section"} value={fromId} onChange={(v) => { setFromId(v); setLookup(""); setEdits({}) }} options={sections.options} loading={sections.isPending} />
         <Button variant="outline" disabled={!adm.trim() || !toId} onClick={() => { setEdits({}); setLookup(adm.trim()) }}>Look up</Button>
       </div>
       {q.isError && <Err e={q.error} />}
@@ -119,7 +134,7 @@ function MarksTab({ mode }: { mode: "transfer" | "change" }) {
           <TableBody>
             {marks.map((m) => (
               <TableRow key={m.subExamId}>
-                <TableCell>{m.subject}</TableCell><TableCell>{m.exam}</TableCell><TableCell>{m.subExam}</TableCell>
+                <TableCell>{m.subject}</TableCell><TableCell>{m.exam}</TableCell><TableCell>{m.subExam}{m.missing && <span className="ml-2 text-xs text-destructive">no match in current section</span>}</TableCell>
                 <TableCell><Input aria-label={`Marks for ${m.subject} ${m.subExam}`} className="w-24" value={m.marks} onChange={(e) => setEdits((x) => ({ ...x, [m.subExamId]: e.target.value }))} /></TableCell>
               </TableRow>
             ))}
@@ -135,7 +150,6 @@ function MarksTab({ mode }: { mode: "transfer" | "change" }) {
         description={`${mode === "transfer" ? `Writes ${count} mark(s) for` : "Overwrites matching marks in the new section for"} ${student?.name ?? ""} (${student?.admission_number ?? ""}). This cannot be undone from here.`}
         onConfirm={submit}
       />
-      <Err e={run.error} />
     </div>
   )
 }

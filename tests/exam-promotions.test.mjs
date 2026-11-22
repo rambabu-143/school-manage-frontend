@@ -55,3 +55,36 @@ test("section change: body and query split, must differ", () => {
   assert.match(P.buildSectionChange("", "a", "b").error, /Student/)
   assert.match(P.buildSectionChange("st", "", "b").error, /sections/)
 })
+
+const cur = [{ subjectId: "sub", subject: "Math", examId: "e2", exam: "Unit", examShort: "U", subExamId: "cx", subExam: "U1", subShort: "u1", marks: "" }]
+const prv = [
+  { subjectId: "sub", subject: "Math", examId: "e1", exam: "Unit", examShort: "U", subExamId: "px", subExam: "U1", subShort: "u1", marks: "17" },
+  { subjectId: "sub", subject: "Math", examId: "e1", exam: "Unit", examShort: "U", subExamId: "py", subExam: "U2", subShort: "u2", marks: "9" },
+  { subjectId: "sub", subject: "Math", examId: "e1", exam: "Unit", examShort: "U", subExamId: "pz", subExam: "U3", subShort: "u3", marks: "" },
+]
+test("transfer rows use the CURRENT section's ids, prefilled from previous", () => {
+  const m = P.matchToCurrent(prv, cur)
+  assert.deepEqual([m[0].examId, m[0].subExamId, m[0].marks, !!m[0].missing], ["e2", "cx", "17", false])
+  assert.equal(m[1].missing, true)
+  const ok = P.buildTransfer("st", "sec", [m[0]])
+  assert.deepEqual(ok.value.body.transfer_marks, [{ subject_id: "sub", exam_id: "e2", sub_exam_id: "cx", marks: "17" }])
+})
+test("transfer blocks an unmatched row with a mark, allows it once cleared", () => {
+  const m = P.matchToCurrent(prv, cur)
+  assert.match(P.buildTransfer("st", "sec", m).error, /No matching sub-exam.*U2/)
+  assert.equal(P.buildTransfer("st", "sec", [m[0], { ...m[1], marks: "" }, m[2]]).error, undefined)
+})
+
+test("mergePromotion: edits per student over the fresh list; new students kept, removed dropped", () => {
+  const fresh = [row(), row({ studentId: "new", promotedTo: "" })]
+  const edited = [row({ promotedTo: "other" }), row({ studentId: "gone" })]
+  const m = P.mergePromotion(fresh, edited)
+  assert.deepEqual(m.map((r) => [r.studentId, r.promotedTo]), [["s1", "other"], ["new", ""]])
+  assert.deepEqual(P.mergePromotion(fresh, null), fresh)
+})
+test("listChanged detects added/removed students only", () => {
+  assert.equal(P.listChanged([row()], [row()]), false)
+  assert.equal(P.listChanged([row()], [row(), row({ studentId: "n" })]), true)
+  assert.equal(P.listChanged([row(), row({ studentId: "n" })], [row()]), true)
+  assert.equal(P.listChanged([row()], [row({ studentId: "z" })]), true)
+})

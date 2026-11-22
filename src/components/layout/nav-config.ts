@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react"
 import {
+  ArrowRightLeft,
   BookOpen,
   ChartColumn,
   Building2,
@@ -175,7 +176,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
   { label: "Exam Reports", href: "/exam-reports", icon: FileText, roles: ADMIN_AND_TEACHER_ROLES },
   { label: "Exam Settings", href: "/exam-settings", icon: SlidersHorizontal, roles: ADMIN_AND_TEACHER_ROLES },
-  { label: "Exam Promotions", href: "/exam-promotions", icon: SlidersHorizontal, roles: ADMIN_AND_TEACHER_ROLES },
+  { label: "Exam Promotions", href: "/exam-promotions", icon: ArrowRightLeft, roles: ADMIN_AND_TEACHER_ROLES },
   { label: "Syllabus", href: "/syllabus", icon: ListChecks, roles: ADMIN_AND_TEACHER_ROLES },
   { label: "Appraisal", href: "/appraisal", icon: NotebookText, roles: STAFF_ROLES },
   { label: "Houses", href: "/houses", icon: Flag, roles: ADMIN_AND_TEACHER_ROLES },
