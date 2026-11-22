@@ -26195,6 +26195,18 @@ export interface components {
             reappear_marks_details?: {
                 [key: string]: unknown;
             }[] | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** MarksSaved */
+        MarksSaved: {
+            /** Updated */
+            updated: number;
+            /**
+             * Conflicts
+             * @default []
+             */
+            conflicts: string[];
         };
         /** MasterDataItemCreate */
         MasterDataItemCreate: {
@@ -46336,9 +46348,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: number;
-                    };
+                    "application/json": components["schemas"]["MarksSaved"];
                 };
             };
             /** @description Validation Error */
@@ -46371,9 +46381,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: number;
-                    };
+                    "application/json": components["schemas"]["MarksSaved"];
                 };
             };
             /** @description Validation Error */
