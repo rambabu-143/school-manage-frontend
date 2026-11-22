@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { NativeSelect } from "./native-select"
 import { useAdmissionRooms, useAdmissionSubjects, useRoomRows, useSaveMarks } from "@/hooks/use-admission-evaluation"
-import { buildMarksPayload, entryFor, failedDrafts } from "@/lib/admission-evaluation"
+import { buildMarksPayload, decideSave, entryFor, failedDrafts } from "@/lib/admission-evaluation"
 import { errorMessage } from "@/lib/error-message"
 
 import { ConfirmDialog, QueryState, regName, roomLabel, type EvalCtx } from "./shared"
@@ -51,13 +51,13 @@ export function MarksTab({ ctx }: { ctx: EvalCtx }) {
     setRefreshing(true)
     // The backend replaces marks_details wholesale with no version check, so merge against the
     // latest server copy, not the sheet loaded earlier (another teacher may have saved a subject since).
-    const fresh = (await rows.refetch()).data
-    setRefreshing(false)
-    if (!fresh) return toast.error("Could not reload the sheet. Nothing was saved.")
-    const built = build(fresh)
+    let r
+    try { r = await rows.refetch() } finally { setRefreshing(false) }
+    if (r.isError || !r.data) return toast.error("Could not reload marks; nothing was saved")
+    const built = build(r.data)
     setErrors(built.errors)
     if (Object.keys(built.errors).length) return toast.error("Fix the highlighted marks before saving")
-    if (JSON.stringify(built.payload) !== JSON.stringify(shown.payload)) {
+    if (decideSave(r, shown.payload, built.payload) === "reconfirm") {
       setNote("The sheet changed on the server since you reviewed it. Check the new summary and confirm again.")
       return setPending(built.payload.length ? built : null)
     }
@@ -67,8 +67,12 @@ export function MarksTab({ ctx }: { ctx: EvalCtx }) {
       onSuccess: async (res) => {
         if (res.updated >= sent) { setDrafts({}); setNote(null); return toast.success(`Saved marks for ${res.updated} applicants`) }
         // The backend skips rows it rejects and only reports a count: keep those drafts, flagged.
-        const after = (await rows.refetch()).data ?? []
-        const failed = failedDrafts({ rows: after, drafts, sentIds, subjectId, reappear })
+        const again = await rows.refetch()
+        if (again.isError || !again.data) {
+          setNote(`Only ${res.updated} of ${sent} rows were saved. Could not reload; reload and check before saving again.`)
+          return
+        }
+        const failed = failedDrafts({ rows: again.data, drafts, sentIds, subjectId, reappear })
         setDrafts(failed.drafts)
         setErrors(failed.errors)
         setNote(`Only ${res.updated} of ${sent} rows were saved. The unsaved rows are highlighted.`)

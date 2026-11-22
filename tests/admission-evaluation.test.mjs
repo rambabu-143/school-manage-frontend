@@ -76,3 +76,16 @@ test("failedDrafts keeps only rows whose saved marks differ from the draft", () 
   assert.deepEqual(Object.keys(r.drafts), ["b", "c"])
   assert.deepEqual(Object.keys(r.errors), ["b", "c"])
 })
+
+test("failedDrafts keeps a draft that differs from saved marks", () => {
+  const rows = [{ id: "a", marks_details: [{ subject_id: "s", marks: 5 }] }]
+  const r = E.failedDrafts({ rows, drafts: { a: "4" }, sentIds: ["a"], subjectId: "s", reappear: false })
+  assert.deepEqual(r.drafts, { a: "4" })
+})
+
+test("decideSave: block on error/empty, reconfirm on change, else save", () => {
+  assert.equal(E.decideSave({ isError: true, data: [1] }, [1], [1]), "block")
+  assert.equal(E.decideSave({ isError: false, data: undefined }, [1], [1]), "block")
+  assert.equal(E.decideSave({ isError: false, data: [1] }, [1], [2]), "reconfirm")
+  assert.equal(E.decideSave({ isError: false, data: [1] }, [1], [1]), "save")
+})

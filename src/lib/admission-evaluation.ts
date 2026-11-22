@@ -103,6 +103,12 @@ export function failedDrafts(opts: { rows: RegRow[]; drafts: Record<string, stri
   return { drafts: keep, errors }
 }
 
+/** Decision after the pre-save refetch: block on a failed/empty reload (a failed refetch resolves with stale cache), reconfirm if the payload changed, else save. */
+export function decideSave(refetch: { isError: boolean; data?: unknown }, shown: unknown, built: unknown): "block" | "reconfirm" | "save" {
+  if (refetch.isError || !refetch.data) return "block"
+  return JSON.stringify(shown) === JSON.stringify(built) ? "save" : "reconfirm"
+}
+
 export function buildAttendanceBody(o: { phase: number; attendance: string; className: string; roomId: string }) {
   if (!["PRESENT", "ABSENT"].includes(o.attendance) || !Number.isInteger(o.phase) || o.phase < 1 || !o.className || !o.roomId) return null
   return { attendance_details: { phase: o.phase, attendance: o.attendance }, class: o.className, phase: o.phase, room_id: o.roomId }
