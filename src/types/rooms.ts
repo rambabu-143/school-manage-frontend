@@ -15,6 +15,9 @@ export interface Room {
   room_type: RoomType
   floor: string | null
   block: string | null
+  block_id?: string | null
+  area?: string | null
+  facing?: string | null
   capacity: number | null
 }
 
@@ -24,5 +27,8 @@ export interface RoomCreateInput {
   room_type: RoomType
   floor?: string | null
   block?: string | null
+  block_id?: string | null
+  area?: string | null
+  facing?: string | null
   capacity?: number | null
 }

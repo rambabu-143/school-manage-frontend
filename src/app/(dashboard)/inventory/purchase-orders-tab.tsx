@@ -42,6 +42,8 @@ import {
   usePurchaseOrders,
   useUpdatePurchaseOrderStatus,
 } from "@/hooks/use-purchase-orders"
+import { ProductSelect } from "@/components/product-select"
+import { MAX_PO_ITEMS, buildPoPayload, itemsTotal, validatePo, type PoItemDraft } from "@/lib/purchase-orders"
 import { useVendors } from "@/hooks/use-vendors"
 import {
   PURCHASE_ORDER_STATUSES,
@@ -54,7 +56,8 @@ const orderSchema = z.object({
   branch_id: z.string().min(1, "Branch is required"),
   vendor_id: z.string().min(1, "Vendor is required"),
   description: z.string().min(1, "Description is required").max(1000),
-  amount: z.coerce.number().positive("Amount must be greater than 0"),
+  // blank = derived from priced items by the backend
+  amount: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().positive("Amount must be greater than 0").optional()),
 })
 
 type OrderInput = z.input<typeof orderSchema>
@@ -64,6 +67,8 @@ export function PurchaseOrdersTab() {
   const { data: orders, isPending } = usePurchaseOrders()
   const { data: vendors } = useVendors()
   const [open, setOpen] = React.useState(false)
+  const [items, setItems] = React.useState<PoItemDraft[]>([])
+  const [itemsError, setItemsError] = React.useState<string | null>(null)
   const [extracted, setExtracted] = React.useState<BillExtractResult | null>(null)
   const createOrder = useCreatePurchaseOrder()
   const updateStatus = useUpdatePurchaseOrderStatus()
@@ -71,12 +76,16 @@ export function PurchaseOrdersTab() {
 
   const form = useForm<OrderInput, unknown, OrderValues>({
     resolver: zodResolver(orderSchema),
-    defaultValues: { branch_id: "", vendor_id: "", description: "", amount: 0 },
+    defaultValues: { branch_id: "", vendor_id: "", description: "", amount: undefined },
   })
 
   function onSubmit(values: OrderValues) {
-    createOrder.mutate(values, {
+    const err = validatePo(values.amount, items)
+    setItemsError(err)
+    if (err) return
+    createOrder.mutate(buildPoPayload(values, items), {
       onSuccess: () => {
+        setItems([])
         setOpen(false)
         form.reset()
         setExtracted(null)
@@ -98,6 +107,7 @@ export function PurchaseOrdersTab() {
         if (total > 0) {
           form.setValue("amount", Math.round(total * 100) / 100)
         }
+        // extracted lines carry no product ids: they prefill amount/description only
       },
     })
   }
@@ -117,9 +127,10 @@ export function PurchaseOrdersTab() {
       cell: ({ row }) => (
         <Select
           value={row.original.status}
-          onValueChange={(value) =>
+          onValueChange={(value) => {
+            if (value === "cancelled" && !window.confirm("Cancel this order? Stock it added is reversed, unless already consumed.")) return
             updateStatus.mutate({ id: row.original.id, status: value as PurchaseOrderStatus })
-          }
+          }}
         >
           <SelectTrigger className="w-36 capitalize" onClick={(e) => e.stopPropagation()}>
             <SelectValue />
@@ -146,6 +157,8 @@ export function PurchaseOrdersTab() {
             if (!next) {
               form.reset()
               setExtracted(null)
+              setItems([])
+              setItemsError(null)
             }
           }}
         >
@@ -237,20 +250,41 @@ export function PurchaseOrdersTab() {
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Amount</FormLabel>
+                      <FormLabel>Amount (optional when items have rates)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           min={0}
                           step="0.01"
                           {...field}
-                          value={field.value as number}
+                          value={(field.value as number | undefined) ?? ""}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Items ({items.length}/{MAX_PO_ITEMS})</span>
+                    <Button type="button" variant="outline" size="sm" disabled={items.length >= MAX_PO_ITEMS}
+                      onClick={() => setItems((p) => [...p, { product_id: "", quantity: 1, rate: 0 }])}>
+                      <Plus /> Add item
+                    </Button>
+                  </div>
+                  {items.map((it, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_4rem_5rem_auto] items-center gap-2">
+                      <ProductSelect value={it.product_id || undefined} onChange={(v) => setItems((p) => p.map((x, j) => (j === i ? { ...x, product_id: v } : x)))} />
+                      <Input type="number" min={1} aria-label="Quantity" value={it.quantity}
+                        onChange={(e) => setItems((p) => p.map((x, j) => (j === i ? { ...x, quantity: Number(e.target.value) } : x)))} />
+                      <Input type="number" min={0} step="0.01" aria-label="Rate" value={it.rate}
+                        onChange={(e) => setItems((p) => p.map((x, j) => (j === i ? { ...x, rate: Number(e.target.value) } : x)))} />
+                      <Button type="button" variant="ghost" size="sm" aria-label="Remove item" onClick={() => setItems((p) => p.filter((_, j) => j !== i))}>x</Button>
+                    </div>
+                  ))}
+                  {items.length > 0 && <p className="text-xs text-muted-foreground">Items total: {itemsTotal(items)}</p>}
+                  {itemsError && <p className="text-sm text-destructive">{itemsError}</p>}
+                </div>
                 <SheetFooter className="px-0">
                   <Button type="submit" disabled={createOrder.isPending}>
                     {createOrder.isPending && <Loader2 className="animate-spin" />}
