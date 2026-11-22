@@ -7,6 +7,7 @@ import { Field } from "@/components/hr/pickers"
 import { RowsTable } from "@/components/hr/rows-table"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { Button } from "@/components/ui/button"
+import { buildYearRolloverBody } from "@/lib/promotion-payloads"
 import { PROMOTIONS, usePromoteGrades, useRunPromotion, useStaffGradePreview } from "@/hooks/use-hr-admin"
 
 export function PromotionTab() {
@@ -17,13 +18,16 @@ export function PromotionTab() {
   const preview = useStaffGradePreview(src)
   const grades = usePromoteGrades()
   const promo = useRunPromotion()
-  const ok = !!src && !!dst && src !== dst
+  const body = buildYearRolloverBody(src, dst)
+  const ok = !!body
   const busy = grades.isPending || promo.isPending
   const label = pending === "grades" ? "Staff grades" : pending ? PROMOTIONS[pending as keyof typeof PROMOTIONS].label : ""
 
+  const scope = pending && pending !== "grades" ? PROMOTIONS[pending as keyof typeof PROMOTIONS].scope : "branch"
+  const scopeText = scope === "tenant" ? "for the whole school (tenant-wide; branch admins are refused)" : "for your branch"
+
   function confirm() {
-    if (!ok || !pending) return
-    const body = { source_academic_year_id: src!, target_academic_year_id: dst! }
+    if (!body || !pending) return
     const done = (r: unknown) => { setResult(r); setPending(null) }
     if (pending === "grades") grades.mutate(body, { onSuccess: done, onError: () => setPending(null) })
     else promo.mutate(() => PROMOTIONS[pending as keyof typeof PROMOTIONS].run(body), { onSuccess: done, onError: () => setPending(null) })
@@ -40,6 +44,7 @@ export function PromotionTab() {
         <Button disabled={!ok || busy} onClick={() => setPending("grades")}>Promote staff grades</Button>
         {Object.entries(PROMOTIONS).map(([k, v]) => <Button key={k} variant="outline" disabled={!ok || busy} onClick={() => setPending(k)}>Promote {v.label.toLowerCase()}</Button>)}
       </div>
+      <p className="text-xs text-muted-foreground">Run order: leave masters before staff leave balances and grade masters; shift masters before staff shifts.</p>
       {result != null && (
         <pre className="max-h-64 overflow-auto rounded-md border bg-muted p-3 text-xs" aria-label="Promotion result">{JSON.stringify(result, null, 2)}</pre>
       )}
@@ -47,7 +52,7 @@ export function PromotionTab() {
         <RowsTable rows={preview.data} isLoading={preview.isPending} error={preview.error} onRetry={() => preview.refetch()} empty="Nothing to promote." /></section>}
       <ConfirmDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)} isPending={busy} confirmLabel="Run promotion"
         title={`Promote ${label.toLowerCase()}?`}
-        description="This copies data from the source year into the target year for the whole school. It is recorded in the audit log."
+        description={`This copies ${label.toLowerCase()} from the source year into the target year ${scopeText}. It is recorded in the audit log.`}
         onConfirm={confirm} />
     </div>
   )

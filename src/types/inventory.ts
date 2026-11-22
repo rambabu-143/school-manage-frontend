@@ -87,6 +87,7 @@ export interface PurchaseOrder {
   description: string
   amount: number
   status: PurchaseOrderStatus
+  items?: { id: string; product_id: string; variant_id: string | null; quantity: number; rate: number }[]
   created_at: string
 }
 
@@ -94,7 +95,8 @@ export interface PurchaseOrderCreateInput {
   branch_id: string
   vendor_id: string
   description: string
-  amount: number
+  amount?: number
+  items?: { product_id: string; quantity: number; rate: number }[]
 }
 
 export interface BillExtractItem {

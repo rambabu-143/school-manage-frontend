@@ -45,6 +45,7 @@ import {
   useMasterData,
   useUpdateMasterDataItem,
 } from "@/hooks/use-master-data"
+import { PARENT_CATEGORY, parentError } from "@/lib/master-data"
 import { MASTER_DATA_CATEGORIES, type MasterDataCategory, type MasterDataItem } from "@/types/masterdata"
 
 const CATEGORY_LABELS: Record<MasterDataCategory, string> = {
@@ -75,6 +76,10 @@ const itemSchema = z.object({
   code: z.string().max(50).optional(),
   sort_order: z.coerce.number().int().optional(),
   note: z.string().max(500).optional(),
+  parent_id: z.string().optional(),
+}).superRefine((v, ctx) => {
+  const msg = parentError(v.category, v.parent_id)
+  if (msg) ctx.addIssue({ code: "custom", path: ["parent_id"], message: msg })
 })
 
 type ItemInput = z.input<typeof itemSchema>
@@ -83,6 +88,8 @@ type ItemValues = z.output<typeof itemSchema>
 export default function MasterDataPage() {
   const [category, setCategory] = React.useState<MasterDataCategory>("city")
   const { data: items, isPending } = useMasterData(category)
+  const parentCategory = PARENT_CATEGORY[category]
+  const { data: parents } = useMasterData(parentCategory)
   const createItem = useCreateMasterDataItem()
   const updateItem = useUpdateMasterDataItem()
   const deleteItem = useDeleteMasterDataItem()
@@ -92,12 +99,12 @@ export default function MasterDataPage() {
 
   const form = useForm<ItemInput, unknown, ItemValues>({
     resolver: zodResolver(itemSchema),
-    defaultValues: { category, name: "", code: "", sort_order: undefined, note: "" },
+    defaultValues: { category, name: "", code: "", sort_order: undefined, note: "", parent_id: "" },
   })
 
   function openCreate() {
     setEditing(null)
-    form.reset({ category, name: "", code: "", sort_order: undefined, note: "" })
+    form.reset({ category, name: "", code: "", sort_order: undefined, note: "", parent_id: "" })
     setOpen(true)
   }
 
@@ -109,6 +116,7 @@ export default function MasterDataPage() {
       code: item.code ?? "",
       sort_order: item.sort_order ?? undefined,
       note: item.note ?? "",
+      parent_id: item.parent_id ?? "",
     })
     setOpen(true)
   }
@@ -119,6 +127,7 @@ export default function MasterDataPage() {
       code: values.code || null,
       sort_order: values.sort_order ?? null,
       note: values.note || null,
+      ...(parentCategory ? { parent_id: values.parent_id || null } : {}),
     }
     if (editing) {
       updateItem.mutate(
@@ -239,6 +248,30 @@ export default function MasterDataPage() {
                     </FormItem>
                   )}
                 />
+                {parentCategory && (
+                  <FormField
+                    control={form.control}
+                    name="parent_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="capitalize">Parent {parentCategory.replace("_", " ")}</FormLabel>
+                        <FormControl>
+                          <Select value={field.value || undefined} onValueChange={field.onChange}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder={`Select a ${parentCategory.replace("_", " ")}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {parents?.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="code"
