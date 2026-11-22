@@ -26,7 +26,7 @@ export function FileUpload<T = unknown>({ path, rule, field, extraFields, onSucc
   const [over, setOver] = useState(false)
 
   async function run(file: File | undefined) {
-    if (!file) return
+    if (!file || up.isUploading) return
     const result = await up.upload(file)
     if (result !== null) onSuccess?.(result)
   }
@@ -54,6 +54,7 @@ export function FileUpload<T = unknown>({ path, rule, field, extraFields, onSucc
           className="sr-only"
           aria-label="Choose file to upload"
           accept={rule.extensions.join(",")}
+          disabled={up.isUploading}
           onChange={(e) => { run(e.target.files?.[0]); e.target.value = "" }}
         />
       </div>

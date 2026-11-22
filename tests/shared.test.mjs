@@ -136,3 +136,27 @@ test("calendar: hex validation and csv export with formula guard", async () => {
   const e = parseApiError(err(422, { detail: { errors: [{ row: 2, error: "bad" }] } }))
   assert.deepEqual(e.rowErrors, [{ row: 2, message: "bad" }])
 })
+
+test("import rule accepts csv and xlsx, fills the content type the backend requires", async () => {
+  const { IMPORT_RULE, uploadTypeFor, canCountRows } = await import("../src/lib/shared/file-validation.ts")
+  const X = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  assert.equal(validateFile({ name: "a.xlsx", size: 10, type: X }, IMPORT_RULE), null)
+  assert.equal(validateFile({ name: "a.xlsx", size: 10, type: "" }, IMPORT_RULE), null)
+  assert.equal(validateFile({ name: "a.csv", size: 10, type: "text/csv" }, IMPORT_RULE), null)
+  assert.match(validateFile({ name: "a.xls", size: 10, type: "application/vnd.ms-excel" }, IMPORT_RULE), /unsupported/)
+  assert.match(validateFile({ name: "a.xlsx", size: 10 * 1024 * 1024 + 1, type: X }, IMPORT_RULE), /larger than 10 MB/)
+  assert.match(validateFile({ name: "a.xlsx", size: 0, type: X }, IMPORT_RULE), /empty/)
+  assert.equal(uploadTypeFor({ name: "A.XLSX", type: "" }), X)
+  assert.equal(uploadTypeFor({ name: "a.csv", type: "" }), "text/csv")
+  assert.equal(uploadTypeFor({ name: "a.csv", type: "text/plain" }), "text/plain")
+  assert.equal(uploadTypeFor({ name: "a.csv", type: X }), "text/csv")
+  assert.equal(canCountRows("a.csv"), true)
+  assert.equal(canCountRows("a.xlsx"), false)
+})
+
+test("api-error: 413/415 upload rejections surface text", () => {
+  assert.equal(parseApiError(err(413, { detail: "File exceeds the upload limit of 10485760 bytes" })).message, "File exceeds the upload limit of 10485760 bytes")
+  assert.equal(parseApiError(err(413, "<html>")).message, "The file is too large.")
+  assert.equal(parseApiError(err(415, {})).message, "That file type is not accepted.")
+  assert.equal(parseApiError(err(400, { detail: "Bad file" })).message, "Bad file")
+})

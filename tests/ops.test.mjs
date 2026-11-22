@@ -70,7 +70,7 @@ test("shooting slots are read-only (create API needs fee data)", () => {
 })
 
 test("reports and action forms point at real operations with real fields", () => {
-  for (const rep of [...R.INVENTORY_REPORTS, ...R.TRANSPORT_REPORTS, ...R.ID_CARD_REPORT, ...R.SHOOTING_CLASSWISE]) {
+  for (const rep of [...R.INVENTORY_REPORTS, ...R.TRANSPORT_REPORTS, ...R.ID_CARD_REPORT, ...R.SHOOTING_CLASSWISE, ...R.DISCIPLINARY_CARDS, ...R.PPR_REPORT, ...R.READMISSION_REPORT, ...R.LOCK_REPORT, ...R.RECORD_LOOKUP]) {
     const o = op(rep.method, rep.path)
     assert.ok(o, rep.path)
     const allowed = rep.method === "get" ? queryNames(o) : props(o).props
@@ -78,7 +78,7 @@ test("reports and action forms point at real operations with real fields", () =>
     assert.equal(!!o.requestBody, rep.method === "post", `${rep.key} body placement`)
     for (const f of rep.fields.filter((x) => !x.pathParam)) assert.ok(allowed.includes(f.name), `${rep.key} ${f.name}`)
   }
-  for (const c of [R.STOCK_IN, R.RENEWAL_NOTIFY, R.EVENT_MAIL, R.SYLLABUS_UPLOAD, R.NOMINATION_UPLOAD]) {
+  for (const c of [R.STOCK_IN, R.RENEWAL_NOTIFY, R.EVENT_MAIL, R.SYLLABUS_UPLOAD, R.NOMINATION_UPLOAD, R.LOCK_FORM, R.UNLOCK_FORM, R.ASSESSMENT_SETTING, R.CONSENT_FORM]) {
     const o = op(c.method, c.path)
     assert.ok(o, c.path)
     const p = props(o)
@@ -110,4 +110,18 @@ test("form value helpers", () => {
   assert.equal(fromIso("not a date"), "")
   assert.deepEqual(reportRows([{ a: 1, transactions: [{ q: 1 }, { q: 2 }] }], "transactions"), [{ a: 1, q: 1 }, { a: 1, q: 2 }])
   assert.deepEqual(reportRows(null), [])
+})
+
+test("staff disciplinary card carries a year filter; lock writes are admin-only", () => {
+  const staff = R.DISCIPLINARY_CARDS.find((r) => r.key === "staff-card")
+  assert.ok(staff.fields.some((f) => f.name === "academic_year_id" && f.kind === "year"))
+  assert.ok(!R.LOCK_ROLES.includes("teacher") && R.LOCK_FORM.roles === R.LOCK_ROLES && R.UNLOCK_FORM.roles === R.LOCK_ROLES)
+})
+
+test("medical payload builder", async () => {
+  const { buildMedicalPayload } = await import("../src/lib/records.ts")
+  assert.deepEqual(buildMedicalPayload({ blood_group: " O+ ", allergies: "", medical: '{"asthma":true}' }), { body: { blood_group: "O+", medical: { asthma: true } }, errors: {} })
+  assert.deepEqual(Object.keys(buildMedicalPayload({ blood_group: "x".repeat(11), allergies: "", medical: "[1]" }).errors).sort(), ["blood_group", "medical"])
+  assert.equal(buildMedicalPayload({ blood_group: "", allergies: "", medical: "{bad" }).errors.medical, "Invalid JSON")
+  assert.ok(buildMedicalPayload({ blood_group: "", allergies: "", medical: "" }).errors.blood_group)
 })

@@ -18,7 +18,7 @@ export default function AttendancePage() {
           Mark daily attendance and review section summaries.
         </p>
         <nav aria-label="Attendance tools" className="mt-2 flex flex-wrap gap-3 text-sm">
-          {[["/attendance/school-days", "School days & terms"], ["/attendance/transport", "Transport"], ["/attendance/reports", "Reports"], ["/attendance/reasons", "Reasons"]].map(([h, l]) => (
+          {[["/attendance/school-days", "School days & terms"], ["/attendance/transport", "Transport"], ["/attendance/reports", "Reports"], ["/attendance/reasons", "Reasons"], ["/attendance/readmission", "Re-admission"]].map(([h, l]) => (
             <Link key={h} href={h} className="underline">{l}</Link>
           ))}
         </nav>

@@ -4,6 +4,8 @@ import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+import { ActionForm } from "@/components/ops/action-form"
+import { ReportPage } from "@/components/ops/report-page"
 import { AcademicYearSelect } from "@/components/academic-year-select"
 import { BranchSelect } from "@/components/branch-select"
 import { Button } from "@/components/ui/button"
@@ -11,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSession } from "@/hooks/use-session"
 import { errorMessage } from "@/lib/error-message"
+import { ASSESSMENT_SETTING, CONSENT_FORM, LOCK_FORM, LOCK_REPORT, RECORD_LOOKUP, UNLOCK_FORM } from "@/lib/ops/resources"
 import { qk } from "@/lib/query-keys"
 import { api } from "@/lib/typed-api"
 
@@ -88,9 +91,15 @@ export default function StudentRecordsPage() {
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Student records</h1>
       <Tabs defaultValue="uploads">
-        <TabsList><TabsTrigger value="uploads">App uploads</TabsTrigger><TabsTrigger value="board">Board results</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="uploads">App uploads</TabsTrigger><TabsTrigger value="board">Board results</TabsTrigger><TabsTrigger value="locks">Record locks</TabsTrigger><TabsTrigger value="lookup">Lookup</TabsTrigger><TabsTrigger value="assess">Assessment and consent</TabsTrigger></TabsList>
         <TabsContent value="uploads"><Uploads /></TabsContent>
         <TabsContent value="board"><BoardResults /></TabsContent>
+        <TabsContent value="locks" className="space-y-4">
+          <ReportPage title="Locked records" reports={LOCK_REPORT} />
+          <div className="grid gap-4 lg:grid-cols-2"><ActionForm cfg={LOCK_FORM} invalidate="report" /><ActionForm cfg={UNLOCK_FORM} invalidate="report" /></div>
+        </TabsContent>
+        <TabsContent value="lookup"><ReportPage title="Student record lookup" reports={RECORD_LOOKUP} /></TabsContent>
+        <TabsContent value="assess" className="grid gap-4 lg:grid-cols-2"><ActionForm cfg={ASSESSMENT_SETTING} /><ActionForm cfg={CONSENT_FORM} /></TabsContent>
       </Tabs>
       <p className="text-xs text-muted-foreground">App versions are managed under Settings, App settings.</p>
     </div>
