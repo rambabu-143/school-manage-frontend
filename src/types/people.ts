@@ -18,6 +18,8 @@ export interface GuardianCreateInput {
 
 export interface Student {
   id: string
+  /** The student's own login (role "student"); null until provisioned. */
+  user_id?: string | null
   tenant_id: string
   branch_id: string
   admission_number: string
