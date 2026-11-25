@@ -163,6 +163,7 @@ export type QueryDomain =
   | "exam-records"
   | "exam-reports"
   | "exam-settings"
+  | "exam-promotions"
 
 export type QueryScope = {
   userId: string
