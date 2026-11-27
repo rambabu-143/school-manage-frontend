@@ -2,6 +2,7 @@ import { cookies } from "next/headers"
 
 import { backendFetch } from "@/lib/backend"
 import { rejectCrossSite } from "@/lib/bff"
+import { cookieSecure } from "@/lib/session-cookies"
 import { EVENT_COOKIE_PATH, EVENT_TOKEN_COOKIE, eventJson } from "@/lib/event-portal"
 
 export async function POST(request: Request) {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
       return eventJson({ error: status === 429 ? "Too many attempts. Please try again later." : status === 401 ? "Invalid email or password" : "Could not sign in" }, status)
     }
     ;(await cookies()).set(EVENT_TOKEN_COOKIE, data.access_token, {
-      httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: EVENT_COOKIE_PATH,
+      httpOnly: true, secure: cookieSecure(), sameSite: "strict", path: EVENT_COOKIE_PATH,
       maxAge: Math.min(Math.max(data.expires_in ?? 900, 60), 60 * 60 * 8),
     })
     return eventJson({ name: data.name, code: data.code, type: data.type })

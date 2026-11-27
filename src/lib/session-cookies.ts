@@ -18,10 +18,20 @@ type CookieStore = Awaited<ReturnType<typeof nextCookies>>
 
 // Secure in production. ALLOW_INSECURE_COOKIES=true is an explicit, temporary
 // opt-out for a plain-HTTP deployment (no domain/TLS yet): browsers drop Secure
-// cookies over http://, so login would silently fail. Remove it once HTTPS is on.
+// cookies over http://, so login would silently fail. It is ignored when
+// PUBLIC_ORIGIN is https, so a forgotten switch cannot weaken a TLS deployment.
+// Every auth cookie must use this helper.
+export function cookieSecure(): boolean {
+  if (process.env.NODE_ENV !== "production") return false
+  const insecureOk =
+    process.env.ALLOW_INSECURE_COOKIES === "true" &&
+    !(process.env.PUBLIC_ORIGIN ?? "").trim().toLowerCase().startsWith("https:")
+  return !insecureOk
+}
+
 const baseCookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production" && process.env.ALLOW_INSECURE_COOKIES !== "true",
+  secure: cookieSecure(),
   sameSite: "lax" as const,
   path: "/",
 }

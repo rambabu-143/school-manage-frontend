@@ -353,6 +353,8 @@ test("session cookies are Secure in production unless ALLOW_INSECURE_COOKIES=tru
     [{ NODE_ENV: "production" }, true],
     [{ NODE_ENV: "production", ALLOW_INSECURE_COOKIES: "false" }, true],
     [{ NODE_ENV: "production", ALLOW_INSECURE_COOKIES: "true" }, false],
+    [{ NODE_ENV: "production", ALLOW_INSECURE_COOKIES: "true", PUBLIC_ORIGIN: "https://school.example.com" }, true],
+    [{ NODE_ENV: "production", ALLOW_INSECURE_COOKIES: "true", PUBLIC_ORIGIN: "http://203.0.113.10" }, false],
     [{ NODE_ENV: "test" }, false],
   ]) {
     const jar = fakeCookies()
@@ -360,4 +362,18 @@ test("session cookies are Secure in production unless ALLOW_INSECURE_COOKIES=tru
     assert.equal(jar.opts.get("access_token").secure, secure, JSON.stringify(env))
     assert.equal(jar.opts.get("access_token").httpOnly, true)
   }
+})
+
+test("cookieSecure helper (used by google nonce and event-portal cookies) follows the same rule", async () => {
+  const on = (await cookiesWith({ NODE_ENV: "production" })).cookieSecure()
+  const off = (await cookiesWith({ NODE_ENV: "production", ALLOW_INSECURE_COOKIES: "true" })).cookieSecure()
+  const tls = (await cookiesWith({ NODE_ENV: "production", ALLOW_INSECURE_COOKIES: "true", PUBLIC_ORIGIN: "HTTPS://x.io" })).cookieSecure()
+  assert.deepEqual([on, off, tls], [true, false, true])
+})
+
+test("proxyHeaders sends the secret and first forwarded IP, nothing without a secret", async () => {
+  const { proxyHeaders } = await loadTs("src/lib/proxy-headers.ts", {})
+  assert.deepEqual({ ...proxyHeaders("s3", "198.51.100.7, 10.0.0.2") }, { "X-Internal-Proxy-Secret": "s3", "X-Client-IP": "198.51.100.7" })
+  assert.deepEqual({ ...proxyHeaders("s3", null) }, { "X-Internal-Proxy-Secret": "s3" })
+  assert.deepEqual({ ...proxyHeaders(undefined, "198.51.100.7") }, {})
 })
