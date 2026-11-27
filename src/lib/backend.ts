@@ -1,3 +1,6 @@
+import { headers as requestHeaders } from "next/headers"
+
+import { proxyHeaders } from "@/lib/proxy-headers"
 import type { TwoFactorChallenge, TwoFactorInput } from "@/types/auth"
 
 // Server-only helpers for talking to the FastAPI backend. Never imported
@@ -32,8 +35,17 @@ export async function backendFetch(
   path: string,
   init?: RequestInit
 ): Promise<Response> {
+  let forwardedFor: string | null = null
+  try {
+    forwardedFor = (await requestHeaders()).get("x-forwarded-for")
+  } catch {
+    // outside a request scope: no client IP to forward
+  }
+  const headers = new Headers(init?.headers)
+  for (const [k, v] of Object.entries(proxyHeaders(process.env.INTERNAL_PROXY_SECRET, forwardedFor))) headers.set(k, v)
   return fetch(`${API_URL}${path}`, {
     ...init,
+    headers,
     cache: "no-store",
   })
 }
