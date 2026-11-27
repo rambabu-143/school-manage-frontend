@@ -29,7 +29,8 @@ export function fakeCookies(initial = {}) {
   return {
     jar,
     get: (n) => (jar.has(n) ? { name: n, value: jar.get(n) } : undefined),
-    set: (n, v) => jar.set(n, v),
+    opts: new Map(),
+    set(n, v, o) { this.opts.set(n, o); jar.set(n, v) },
     delete: (n) => jar.delete(typeof n === "string" ? n : n.name),
   }
 }

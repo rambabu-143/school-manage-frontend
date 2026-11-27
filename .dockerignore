@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+.next
+.env*
+!.env.example
+qa
+tests
+docs
+contracts
+*.md
+.DS_Store
