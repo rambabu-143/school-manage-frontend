@@ -16,9 +16,12 @@ const REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 30
 
 type CookieStore = Awaited<ReturnType<typeof nextCookies>>
 
+// Secure in production. ALLOW_INSECURE_COOKIES=true is an explicit, temporary
+// opt-out for a plain-HTTP deployment (no domain/TLS yet): browsers drop Secure
+// cookies over http://, so login would silently fail. Remove it once HTTPS is on.
 const baseCookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: process.env.NODE_ENV === "production" && process.env.ALLOW_INSECURE_COOKIES !== "true",
   sameSite: "lax" as const,
   path: "/",
 }

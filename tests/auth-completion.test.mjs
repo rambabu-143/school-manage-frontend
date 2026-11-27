@@ -342,3 +342,22 @@ test("impersonate POST from an fsw session is refused with 409 and no backend ca
   assert.equal(calls, 0)
   assert.equal(jar.jar.get("access_token"), fsw)
 })
+
+async function cookiesWith(env) {
+  const claims = await loadTs("src/lib/jwt-claims.ts", {})
+  return loadTs("src/lib/session-cookies.ts", { "next/headers": {}, "@/lib/jwt-claims": claims }, { process: { env } })
+}
+
+test("session cookies are Secure in production unless ALLOW_INSECURE_COOKIES=true", async () => {
+  for (const [env, secure] of [
+    [{ NODE_ENV: "production" }, true],
+    [{ NODE_ENV: "production", ALLOW_INSECURE_COOKIES: "false" }, true],
+    [{ NODE_ENV: "production", ALLOW_INSECURE_COOKIES: "true" }, false],
+    [{ NODE_ENV: "test" }, false],
+  ]) {
+    const jar = fakeCookies()
+    ;(await cookiesWith(env)).setSessionCookies(jar, { access_token: "A", refresh_token: "R" })
+    assert.equal(jar.opts.get("access_token").secure, secure, JSON.stringify(env))
+    assert.equal(jar.opts.get("access_token").httpOnly, true)
+  }
+})
