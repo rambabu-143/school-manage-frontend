@@ -140,7 +140,8 @@ test("session cookie flags", async () => {
   const src = fs.readFileSync(new URL("../src/lib/session-cookies.ts", import.meta.url), "utf8")
   assert.match(src, /httpOnly: true/)
   assert.match(src, /sameSite: "lax"/)
-  assert.match(src, /secure: process\.env\.NODE_ENV === "production"/)
+  assert.match(src, /secure: cookieSecure\(\)/)
+  assert.match(src, /process\.env\.NODE_ENV !== "production"\) return false/)
 })
 
 // Derived from the contract snapshot (contracts/openapi.json, shared with PR #2), so a new
